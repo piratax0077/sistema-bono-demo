@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Models\Voucher;
+use App\Models\VoucherCobro;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
+class DemoPortalController extends Controller
+{
+    public function loginBono(Request $request)
+    {
+        abort_unless(config('demo.enabled') && config('demo.user_switch_enabled'), 404);
+        $user = User::where('email', 'paciente@gmail.com')->where('activo', true)->firstOrFail();
+        Auth::login($user);
+        $request->session()->regenerate();
+        $request->session()->put('two_factor_verified', true);
+        $request->session()->put('phone_otp_verified', true);
+
+        Log::info('Ingreso automático demo-bono', ['user_id' => $user->id, 'ip' => $request->ip()]);
+
+        return redirect()->route('cliente.dashboard')
+            ->with('ok', 'Sesión demo-bono autenticada automáticamente.');
+    }
+
+    public function index()
+    {
+        abort_unless(config('demo.enabled'), 404);
+
+        $vouchers = Voucher::with(['agenda', 'atencion', 'cobros.auditor', 'cobros.decisorPago'])
+            ->latest('id')->take(50)->get();
+        $resumen = [
+            'comprados' => Voucher::count(),
+            'en_espera' => Voucher::whereHas('agenda', fn ($q) => $q->where('estado', 'paciente_en_espera'))->count(),
+            'atendidos' => Voucher::whereNotNull('atencion_cerrada_at')->count(),
+            'en_auditoria' => VoucherCobro::whereIn('estado', ['pendiente_auditoria', 'observado_auditoria'])->count(),
+            'autorizados' => VoucherCobro::where('estado', 'pendiente_rendicion')->count(),
+            'depositados' => VoucherCobro::where('pago_estado', 'depositado')->count(),
+        ];
+
+        return view('demo.portal', compact('vouchers', 'resumen'));
+    }
+
+    public function switchUser(Request $request, string $perfil)
+    {
+        abort_unless(config('demo.enabled') && config('demo.user_switch_enabled'), 404);
+        $perfilConfig = config('demo.users.'.$perfil);
+        abort_unless(is_array($perfilConfig), 404);
+
+        $user = User::where('email', $perfilConfig['email'])->where('activo', true)->firstOrFail();
+        $anterior = Auth::user()?->email;
+        Auth::login($user);
+        $request->session()->regenerate();
+        $request->session()->put('two_factor_verified', true);
+        $request->session()->put('phone_otp_verified', true);
+
+        Log::info('Cambio de perfil del portal demo', [
+            'anterior' => $anterior,
+            'nuevo' => $user->email,
+            'ip' => $request->ip(),
+        ]);
+
+        $destinosPaciente = ['paciente.totem', 'paciente.escritorio', 'paciente.agenda'];
+        $destino = (string) $request->input('destino', '');
+        if ($perfil === 'paciente' && in_array($destino, $destinosPaciente, true)) {
+            return redirect()->route($destino)->with('ok', 'Perfil cambiado a Paciente.');
+        }
+
+        if (! empty($perfilConfig['route'])) {
+            return redirect()->route($perfilConfig['route'])->with('ok', 'Perfil cambiado a '.$perfilConfig['label'].'.');
+        }
+
+        return redirect($perfilConfig['url'])->with('ok', 'Perfil cambiado a '.$perfilConfig['label'].'.');
+    }
+}

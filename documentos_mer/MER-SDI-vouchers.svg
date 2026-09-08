@@ -1,0 +1,262 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1180" viewBox="0 0 1680 1180" role="img" aria-labelledby="title desc">
+  <title id="title">MER SDI Salud Digital Integrada - Sistema de Vouchers</title>
+  <desc id="desc">Modelo entidad relación funcional del circuito de bonos SDI, desde base externa, autorización, emisión, atención, auditoría y liquidación.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f4faf8; }
+      .panel { fill: #ffffff; stroke: #b9d8d1; stroke-width: 2; rx: 22; }
+      .panel-title { font: 700 22px Arial, sans-serif; fill: #063f38; letter-spacing: .5px; }
+      .entity { fill: #ecf8f5; stroke: #78bdb2; stroke-width: 1.5; rx: 12; }
+      .entity-core { fill: #fff7df; stroke: #f1b400; stroke-width: 2; rx: 12; }
+      .entity-audit { fill: #fff0f0; stroke: #e57373; stroke-width: 1.5; rx: 12; }
+      .entity-finance { fill: #eef3ff; stroke: #7896d8; stroke-width: 1.5; rx: 12; }
+      .entity-security { fill: #ecfbef; stroke: #55b86a; stroke-width: 1.5; rx: 12; }
+      .name { font: 700 16px Arial, sans-serif; fill: #073c36; }
+      .cols { font: 12px Arial, sans-serif; fill: #315d58; }
+      .note { font: 13px Arial, sans-serif; fill: #486b66; }
+      .small { font: 11px Arial, sans-serif; fill: #5d7672; }
+      .arrow { stroke: #0a7167; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .arrow-soft { stroke: #749993; stroke-width: 1.8; fill: none; marker-end: url(#arrowSoft); stroke-dasharray: 7 6; }
+      .arrow-red { stroke: #d34242; stroke-width: 2.2; fill: none; marker-end: url(#arrowRed); }
+      .legend-box { fill: #ffffff; stroke: #d4e5e1; stroke-width: 1; rx: 10; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0a7167"/>
+    </marker>
+    <marker id="arrowSoft" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#749993"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#d34242"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1680" height="1180"/>
+  <text x="50" y="52" style="font: 800 30px Arial, sans-serif; fill:#053f38;">MER - SDI Salud Digital Integrada</text>
+  <text x="50" y="80" class="note">Sistema de vouchers / bonos: preconsulta, autorización, QR, atención, auditoría y liquidación</text>
+  <text x="1390" y="58" class="small">Fecha: 30-06-2026</text>
+
+  <rect class="legend-box" x="1238" y="88" width="390" height="74"/>
+  <circle cx="1262" cy="113" r="8" fill="#ecf8f5" stroke="#78bdb2"/>
+  <text x="1280" y="118" class="small">Catálogos / flujo operacional</text>
+  <circle cx="1262" cy="139" r="8" fill="#fff7df" stroke="#f1b400"/>
+  <text x="1280" y="144" class="small">Núcleo del bono y QR</text>
+  <circle cx="1470" cy="113" r="8" fill="#fff0f0" stroke="#e57373"/>
+  <text x="1488" y="118" class="small">Auditoría / alertas</text>
+  <circle cx="1470" cy="139" r="8" fill="#eef3ff" stroke="#7896d8"/>
+  <text x="1488" y="144" class="small">Finanzas / pagos</text>
+
+  <!-- Base externa -->
+  <rect class="panel" x="40" y="115" width="500" height="430"/>
+  <text class="panel-title" x="68" y="152">1. Base externa y preconsulta</text>
+  <text class="note" x="68" y="176">Primera barrera: relación usuario/profesional/servicio antes del bono.</text>
+
+  <rect class="entity" x="70" y="205" width="190" height="78"/>
+  <text class="name" x="88" y="230">base_usuarios</text>
+  <text class="cols" x="88" y="252">id PK · rut_hash · estado</text>
+  <text class="cols" x="88" y="270">nombre · contacto</text>
+
+  <rect class="entity" x="310" y="205" width="190" height="78"/>
+  <text class="name" x="328" y="230">base_dependientes</text>
+  <text class="cols" x="328" y="252">id PK · usuario_id FK</text>
+  <text class="cols" x="328" y="270">rut_hash · parentesco</text>
+
+  <rect class="entity" x="70" y="310" width="190" height="88"/>
+  <text class="name" x="88" y="335">base_profesionales</text>
+  <text class="cols" x="88" y="357">id PK · rut_hash</text>
+  <text class="cols" x="88" y="375">profesión · especialidad</text>
+
+  <rect class="entity" x="310" y="310" width="190" height="88"/>
+  <text class="name" x="328" y="335">base_laboratorios</text>
+  <text class="cols" x="328" y="357">id PK · rut_hash</text>
+  <text class="cols" x="328" y="375">tipo · especialidad</text>
+
+  <rect class="entity" x="70" y="425" width="190" height="78"/>
+  <text class="name" x="88" y="450">base_servicios</text>
+  <text class="cols" x="88" y="472">id PK · código</text>
+  <text class="cols" x="88" y="490">nivel · valor · estado</text>
+
+  <rect class="entity" x="310" y="425" width="190" height="78"/>
+  <text class="name" x="328" y="450">base_relaciones</text>
+  <text class="cols" x="328" y="472">usuario/dependiente FK</text>
+  <text class="cols" x="328" y="490">prestador/servicio FK</text>
+
+  <!-- Seguridad -->
+  <rect class="panel" x="570" y="115" width="500" height="255"/>
+  <text class="panel-title" x="598" y="152">2. Identidad y autorización</text>
+  <text class="note" x="598" y="176">Cliente autoriza por app; admin/auditor usan Google Authenticator.</text>
+
+  <rect class="entity-security" x="600" y="205" width="190" height="86"/>
+  <text class="name" x="618" y="230">clientes</text>
+  <text class="cols" x="618" y="252">id PK · rut_hash</text>
+  <text class="cols" x="618" y="270">teléfono · email · estado</text>
+
+  <rect class="entity-security" x="840" y="205" width="190" height="86"/>
+  <text class="name" x="858" y="230">cliente_dispositivos</text>
+  <text class="cols" x="858" y="252">id PK · cliente_id FK</text>
+  <text class="cols" x="858" y="270">imei_hash · token</text>
+
+  <rect class="entity-security" x="600" y="312" width="190" height="42"/>
+  <text class="name" x="618" y="338">users / roles</text>
+
+  <rect class="entity-security" x="840" y="312" width="190" height="42"/>
+  <text class="name" x="858" y="338">2FA + OTP</text>
+
+  <!-- Preconsulta center -->
+  <rect class="entity-core" x="610" y="410" width="220" height="96"/>
+  <text class="name" x="628" y="438">voucher_preconsultas</text>
+  <text class="cols" x="628" y="460">relación FK · canal</text>
+  <text class="cols" x="628" y="478">estado · contradicciones</text>
+  <text class="cols" x="628" y="496">intentos · geo · respuesta</text>
+
+  <rect class="entity-audit" x="872" y="410" width="220" height="96"/>
+  <text class="name" x="890" y="438">preconsulta_auditorias</text>
+  <text class="cols" x="890" y="460">preconsulta_id FK</text>
+  <text class="cols" x="890" y="478">motivo · evidencia</text>
+  <text class="cols" x="890" y="496">auditor · resolución</text>
+
+  <!-- Canales -->
+  <rect class="panel" x="1110" y="190" width="520" height="355"/>
+  <text class="panel-title" x="1138" y="227">3. Canales de emisión</text>
+  <text class="note" x="1138" y="251">Todos convergen en bono, pero conservan trazabilidad de origen.</text>
+
+  <rect class="entity" x="1140" y="280" width="190" height="80"/>
+  <text class="name" x="1158" y="305">app_cliente</text>
+  <text class="cols" x="1158" y="327">compra bono</text>
+  <text class="cols" x="1158" y="345">autoriza desde teléfono</text>
+
+  <rect class="entity" x="1385" y="280" width="190" height="80"/>
+  <text class="name" x="1403" y="305">totems</text>
+  <text class="cols" x="1403" y="327">admin central</text>
+  <text class="cols" x="1403" y="345">geo · ping · alerta</text>
+
+  <rect class="entity" x="1140" y="395" width="190" height="80"/>
+  <text class="name" x="1158" y="420">asistente API</text>
+  <text class="cols" x="1158" y="442">vende / recibe QR</text>
+  <text class="cols" x="1158" y="460">recibe bono físico</text>
+
+  <rect class="entity" x="1385" y="395" width="190" height="80"/>
+  <text class="name" x="1403" y="420">agenda web</text>
+  <text class="cols" x="1403" y="442">pide hora</text>
+  <text class="cols" x="1403" y="460">requiere autorización</text>
+
+  <rect class="entity" x="1260" y="500" width="200" height="30"/>
+  <text class="name" x="1284" y="521">totem_ventas / detalles</text>
+
+  <!-- Core voucher -->
+  <rect class="panel" x="470" y="580" width="740" height="320"/>
+  <text class="panel-title" x="498" y="617">4. Núcleo del bono, QR y atención</text>
+  <text class="note" x="498" y="641">Bono emitido, QR seguro, entrega y validación en sala.</text>
+
+  <rect class="entity-core" x="505" y="670" width="250" height="116"/>
+  <text class="name" x="526" y="698">vouchers</text>
+  <text class="cols" x="526" y="720">id PK · código UK · token_qr</text>
+  <text class="cols" x="526" y="738">cliente/profesional/servicio FK</text>
+  <text class="cols" x="526" y="756">estado · canal · copago</text>
+  <text class="cols" x="526" y="774">vence_at · riesgo_validación</text>
+
+  <rect class="entity-core" x="805" y="670" width="170" height="86"/>
+  <text class="name" x="823" y="695">delivery_requests</text>
+  <text class="cols" x="823" y="717">voucher_id FK</text>
+  <text class="cols" x="823" y="735">WhatsApp / email / modal</text>
+
+  <rect class="entity-core" x="1010" y="670" width="170" height="86"/>
+  <text class="name" x="1028" y="695">voucher_pagos</text>
+  <text class="cols" x="1028" y="717">voucher_id FK</text>
+  <text class="cols" x="1028" y="735">método · monto · estado</text>
+
+  <rect class="entity" x="610" y="812" width="190" height="60"/>
+  <text class="name" x="628" y="838">voucher_agendas</text>
+  <text class="cols" x="628" y="858">paciente confirmado → sala</text>
+
+  <rect class="entity" x="860" y="812" width="190" height="60"/>
+  <text class="name" x="878" y="838">voucher_atenciones</text>
+  <text class="cols" x="878" y="858">QR / bono físico validado</text>
+
+  <!-- Auditoria -->
+  <rect class="panel" x="40" y="610" width="390" height="470"/>
+  <text class="panel-title" x="68" y="647">5. Auditoría y alertas</text>
+  <text class="note" x="68" y="671">Contraloría decide y autoriza si hay riesgo.</text>
+
+  <rect class="entity-audit" x="70" y="705" width="300" height="75"/>
+  <text class="name" x="90" y="731">voucher_alertas</text>
+  <text class="cols" x="90" y="753">nivel: verde / amarilla / roja</text>
+  <text class="cols" x="90" y="771">motivo · evidencia · estado</text>
+
+  <rect class="entity-audit" x="70" y="805" width="300" height="75"/>
+  <text class="name" x="90" y="831">auditor_notificaciones</text>
+  <text class="cols" x="90" y="853">alerta_id FK · voucher_id FK</text>
+  <text class="cols" x="90" y="871">auditor · resumen · resolución</text>
+
+  <rect class="entity-audit" x="70" y="905" width="300" height="75"/>
+  <text class="name" x="90" y="931">voucher_auditorias</text>
+  <text class="cols" x="90" y="953">acción · detalle · IP</text>
+  <text class="cols" x="90" y="971">trazabilidad completa</text>
+
+  <rect class="entity-audit" x="70" y="1005" width="300" height="50"/>
+  <text class="name" x="90" y="1036">login_auditorias / security_logs</text>
+
+  <!-- Finanzas -->
+  <rect class="panel" x="1260" y="610" width="370" height="470"/>
+  <text class="panel-title" x="1288" y="647">6. Cobros y liquidaciones</text>
+  <text class="note" x="1288" y="671">Profesionales e instituciones en vistas separadas.</text>
+
+  <rect class="entity-finance" x="1290" y="705" width="290" height="75"/>
+  <text class="name" x="1310" y="731">voucher_cobros</text>
+  <text class="cols" x="1310" y="753">voucher_id FK · profesional_id FK</text>
+  <text class="cols" x="1310" y="771">monto · estado · cobrado_at</text>
+
+  <rect class="entity-finance" x="1290" y="805" width="290" height="75"/>
+  <text class="name" x="1310" y="831">voucher_rendiciones</text>
+  <text class="cols" x="1310" y="853">folio · tipo_prestador</text>
+  <text class="cols" x="1310" y="871">alerta · total · estado</text>
+
+  <rect class="entity-finance" x="1290" y="905" width="290" height="75"/>
+  <text class="name" x="1310" y="931">voucher_liquidaciones</text>
+  <text class="cols" x="1310" y="953">profesional / institución</text>
+  <text class="cols" x="1310" y="971">pendiente · pagada · histórica</text>
+
+  <rect class="entity-finance" x="1290" y="1005" width="290" height="50"/>
+  <text class="name" x="1310" y="1036">pago_autorizaciones</text>
+
+  <!-- Relaciones principales -->
+  <path class="arrow" d="M 260 464 C 385 464 480 458 610 458"/>
+  <text x="392" y="443" class="small">relación vigente</text>
+
+  <path class="arrow-red" d="M 830 458 L 872 458"/>
+  <text x="837" y="440" class="small">rechazo / contradicción</text>
+
+  <path class="arrow" d="M 720 506 C 720 575 650 610 630 670"/>
+  <text x="655" y="590" class="small">aprueba → emite</text>
+
+  <path class="arrow" d="M 790 248 L 840 248"/>
+  <path class="arrow" d="M 935 291 C 935 350 834 374 755 410"/>
+  <text x="845" y="386" class="small">token temporal</text>
+
+  <path class="arrow" d="M 1235 360 C 1160 510 920 580 755 705"/>
+  <path class="arrow" d="M 1480 360 C 1410 520 950 600 755 715"/>
+  <path class="arrow" d="M 1235 475 C 1130 585 930 640 755 725"/>
+  <path class="arrow" d="M 1480 475 C 1400 595 1000 650 755 735"/>
+  <text x="1032" y="585" class="small">canales de compra / recepción</text>
+
+  <path class="arrow" d="M 755 724 L 805 724"/>
+  <path class="arrow" d="M 755 733 C 865 745 930 712 1010 712"/>
+  <path class="arrow" d="M 630 786 C 640 805 664 812 705 812"/>
+  <path class="arrow" d="M 800 842 L 860 842"/>
+
+  <path class="arrow-red" d="M 505 735 C 420 760 385 745 370 745"/>
+  <path class="arrow-red" d="M 220 780 L 220 805"/>
+  <path class="arrow-red" d="M 220 880 L 220 905"/>
+
+  <path class="arrow" d="M 1180 712 C 1222 715 1252 725 1290 742"/>
+  <path class="arrow" d="M 1435 780 L 1435 805"/>
+  <path class="arrow" d="M 1435 880 L 1435 905"/>
+  <path class="arrow-red" d="M 1290 940 C 1030 980 635 1000 370 845"/>
+  <text x="804" y="1003" class="small">alerta amarilla/roja → auditoría / contraloría</text>
+
+  <path class="arrow-soft" d="M 1480 360 C 1540 555 1510 655 1460 705"/>
+  <text x="1508" y="575" class="small">venta tótem</text>
+
+  <rect x="50" y="1100" width="1580" height="44" fill="#e8f4f1" stroke="#c5ddd7" rx="12"/>
+  <text x="70" y="1128" class="note">Regla central: no se genera bono si no existe relación/servicio vigente o autorización válida; si hay contradicción o exceso de uso, se deriva a auditoría con motivo, evidencia e intentos fallidos.</text>
+</svg>

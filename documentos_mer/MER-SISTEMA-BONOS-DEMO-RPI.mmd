@@ -1,0 +1,341 @@
+%% MODELO ENTIDAD-RELACION LOGICO
+%% Sistema de Bonos Medichile - SDI Salud Digital Integrada
+%% Documento preparado para expediente de Registro de Propiedad Intelectual
+%% Version 1.0 - 23-08-2026
+
+erDiagram
+    USERS {
+        bigint id PK
+        string name
+        string email UK
+        string rut
+        string telefono
+        string rol
+        bigint profesional_id FK
+        boolean activo
+        timestamp email_verified_at
+    }
+
+    CLIENTES {
+        bigint id PK
+        string rut_hash UK
+        text rut_encrypted
+        string nombre
+        string email
+        string telefono
+        string estado
+    }
+
+    CLIENTE_DISPOSITIVOS {
+        bigint id PK
+        bigint cliente_id FK
+        string imei_hash UK
+        string device_token
+        string estado
+        timestamp ultimo_uso_at
+    }
+
+    CLIENTE_AUTORIZACIONES {
+        bigint id PK
+        bigint cliente_id FK
+        bigint dispositivo_id FK
+        string tipo_accion
+        string referencia_tipo
+        bigint referencia_id
+        string token UK
+        string estado
+        timestamp expira_at
+        timestamp respondido_at
+    }
+
+    VOUCHER_PROFESIONALES {
+        bigint id PK
+        string rut UK
+        string nombre
+        string especialidad
+        string email
+        string telefono
+        string nivel_bono
+        string banco
+        string tipo_cuenta
+        string numero_cuenta
+        boolean activo
+    }
+
+    VOUCHER_SERVICIOS {
+        bigint id PK
+        string nombre
+        string descripcion
+        decimal valor_base
+        decimal copago_base
+        boolean activo
+    }
+
+    AGENDA_ONLINE_HORARIOS {
+        bigint id PK
+        bigint profesional_id FK
+        bigint servicio_id FK
+        datetime fecha_hora
+        integer duracion_minutos
+        string centro_nombre
+        string lugar_atencion
+        string estado
+        bigint reservado_por FK
+        bigint voucher_id FK
+    }
+
+    VOUCHERS {
+        bigint id PK
+        string codigo UK
+        bigint cliente_id FK
+        bigint profesional_id FK
+        bigint servicio_id FK
+        bigint agenda_id FK
+        bigint atencion_id FK
+        bigint totem_venta_id FK
+        string estado
+        string canal_emision
+        string token_qr UK
+        string codigo_hash
+        decimal valor_total
+        decimal copago
+        string forma_pago
+        timestamp vence_at
+    }
+
+    VOUCHER_DELIVERY_REQUESTS {
+        bigint id PK
+        bigint voucher_id FK
+        bigint cliente_user_id FK
+        string canal
+        string destino_tipo
+        string destino_valor
+        string estado
+        timestamp enviado_at
+    }
+
+    VOUCHER_AGENDAS {
+        bigint id PK
+        bigint voucher_id FK
+        bigint cliente_id FK
+        bigint profesional_id FK
+        bigint medichile_hora_medica_id FK
+        string estado
+        date fecha
+        time hora
+        string lugar_atencion
+        timestamp recepcionado_at
+    }
+
+    VOUCHER_ATENCIONES {
+        bigint id PK
+        bigint voucher_id FK
+        bigint agenda_id FK
+        bigint cliente_id FK
+        bigint profesional_id FK
+        bigint asistente_id FK
+        string estado
+        text diagnostico
+        text indicaciones
+        boolean validacion_automatica
+        timestamp iniciado_at
+        timestamp cerrado_at
+    }
+
+    VOUCHER_COBROS {
+        bigint id PK
+        bigint voucher_id FK
+        bigint profesional_id FK
+        bigint voucher_rendicion_id FK
+        bigint auditor_id FK
+        decimal monto
+        string estado
+        string auditoria_estado
+        string pago_estado
+        string comprobante_deposito
+        timestamp cobrado_at
+        timestamp pagado_at
+    }
+
+    VOUCHER_RENDICIONES {
+        bigint id PK
+        string folio UK
+        bigint profesional_id FK
+        string estado
+        decimal total
+        timestamp enviada_at
+    }
+
+    VOUCHER_LIQUIDACIONES {
+        bigint id PK
+        bigint voucher_rendicion_id FK
+        bigint profesional_id FK
+        decimal monto
+        string estado
+        string comprobante
+        timestamp pagado_at
+    }
+
+    VOUCHER_AUDITORIAS {
+        bigint id PK
+        bigint voucher_id FK
+        bigint usuario_id FK
+        string usuario_tipo
+        string accion
+        text descripcion
+        string ip
+        timestamp created_at
+    }
+
+    VOUCHER_ALERTAS {
+        bigint id PK
+        bigint voucher_id FK
+        string tipo
+        string nivel
+        string estado
+        string motivo
+        json evidencia
+    }
+
+    TOTEMS {
+        bigint id PK
+        string codigo UK
+        string nombre
+        string ubicacion
+        string estado_operacional
+        boolean activo
+        timestamp ultimo_ping_at
+    }
+
+    TOTEM_VENTAS {
+        bigint id PK
+        bigint totem_id FK
+        bigint cliente_id FK
+        bigint profesional_id FK
+        string folio UK
+        decimal total
+        string estado
+        string entrega_canal
+        timestamp created_at
+    }
+
+    PERSONAS {
+        bigint id PK
+        string rut_normalizado UK
+        string nombre_completo
+        string estado
+    }
+
+    PERSONAS_RAPIDAS_EDICIONES {
+        bigint id PK
+        string rut_normalizado UK
+        string nombre_completo
+        string email
+        string telefono
+        text direccion_encrypted
+        string origen
+    }
+
+    MEDICHILE_PACIENTES {
+        bigint id PK
+        string rut UK
+        string nombre
+        string email
+        string telefono
+    }
+
+    MEDICHILE_PROFESIONALES {
+        bigint id PK
+        string rut UK
+        string nombre
+        string email
+        string telefono
+        boolean estado
+        boolean certificado
+    }
+
+    MEDICHILE_HORAS_MEDICAS {
+        bigint id PK
+        bigint id_profesional FK
+        bigint id_paciente FK
+        date fecha_consulta
+        time hora_inicio
+        time hora_termino
+        integer id_estado
+        timestamp fecha_realizacion_consulta
+    }
+
+    VOUCHER_BASE_USUARIOS {
+        bigint id PK
+        string rut_hash UK
+        string nombre
+        string estado
+    }
+
+    VOUCHER_BASE_RELACIONES {
+        bigint id PK
+        bigint usuario_id FK
+        bigint profesional_id FK
+        bigint servicio_id FK
+        string nivel_bono
+        string estado
+        date vigente_desde
+        date vigente_hasta
+    }
+
+    VOUCHER_PRECONSULTAS {
+        bigint id PK
+        bigint usuario_id FK
+        bigint profesional_id FK
+        bigint servicio_id FK
+        bigint relacion_autorizada_id FK
+        bigint voucher_id FK
+        string canal
+        string estado
+        json contradicciones
+        integer intentos_fallidos
+    }
+
+    VOUCHER_PROFESIONALES ||--o{ USERS : habilita_perfil
+    CLIENTES ||--o{ CLIENTE_DISPOSITIVOS : registra
+    CLIENTES ||--o{ CLIENTE_AUTORIZACIONES : autoriza
+    CLIENTE_DISPOSITIVOS ||--o{ CLIENTE_AUTORIZACIONES : recibe
+
+    VOUCHER_PROFESIONALES ||--o{ AGENDA_ONLINE_HORARIOS : publica
+    VOUCHER_SERVICIOS ||--o{ AGENDA_ONLINE_HORARIOS : ofrece
+    USERS ||--o{ AGENDA_ONLINE_HORARIOS : reserva
+    AGENDA_ONLINE_HORARIOS ||--o| VOUCHERS : genera
+
+    CLIENTES ||--o{ VOUCHERS : adquiere
+    VOUCHER_PROFESIONALES ||--o{ VOUCHERS : presta
+    VOUCHER_SERVICIOS ||--o{ VOUCHERS : valoriza
+    VOUCHERS ||--o{ VOUCHER_DELIVERY_REQUESTS : distribuye_qr
+    VOUCHERS ||--o| VOUCHER_AGENDAS : vincula_hora
+    VOUCHER_AGENDAS ||--o| VOUCHER_ATENCIONES : inicia
+    VOUCHERS ||--o| VOUCHER_ATENCIONES : acredita
+
+    VOUCHERS ||--o| VOUCHER_COBROS : habilita_cobro
+    VOUCHER_PROFESIONALES ||--o{ VOUCHER_COBROS : solicita
+    VOUCHER_RENDICIONES ||--o{ VOUCHER_COBROS : agrupa
+    VOUCHER_RENDICIONES ||--o{ VOUCHER_LIQUIDACIONES : liquida
+    VOUCHER_PROFESIONALES ||--o{ VOUCHER_LIQUIDACIONES : recibe_pago
+
+    VOUCHERS ||--o{ VOUCHER_AUDITORIAS : deja_traza
+    USERS ||--o{ VOUCHER_AUDITORIAS : ejecuta
+    VOUCHERS ||--o{ VOUCHER_ALERTAS : genera
+
+    TOTEMS ||--o{ TOTEM_VENTAS : procesa
+    CLIENTES ||--o{ TOTEM_VENTAS : compra
+    TOTEM_VENTAS ||--o{ VOUCHERS : emite
+
+    PERSONAS ||--o| PERSONAS_RAPIDAS_EDICIONES : complementa
+    VOUCHER_BASE_USUARIOS ||--o{ VOUCHER_BASE_RELACIONES : titular
+    VOUCHER_PROFESIONALES ||--o{ VOUCHER_BASE_RELACIONES : convenio
+    VOUCHER_SERVICIOS ||--o{ VOUCHER_BASE_RELACIONES : cobertura
+    VOUCHER_BASE_RELACIONES ||--o{ VOUCHER_PRECONSULTAS : valida
+    VOUCHER_PRECONSULTAS ||--o| VOUCHERS : autoriza_emision
+
+    MEDICHILE_PACIENTES ||--o{ MEDICHILE_HORAS_MEDICAS : reserva
+    MEDICHILE_PROFESIONALES ||--o{ MEDICHILE_HORAS_MEDICAS : atiende
+    MEDICHILE_HORAS_MEDICAS ||--o| VOUCHER_AGENDAS : sincroniza_estado
+

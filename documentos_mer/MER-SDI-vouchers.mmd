@@ -1,0 +1,456 @@
+%% MER / ERD - SDI Salud Digital Integrada
+%% Proyecto: sistema de vouchers / bonos
+%% Fecha de referencia: 2026-06-30
+%% Este archivo Mermaid es editable. Puede abrirse en editores compatibles con Mermaid.
+
+erDiagram
+    USERS {
+        bigint id PK
+        string name
+        string email UK
+        string rut
+        string telefono
+        string rol
+        bigint vendedor_id FK
+        bigint profesional_id FK
+        string login_otp_hash
+        string two_factor_secret
+        timestamp two_factor_confirmed_at
+    }
+
+    CLIENTES {
+        bigint id PK
+        string rut_hash UK
+        text rut_encrypted
+        string nombre
+        string email
+        string telefono
+        string estado
+    }
+
+    CLIENTE_DISPOSITIVOS {
+        bigint id PK
+        bigint cliente_id FK
+        string imei_hash UK
+        string device_token
+        string plataforma
+        string estado
+        timestamp ultimo_uso_at
+    }
+
+    CLIENTE_AUTORIZACIONES {
+        bigint id PK
+        bigint cliente_id FK
+        bigint dispositivo_id FK
+        string tipo_accion
+        string referencia_tipo
+        bigint referencia_id
+        string token UK
+        string estado
+        json metadata
+        timestamp expira_at
+        timestamp respondido_at
+    }
+
+    VOUCHER_BASE_USUARIOS {
+        bigint id PK
+        string rut_hash UK
+        string nombre
+        string telefono
+        string email
+        date fecha_nacimiento
+        string estado
+    }
+
+    VOUCHER_BASE_DEPENDIENTES {
+        bigint id PK
+        bigint usuario_id FK
+        string rut_hash
+        string nombre
+        date fecha_nacimiento
+        string parentesco
+        string estado
+    }
+
+    VOUCHER_BASE_PROFESIONALES {
+        bigint id PK
+        string rut_hash UK
+        string nombre
+        string profesion
+        string especialidad
+        string nivel_bono
+        string estado
+    }
+
+    VOUCHER_BASE_LABORATORIOS {
+        bigint id PK
+        string rut_hash UK
+        string nombre
+        string tipo
+        string especialidad
+        string nivel_bono
+        string estado
+    }
+
+    VOUCHER_BASE_SERVICIOS {
+        bigint id PK
+        string codigo UK
+        string nombre
+        string tipo
+        string nivel_bono
+        decimal valor
+        string estado
+    }
+
+    VOUCHER_BASE_RELACIONES {
+        bigint id PK
+        bigint usuario_id FK
+        bigint dependiente_id FK
+        bigint profesional_id FK
+        bigint laboratorio_id FK
+        bigint servicio_id FK
+        string tipo_relacion
+        date vigente_desde
+        date vigente_hasta
+        string estado
+    }
+
+    VOUCHER_PRECONSULTAS {
+        bigint id PK
+        bigint usuario_id FK
+        bigint dependiente_id FK
+        bigint profesional_id FK
+        bigint laboratorio_id FK
+        bigint servicio_id FK
+        bigint relacion_id FK
+        bigint voucher_id FK
+        string canal
+        string estado
+        string motivo_rechazo
+        json contradicciones
+        integer intentos_fallidos
+        string geolocalizacion
+        timestamp fecha_consulta
+        timestamp hora_respuesta
+    }
+
+    VOUCHER_PRECONSULTA_AUDITORIAS {
+        bigint id PK
+        bigint preconsulta_id FK
+        string motivo
+        json contradicciones
+        json intentos_fallidos
+        text explicacion
+        string estado
+        bigint auditor_id FK
+    }
+
+    VOUCHER_VENDEDORES {
+        bigint id PK
+        string nombre
+        string rut
+        string email
+        string telefono
+        string estado
+    }
+
+    VOUCHER_PROFESIONALES {
+        bigint id PK
+        string rut
+        string nombre
+        string profesion
+        string especialidad
+        string nivel_bono
+        string lugar_atencion
+        string estado
+    }
+
+    VOUCHER_SERVICIOS {
+        bigint id PK
+        string codigo
+        string nombre
+        string tipo
+        string nivel
+        decimal precio_base
+        string estado
+    }
+
+    VOUCHER_MASCOTAS {
+        bigint id PK
+        bigint cliente_id FK
+        string nombre
+        string especie
+        string dueno_rut_hash
+        string estado
+    }
+
+    VOUCHERS {
+        bigint id PK
+        string codigo UK
+        bigint cliente_user_id FK
+        bigint vendedor_id FK
+        bigint profesional_id FK
+        bigint servicio_id FK
+        bigint mascota_id FK
+        bigint totem_venta_id FK
+        bigint agenda_id FK
+        bigint atencion_id FK
+        string estado
+        string canal_emision
+        string token_qr UK
+        string codigo_hash
+        decimal valor_total
+        decimal copago
+        string forma_pago
+        string destino_entrega
+        string riesgo_validacion
+        timestamp vence_at
+        timestamp validado_at
+    }
+
+    VOUCHER_DELIVERY_REQUESTS {
+        bigint id PK
+        bigint voucher_id FK
+        bigint cliente_user_id FK
+        string canal
+        string destino_tipo
+        string destino_valor
+        string estado
+        timestamp enviado_at
+    }
+
+    VOUCHER_PAGOS {
+        bigint id PK
+        bigint voucher_id FK
+        string metodo
+        decimal monto
+        string estado
+        string referencia
+    }
+
+    CLIENTE_SALDOS {
+        bigint id PK
+        string cliente_rut_hash
+        decimal monto
+        string origen
+        string estado
+        bigint voucher_id FK
+    }
+
+    VOUCHER_AGENDAS {
+        bigint id PK
+        bigint voucher_id FK
+        bigint profesional_id FK
+        string paciente_rut_hash
+        string estado
+        date fecha
+        time hora
+        string origen
+    }
+
+    VOUCHER_ATENCIONES {
+        bigint id PK
+        bigint voucher_id FK
+        bigint agenda_id FK
+        bigint profesional_id FK
+        bigint asistente_id FK
+        string estado
+        timestamp recibido_at
+        timestamp cerrado_at
+    }
+
+    TOTEMS {
+        bigint id PK
+        string codigo UK
+        string nombre
+        string estado
+        boolean activo_admin
+        string ip_autorizada
+        string geolocalizacion
+        timestamp ultimo_ping_at
+    }
+
+    TOTEM_SESIONES {
+        bigint id PK
+        bigint totem_id FK
+        string token_hash UK
+        string estado
+        timestamp expira_at
+    }
+
+    TOTEM_VENTAS {
+        bigint id PK
+        bigint totem_id FK
+        string folio UK
+        string rut_cliente_hash
+        string telefono_cliente
+        string email_cliente
+        bigint profesional_id FK
+        bigint servicio_id FK
+        decimal total
+        string estado
+        string entrega_canal
+        string ip_emision
+        string geolocalizacion
+        timestamp autorizacion_cliente_at
+    }
+
+    TOTEM_VENTA_DETALLES {
+        bigint id PK
+        bigint totem_venta_id FK
+        bigint servicio_id FK
+        integer cantidad
+        decimal precio_unitario
+        decimal total
+    }
+
+    TOTEM_LOGS {
+        bigint id PK
+        bigint totem_id FK
+        string nivel
+        string evento
+        json contexto
+        timestamp created_at
+    }
+
+    VOUCHER_COBROS {
+        bigint id PK
+        bigint voucher_id FK
+        bigint profesional_id FK
+        bigint rendicion_id FK
+        decimal monto
+        string estado
+        timestamp cobrado_at
+    }
+
+    VOUCHER_RENDICIONES {
+        bigint id PK
+        string folio UK
+        string tipo_prestador
+        bigint profesional_id FK
+        string estado
+        string alerta
+        decimal total
+    }
+
+    VOUCHER_LIQUIDACIONES {
+        bigint id PK
+        bigint rendicion_id FK
+        string tipo_destino
+        bigint destino_id
+        string estado
+        string alerta
+        decimal monto
+        timestamp pagado_at
+    }
+
+    PAGO_AUTORIZACIONES {
+        bigint id PK
+        bigint liquidacion_id FK
+        bigint rendicion_id FK
+        bigint autorizador_id FK
+        string canal
+        string estado
+        timestamp autorizado_at
+    }
+
+    VOUCHER_ALERTAS {
+        bigint id PK
+        bigint voucher_id FK
+        string tipo
+        string nivel
+        string estado
+        string motivo
+        json evidencia
+    }
+
+    AUDITOR_NOTIFICACIONES {
+        bigint id PK
+        bigint voucher_id FK
+        bigint alerta_id FK
+        bigint auditor_id FK
+        string estado
+        text resumen
+    }
+
+    VOUCHER_AUDITORIAS {
+        bigint id PK
+        bigint voucher_id FK
+        bigint user_id FK
+        string accion
+        text detalle
+        string ip
+        timestamp created_at
+    }
+
+    LOGIN_AUDITORIAS {
+        bigint id PK
+        bigint user_id FK
+        string email
+        string resultado
+        string ip
+        string user_agent
+    }
+
+    IP_AUTORIZADAS {
+        bigint id PK
+        string ip
+        string descripcion
+        string estado
+        timestamp vence_at
+    }
+
+    SECURITY_LOGS {
+        bigint id PK
+        bigint user_id FK
+        string evento
+        string severidad
+        string ip
+        json contexto
+    }
+
+    USERS ||--o{ VOUCHERS : compra_o_emite
+    VOUCHER_VENDEDORES ||--o{ USERS : credenciales
+    VOUCHER_PROFESIONALES ||--o{ USERS : credenciales
+    VOUCHER_PROFESIONALES ||--o{ VOUCHERS : atiende
+    VOUCHER_SERVICIOS ||--o{ VOUCHERS : define
+    VOUCHER_MASCOTAS ||--o{ VOUCHERS : paciente_mascota
+
+    CLIENTES ||--o{ CLIENTE_DISPOSITIVOS : registra
+    CLIENTES ||--o{ CLIENTE_AUTORIZACIONES : aprueba
+    CLIENTE_DISPOSITIVOS ||--o{ CLIENTE_AUTORIZACIONES : recibe_push
+    CLIENTE_AUTORIZACIONES ||--o{ VOUCHERS : habilita_compra
+
+    VOUCHER_BASE_USUARIOS ||--o{ VOUCHER_BASE_DEPENDIENTES : tiene
+    VOUCHER_BASE_USUARIOS ||--o{ VOUCHER_BASE_RELACIONES : titular
+    VOUCHER_BASE_DEPENDIENTES ||--o{ VOUCHER_BASE_RELACIONES : beneficiario
+    VOUCHER_BASE_PROFESIONALES ||--o{ VOUCHER_BASE_RELACIONES : autorizado
+    VOUCHER_BASE_LABORATORIOS ||--o{ VOUCHER_BASE_RELACIONES : autorizado
+    VOUCHER_BASE_SERVICIOS ||--o{ VOUCHER_BASE_RELACIONES : servicio
+    VOUCHER_BASE_RELACIONES ||--o{ VOUCHER_PRECONSULTAS : valida
+    VOUCHER_PRECONSULTAS ||--o| VOUCHERS : genera_si_aprueba
+    VOUCHER_PRECONSULTAS ||--o| VOUCHER_PRECONSULTA_AUDITORIAS : deriva_si_contradiccion
+
+    VOUCHERS ||--o{ VOUCHER_DELIVERY_REQUESTS : entrega_qr
+    VOUCHERS ||--o{ VOUCHER_PAGOS : pagos
+    VOUCHERS ||--o{ CLIENTE_SALDOS : reversa_o_saldo
+    VOUCHERS ||--o| VOUCHER_AGENDAS : confirma_hora
+    VOUCHER_AGENDAS ||--o| VOUCHER_ATENCIONES : pasa_a_sala
+    VOUCHERS ||--o| VOUCHER_ATENCIONES : valida_qr
+
+    TOTEMS ||--o{ TOTEM_SESIONES : autentica
+    TOTEMS ||--o{ TOTEM_VENTAS : vende
+    TOTEM_VENTAS ||--o{ TOTEM_VENTA_DETALLES : contiene
+    TOTEM_VENTAS ||--o{ VOUCHERS : genera
+    TOTEMS ||--o{ TOTEM_LOGS : reporta
+
+    VOUCHERS ||--o{ VOUCHER_COBROS : cobra
+    VOUCHER_RENDICIONES ||--o{ VOUCHER_COBROS : agrupa
+    VOUCHER_RENDICIONES ||--o{ VOUCHER_LIQUIDACIONES : liquida
+    VOUCHER_LIQUIDACIONES ||--o{ PAGO_AUTORIZACIONES : requiere_autorizacion
+
+    VOUCHERS ||--o{ VOUCHER_ALERTAS : dispara
+    VOUCHER_ALERTAS ||--o{ AUDITOR_NOTIFICACIONES : notifica
+    VOUCHERS ||--o{ VOUCHER_AUDITORIAS : registra
+    USERS ||--o{ LOGIN_AUDITORIAS : login
+    USERS ||--o{ SECURITY_LOGS : seguridad

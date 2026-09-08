@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tótem · SDI Salud Digital Integrada</title>
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#e0f2f1,#f7fbff);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.box{
+    background:white;
+    width:760px;
+    padding:50px;
+    border-radius:30px;
+    text-align:center;
+    box-shadow:0 8px 25px rgba(0,0,0,.15);
+}
+
+.logo{
+    font-size:52px;
+    font-weight:bold;
+    color:#00695c;
+}
+
+.sub{
+    font-size:24px;
+    margin-bottom:40px;
+}
+
+button{
+    width:100%;
+    padding:34px;
+    margin:18px 0;
+    border:0;
+    border-radius:24px;
+    font-size:30px;
+    font-weight:bold;
+    color:white;
+    cursor:pointer;
+}
+
+.atencion{
+    background:#00897b;
+}
+
+.despacho{
+    background:#455a64;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+    <div class="logo">SDI · SALUD DIGITAL INTEGRADA</div>
+    <div class="sub">Seleccione el módulo</div>
+
+    <button class="atencion" onclick="location.href='../totem-local'">
+        Abrir tótem de atención
+    </button>
+
+    <button class="despacho" onclick="location.href='despacho.html'">
+        Alimentos y Farmacia
+    </button>
+</div>
+
+</body>
+</html>
