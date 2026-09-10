@@ -21,6 +21,7 @@ use App\Services\MedichileAgendaService;
 use App\Services\VoucherQrPayloadService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\DB;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 
@@ -491,8 +492,12 @@ public function cobrar($id)
 {
     $voucher = Voucher::findOrFail($id);
 
-    if (auth()->user()->rol !== 'profesional'
-        || (int) $voucher->profesional_id !== (int) auth()->user()->profesional_id) {
+    // Igual que voucherProfesionalHabilitadoParaCobro(): un bono Med-SDI
+    // externo se autoriza por prestador_nombre, no por profesional_id local.
+    $esLocal = (int) $voucher->profesional_id === (int) auth()->user()->profesional_id;
+    $esExterno = ! empty($voucher->prestador_nombre);
+
+    if (auth()->user()->rol !== 'profesional' || (! $esLocal && ! $esExterno)) {
         abort(403);
     }
 
@@ -527,7 +532,9 @@ public function cobrar($id)
     \App\Models\VoucherCobro::updateOrCreate(
         ['voucher_id' => $voucher->id],
         [
-            'profesional_id' => $voucher->profesional_id,
+            // Bono externo sin profesional_id local: el cobro queda a nombre
+            // del profesional autenticado que lo generó.
+            'profesional_id' => $voucher->profesional_id ?? auth()->user()->profesional_id,
             'veterinario_nombre' => $voucher->prestador_nombre ?? 'Profesional',
             'sucursal' => 'Sucursal Centro',
             'monto_cobrado' => $voucher->saldo_veterinario,
@@ -548,6 +555,61 @@ public function cobrar($id)
     return redirect()
         ->route('profesional.cobros')
         ->with('ok', 'QR enviado a cobro. Quedó pendiente del visto bueno de auditoría.');
+}
+
+public function cobrarSeleccionados(Request $request)
+{
+    $data = $request->validate([
+        'voucher_ids' => ['required', 'array', 'min:1', 'max:100'],
+        'voucher_ids.*' => ['required', 'integer', 'distinct'],
+    ], [
+        'voucher_ids.required' => 'Seleccione al menos una atención para enviar a cobros.',
+        'voucher_ids.min' => 'Seleccione al menos una atención para enviar a cobros.',
+    ]);
+
+    abort_unless(auth()->user()->rol === 'profesional', 403);
+
+    $procesados = DB::transaction(function () use ($data) {
+        $vouchers = Voucher::whereIn('id', $data['voucher_ids'])->lockForUpdate()->get();
+        $procesados = 0;
+
+        foreach ($vouchers as $voucher) {
+            $esLocal = (int) $voucher->profesional_id === (int) auth()->user()->profesional_id;
+            $esExterno = ! empty($voucher->prestador_nombre);
+            if ((! $esLocal && ! $esExterno)
+                || $voucher->estado !== 'validado_atencion'
+                || $voucher->qr_usado
+                || $voucher->cobros()->exists()) {
+                continue;
+            }
+
+            $voucher->update(['estado' => 'cobrado', 'qr_usado' => true, 'qr_usado_at' => now(), 'usado_en' => now()]);
+            \App\Models\VoucherCobro::create([
+                'voucher_id' => $voucher->id,
+                'profesional_id' => $voucher->profesional_id ?? auth()->user()->profesional_id,
+                'veterinario_nombre' => $voucher->prestador_nombre ?? 'Profesional',
+                'sucursal' => 'Sucursal Centro',
+                'monto_cobrado' => $voucher->saldo_veterinario,
+                'estado' => 'pendiente_auditoria',
+                'cobrado_en' => now(),
+            ]);
+            VoucherAuditoria::create([
+                'voucher_id' => $voucher->id,
+                'accion' => 'voucher_enviado_cobro_masivo',
+                'usuario_tipo' => auth()->user()->rol,
+                'usuario_id' => auth()->id(),
+                'descripcion' => 'Bono enviado a cobro mediante selección masiva del profesional.',
+                'ip' => request()->ip(),
+            ]);
+            $procesados++;
+        }
+
+        return $procesados;
+    });
+
+    return $procesados > 0
+        ? redirect()->route('profesional.cobros')->with('ok', $procesados.' '.($procesados === 1 ? 'bono fue enviado' : 'bonos fueron enviados').' a cobros y quedaron pendientes de auditoría.')
+        : back()->with('error', 'Ninguno de los bonos seleccionados estaba disponible para cobro.');
 }
 
 public function generarQrCobro($id)
@@ -618,12 +680,79 @@ public function qrCobro($id)
     ));
 }
 
+/**
+ * Mismos datos que qrCobro(), en JSON, para abrirlos en un modal desde
+ * "Atenciones cerradas" sin redirigir a la página completa.
+ */
+public function cobroQrDatos($id)
+{
+    $voucher = $this->voucherProfesionalHabilitadoParaCobro($id);
+    $voucher->load(['agenda', 'atencion']);
+
+    $fechaAtencion = optional($voucher->atencion)->cerrada_at
+        ?: optional($voucher->atencion)->fin_atencion
+        ?: optional($voucher->agenda)->fecha_hora_confirmada;
+
+    $lugarAtencion = optional($voucher->atencion)->direccion
+        ?: $voucher->prestador_direccion
+        ?: 'Centro médico de prueba';
+
+    $datosCobro = [
+        'codigo_bono' => $voucher->codigo,
+        'paciente' => $voucher->beneficiario_nombre ?: $voucher->cliente_nombre,
+        'profesional' => $voucher->prestador_nombre ?: optional($voucher->profesional)->nombre,
+        'relacion' => 'Paciente atendido por profesional asociado al bono',
+        'lugar_atencion' => $lugarAtencion,
+        'fecha_atencion' => $fechaAtencion ? Carbon::parse($fechaAtencion)->format('d-m-Y H:i') : 'Sin fecha registrada',
+        'tipo_atencion' => $voucher->tipo_servicio ?: $voucher->prestador_especialidad ?: 'Consulta médica',
+        'valor_a_cobrar' => (int) $voucher->saldo_veterinario,
+    ];
+
+    $urlFirmada = URL::temporarySignedRoute(
+        'profesional.cobros.qr',
+        now()->addHours(24),
+        ['id' => $voucher->id]
+    );
+
+    $qrSvg = (string) QrCode::format('svg')
+        ->size(330)
+        ->margin(2)
+        ->errorCorrection('H')
+        ->generate($urlFirmada);
+    $qrDataUri = 'data:image/svg+xml;base64,'.base64_encode($qrSvg);
+    $mensajeWhatsapp = 'QR de cobro Medichile · Bono '.$voucher->codigo
+        .' · Paciente: '.$datosCobro['paciente']
+        .' · Profesional: '.$datosCobro['profesional']
+        .' · Valor a cobrar: $'.number_format($datosCobro['valor_a_cobrar'], 0, ',', '.')
+        .' · Enlace seguro: '.$urlFirmada;
+
+    VoucherAuditoria::create([
+        'voucher_id' => $voucher->id,
+        'accion' => 'qr_cobro_generado',
+        'usuario_tipo' => auth()->user()->rol,
+        'usuario_id' => auth()->id(),
+        'descripcion' => 'QR de cobro generado con enlace firmado y vigencia de 24 horas',
+        'ip' => request()->ip(),
+    ]);
+
+    return response()->json(array_merge($datosCobro, [
+        'qr_data_uri' => $qrDataUri,
+        'mensaje_whatsapp' => $mensajeWhatsapp,
+        'signed_url' => $urlFirmada,
+        'cobrar_url' => route('vouchers.cobrar', $voucher->id),
+    ]));
+}
+
 private function voucherProfesionalHabilitadoParaCobro($id): Voucher
 {
     $voucher = Voucher::with(['agenda', 'atencion', 'profesional'])->findOrFail($id);
 
-    if (auth()->user()->rol !== 'profesional'
-        || (int) $voucher->profesional_id !== (int) auth()->user()->profesional_id) {
+    // Los bonos agendados vía Med-SDI externo no tienen profesional_id local
+    // (el prestador viene de la API real), se identifican por prestador_nombre.
+    $esLocal = (int) $voucher->profesional_id === (int) auth()->user()->profesional_id;
+    $esExterno = ! empty($voucher->prestador_nombre);
+
+    if (auth()->user()->rol !== 'profesional' || (! $esLocal && ! $esExterno)) {
         abort(403);
     }
 
@@ -636,8 +765,13 @@ private function voucherProfesionalHabilitadoParaCobro($id): Voucher
     public function qr($token, VoucherQrPayloadService $qrPayloadService, MedichileQrImageService $qrImageService)
     {
         $voucher = Voucher::where('qr_token', $token)
-            ->with(['pagos', 'atencion', 'cobros.rendicion.liquidaciones'])
+            ->with(['pagos', 'atencion', 'agenda', 'cobros.rendicion.liquidaciones'])
             ->firstOrFail();
+
+        // El QR representa el bono ya pagado; sin esto, quien tenga el enlace
+        // podría verlo antes de completar el copago.
+        abort_unless($voucher->estado === 'activo', 404);
+
         $qrPayload = $qrPayloadService->build($voucher);
         $qrText = $qrPayloadService->compactText($voucher);
         $qrUrl = $qrPayload['qr_url'];
@@ -648,6 +782,85 @@ private function voucherProfesionalHabilitadoParaCobro($id): Voucher
         return view('vouchers.qr', compact('voucher', 'qrPayload', 'qrText', 'qrUrl', 'qrImage', 'centroWhatsapp'));
     }
 
+    /**
+     * Datos del modal "Compartir" en JSON, para abrirlo sin recargar la
+     * página (ej. desde el historial de bonos del dashboard del paciente).
+     */
+    public function compartirDatos($token, MedichileQrImageService $qrImageService)
+    {
+        $voucher = Voucher::where('qr_token', $token)->firstOrFail();
+        abort_unless($voucher->estado === 'activo', 404);
+
+        if (auth()->check() && auth()->user()->rol === 'cliente') {
+            abort_unless((int) $voucher->cliente_id === (int) auth()->id(), 403);
+        }
+
+        $qrUrl = route('vouchers.qr', $voucher->qr_token);
+        $qrImage = $qrImageService->ensureForVoucher($voucher, $qrUrl);
+        $centroWhatsapp = VoucherDeliveryRequest::where('voucher_id', $voucher->id)
+            ->where('canal', 'medical_center_whatsapp')->latest('id')->value('destino');
+
+        $normalizarTelefono = function ($telefono) {
+            $digits = preg_replace('/\D+/', '', (string) $telefono);
+            if ($digits !== '' && substr($digits, 0, 2) !== '56') {
+                $digits = '56'.ltrim($digits, '0');
+            }
+
+            return $digits;
+        };
+
+        $recipients = [];
+        $addRecipient = function ($id, $label, $role, $phone = null, $email = null) use (&$recipients, $normalizarTelefono) {
+            $phone = $normalizarTelefono($phone);
+            $email = trim((string) $email);
+            if ($phone === '' && $email === '') {
+                return;
+            }
+
+            $channels = [];
+            if ($phone !== '') {
+                $channels[] = 'whatsapp';
+            }
+            if ($email !== '') {
+                $channels[] = 'email';
+            }
+
+            $recipients[] = [
+                'id' => $id,
+                'label' => $label ?: 'Sin nombre',
+                'role' => $role,
+                'phone' => $phone !== '' ? $phone : null,
+                'email' => $email !== '' ? $email : null,
+                'channels' => $channels,
+            ];
+        };
+
+        $addRecipient('titular', $voucher->cliente_nombre ?: 'Titular', 'Titular / paciente', $voucher->cliente_telefono, $voucher->cliente_email);
+        $addRecipient('profesional', $voucher->prestador_nombre ?: 'Profesional', 'Profesional tratante', $voucher->prestador_telefono, $voucher->prestador_email);
+        $addRecipient('centro-medico', 'Centro médico / recepción', 'Recepción del centro', $centroWhatsapp, $voucher->centro_email ?: 'recepcion@centromedico.cl');
+
+        $qrImageUrl = $qrImage['url'] ?? null;
+        $qrImagePath = $qrImage['path'] ?? null;
+        $qrImageVersion = $qrImagePath && file_exists($qrImagePath) ? filemtime($qrImagePath) : time();
+
+        return response()->json([
+            'codigo' => $voucher->codigo,
+            'recipients' => $recipients,
+            'subject' => 'QR Medichile '.$voucher->codigo,
+            'message' => implode("\n", [
+                'Medichile · Bono digital seguro',
+                '',
+                'QR del bono: '.$voucher->codigo,
+                '',
+                'Se adjunta imagen QR. No es necesario imprimir.',
+            ]),
+            'qr_image_url' => $qrImageUrl.'?v='.$qrImageVersion,
+            'qr_image_download_name' => 'qr-medichile-'.$voucher->codigo.'.png',
+            'whatsapp_demo_url' => route('vouchers.qr.whatsappDemo', $voucher->qr_token),
+            'qr_page_url' => $qrUrl,
+        ]);
+    }
+
     public function whatsappDemo(Request $request, $token, VoucherQrPayloadService $qrPayloadService, MedichileQrImageService $qrImageService)
     {
         $voucher = Voucher::where('qr_token', $token)->firstOrFail();
@@ -656,6 +869,8 @@ private function voucherProfesionalHabilitadoParaCobro($id): Voucher
         if ($user->rol === 'cliente' && (int) $voucher->cliente_id !== (int) $user->id) {
             abort(403);
         }
+
+        abort_unless($voucher->estado === 'activo', 404);
 
         $qrPayload = $qrPayloadService->build($voucher);
         $qrImage = $qrImageService->ensureForVoucher($voucher, $qrPayload['qr_url']);
@@ -739,6 +954,8 @@ private function voucherProfesionalHabilitadoParaCobro($id): Voucher
         if ($user->rol === 'cliente' && (int) $voucher->cliente_id !== (int) $user->id) {
             abort(403);
         }
+
+        abort_unless($voucher->estado === 'activo', 404);
 
         $qrPayload = $qrPayloadService->build($voucher);
         $firmaCalculada = hash_hmac(

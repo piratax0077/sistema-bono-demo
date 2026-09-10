@@ -11,7 +11,7 @@ class VoucherQrPayloadService
 {
     public function build(Voucher $voucher): array
     {
-        $voucher->loadMissing(['servicio']);
+        $voucher->loadMissing(['servicio', 'agenda']);
 
         $rutTitular = $voucher->cliente_rut_visible;
         $baseUsuario = $this->baseUsuario($rutTitular);
@@ -51,6 +51,7 @@ class VoucherQrPayloadService
             ],
             'beneficiarios' => $this->beneficiarios($baseUsuario),
             'beneficiario_seleccionado' => $this->beneficiarioSeleccionado($voucher, $baseUsuario, $rutTitular),
+            'hora_medica' => $this->horaMedica($voucher),
         ];
 
         $payload['integridad'] = [
@@ -103,6 +104,13 @@ class VoucherQrPayloadService
                 .' | Especialidad: '.($payload['profesional']['especialidad'] ?: 'Sin especialidad');
         }
 
+        if (! empty($payload['hora_medica'])) {
+            $hora = $payload['hora_medica'];
+            $lines[] = 'Hora médica: '.($hora['fecha_hora'] ?: 'Sin fecha')
+                .' | Estado: '.($hora['estado_texto'] ?: 'Sin estado')
+                .(($hora['id_medichile'] ?? null) ? ' | Hora Med-SDI #'.$hora['id_medichile'] : '');
+        }
+
         $lines[] = 'Token: '.$voucher->qr_token;
         $lines[] = 'Firma: '.$payload['integridad']['firma'];
 
@@ -121,6 +129,38 @@ class VoucherQrPayloadService
             ->where('rut_hash', $this->rutHmac($rut))
             ->orWhere('rut_sha256', $this->rutSha256($rut))
             ->first();
+    }
+
+    /**
+     * Estados reales de Med-SDI (Agenda_Estado) para mostrar un texto legible
+     * junto al id de la hora médica anexada al bono.
+     */
+    private const AGENDA_ESTADO_TEXTO = [
+        1 => 'Reservada',
+        2 => 'Confirmada',
+        3 => 'Rechazada',
+        4 => 'Paciente en espera',
+        5 => 'Realizando atención',
+        6 => 'Realizada',
+        7 => 'Inasistida',
+    ];
+
+    private function horaMedica(Voucher $voucher): ?array
+    {
+        $agenda = $voucher->agenda;
+        if (! $agenda) {
+            return null;
+        }
+
+        $fechaHora = $agenda->fecha_hora_confirmada ?: $agenda->fecha_hora_solicitada;
+
+        return [
+            'id_medichile' => $agenda->medichile_hora_medica_id,
+            'fecha_hora' => $fechaHora ? Carbon::parse($fechaHora)->format('d-m-Y H:i') : null,
+            'estado_local' => $agenda->estado,
+            'id_estado_medichile' => $agenda->medichile_estado_id,
+            'estado_texto' => self::AGENDA_ESTADO_TEXTO[(int) $agenda->medichile_estado_id] ?? null,
+        ];
     }
 
     private function beneficiarios(?VoucherBaseUsuario $baseUsuario): array

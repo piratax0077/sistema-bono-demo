@@ -368,7 +368,7 @@
         @endauth
     </div>
 
-    @include('partials.demo_flow_guide', ['demoStep' => 2])
+    @include('partials.demo_flow_guide', ['demoStep' => $voucher->demoRecorridoStep()])
 
     <div class="row justify-content-center">
         <div class="col-lg-9">
@@ -458,6 +458,18 @@
                                     <strong>Email:</strong> {{ $profesional['email'] }}
                                 </p>
                             @endif
+                        </div>
+                    @endif
+
+                    @if(!empty($qrPayload['hora_medica']))
+                        @php($horaMedica = $qrPayload['hora_medica'])
+                        <div class="border rounded-4 p-3 mt-3">
+                            <div class="section-title mb-2">Hora médica solicitada</div>
+                            <div class="row">
+                                <div class="col-md-4"><strong>Fecha y hora:</strong> {{ $horaMedica['fecha_hora'] ?? 'Sin dato' }}</div>
+                                <div class="col-md-4"><strong>Estado Med-SDI:</strong> {{ $horaMedica['estado_texto'] ?? 'Sin sincronizar' }}</div>
+                                <div class="col-md-4"><strong>Hora Med-SDI:</strong> {{ $horaMedica['id_medichile'] ? '#'.$horaMedica['id_medichile'] : 'Sin dato' }}</div>
+                            </div>
                         </div>
                     @endif
 
@@ -887,6 +899,12 @@
                 closeModal();
             }
         });
+
+        // Permite abrir el modal directo desde otras pantallas (ej. botón
+        // "Compartir" del historial de bonos) con ?compartir=1 en la URL.
+        if (new URLSearchParams(window.location.search).get('compartir') === '1') {
+            openModal();
+        }
     })();
 </script>
 

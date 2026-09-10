@@ -69,6 +69,20 @@
                 </div>
             </div>
         </div>
+        @if(!empty($qrPayload['hora_medica']))
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-info text-white fw-bold">Hora médica solicitada</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-5">Fecha y hora</dt><dd class="col-7">{{ $qrPayload['hora_medica']['fecha_hora'] ?? 'Sin dato' }}</dd>
+                        <dt class="col-5">Estado Med-SDI</dt><dd class="col-7">{{ $qrPayload['hora_medica']['estado_texto'] ?? 'Sin sincronizar' }}</dd>
+                        <dt class="col-5">Hora Med-SDI</dt><dd class="col-7">{{ $qrPayload['hora_medica']['id_medichile'] ? '#'.$qrPayload['hora_medica']['id_medichile'] : 'Sin dato' }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        @endif
         <div class="col-lg-6">
             <div class="card shadow-sm h-100 border-0">
                 <div class="card-header bg-light fw-bold">Valores para el paciente</div>

@@ -16,6 +16,7 @@ use App\Models\VoucherServicio;
 use App\Models\PersonaBusqueda;
 use App\Models\AgendaOnlineHorario;
 use App\Services\ClienteAuthorizationGate;
+use App\Services\MedsdiAgendaApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Crypt;
@@ -23,12 +24,54 @@ use Illuminate\Support\Facades\DB;
 
 class ClienteBonoController extends Controller
 {
-    public function dashboard()
+    public function home(MedsdiAgendaApiService $medsdiApi)
     {
         $user = auth()->user();
         $rutNormalizado = $this->normalizarRut($user->rut);
 
         $vouchers = Voucher::query()
+            ->with(['agenda', 'pagos'])
+            ->where(function ($query) use ($user, $rutNormalizado) {
+                $query->where('cliente_id', $user->id);
+
+                if ($user->rut) {
+                    $query->orWhere('cliente_rut', $user->rut)
+                        ->orWhereRaw(
+                            "UPPER(REPLACE(REPLACE(REPLACE(cliente_rut, '.', ''), '-', ''), ' ', '')) = ?",
+                            [$rutNormalizado]
+                        );
+                }
+            })
+            ->latest('id')
+            ->get();
+
+        $proximaAgenda = VoucherAgenda::query()
+            ->with(['voucher', 'profesional'])
+            ->whereIn('voucher_id', $vouchers->pluck('id'))
+            ->whereNotIn('estado', ['cancelada', 'paciente_atendido'])
+            ->where('fecha_hora_solicitada', '>=', now())
+            ->orderBy('fecha_hora_solicitada')
+            ->first();
+
+        $resumen = [
+            'bonos_vigentes' => $vouchers->whereNotIn('estado', ['usado', 'cobrado', 'invalidado_cliente'])->count(),
+            'pendientes_pago' => $vouchers->where('estado', 'pendiente_pago')->count(),
+            'pagados' => $vouchers->filter(fn ($voucher) => $voucher->pagos->contains('estado_pago', 'pagado'))->count(),
+            'en_espera' => $vouchers->filter(fn ($voucher) => optional($voucher->agenda)->estado === 'paciente_en_espera')->count(),
+        ];
+
+        $perfilRemotoMedsdi = $medsdiApi->pacienteAutenticado();
+        $pacienteMedsdi = $perfilRemotoMedsdi['ok'] ? $perfilRemotoMedsdi['paciente'] : null;
+        return view('clientes.home', compact('user', 'proximaAgenda', 'resumen', 'perfilRemotoMedsdi', 'pacienteMedsdi'));
+    }
+
+    public function dashboard(MedsdiAgendaApiService $medsdiApi)
+    {
+        $user = auth()->user();
+        $rutNormalizado = $this->normalizarRut($user->rut);
+
+        $vouchers = Voucher::query()
+            ->with(['agenda', 'pagos'])
             ->where(function ($query) use ($user, $rutNormalizado) {
                 $query->where('cliente_id', $user->id);
 
@@ -100,6 +143,24 @@ class ClienteBonoController extends Controller
         $agendaOnlineResultado = session('agenda_online_voucher_id')
             ? Voucher::with(['agenda', 'pagos', 'profesional'])->find(session('agenda_online_voucher_id'))
             : null;
+        $perfilRemotoMedsdi = $medsdiApi->pacienteAutenticado();
+        $pacienteMedsdi = $perfilRemotoMedsdi['ok'] ? $perfilRemotoMedsdi['paciente'] : null;
+        $cuentaBancariaMedsdi = $medsdiApi->cuentaBancariaPaciente();
+        if ($pacienteMedsdi) {
+            $perfilPersona = [
+                'encontrada' => true,
+                'nombre' => trim(implode(' ', array_filter([
+                    $pacienteMedsdi['nombres'] ?? null,
+                    $pacienteMedsdi['apellido_uno'] ?? null,
+                    $pacienteMedsdi['apellido_dos'] ?? null,
+                ]))),
+                'rut' => $pacienteMedsdi['rut'] ?? null,
+                'direccion' => $perfilPersona['direccion'],
+                'grupo_ingreso' => $perfilPersona['grupo_ingreso'],
+                'edad' => $pacienteMedsdi['edad'] ?? $perfilPersona['edad'],
+                'origen' => 'Perfil real Med-SDI',
+            ];
+        }
 
         $vouchersAgenda = Voucher::query()
             ->where(function ($query) use ($user, $rutNormalizado) {
@@ -141,7 +202,27 @@ class ClienteBonoController extends Controller
             ,'horariosOnline'
             ,'horariosOnlineJson'
             ,'agendaOnlineResultado'
+            ,'pacienteMedsdi'
+            ,'perfilRemotoMedsdi'
+            ,'cuentaBancariaMedsdi'
         ));
+    }
+
+    public function actualizarCuentaBancaria(Request $request, MedsdiAgendaApiService $medsdiApi)
+    {
+        $data = $request->validate([
+            'titular' => ['required', 'string', 'max:150'],
+            'banco_id' => ['required', 'integer'],
+            'tipo_cuenta' => ['required', 'string', 'max:100'],
+            'numero_cuenta' => ['required', 'string', 'min:3', 'max:40', 'regex:/^[0-9A-Za-z.-]+$/'],
+            'email' => ['required', 'email', 'max:150'],
+        ]);
+
+        $resultado = $medsdiApi->actualizarCuentaBancariaPaciente($data);
+
+        return back()
+            ->with('abrir_cuenta_bancaria', true)
+            ->with($resultado['ok'] ? 'ok' : 'error', $resultado['mensaje']);
     }
 
     public function agenda()

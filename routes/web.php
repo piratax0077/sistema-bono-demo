@@ -33,7 +33,10 @@ use App\Http\Controllers\DemoFlujoBonoController;
 use App\Http\Controllers\AsistenteRecepcionController;
 use App\Http\Controllers\DemoPortalController;
 use App\Http\Controllers\ClienteAgendaOnlineController;
+use App\Http\Controllers\ClienteAgendaExternaController;
 use App\Http\Controllers\TotemLocalController;
+use App\Http\Controllers\RoleHomeController;
+use App\Services\MedsdiAgendaApiService;
 use App\Models\AuditorNotificacion;
 use App\Models\LoginAuditoria;
 use App\Models\IpAutorizada;
@@ -127,12 +130,12 @@ Route::post('/logout', function (Request $request) {
 Route::get('/redirigir-rol', function () {
     $user = auth()->user();
 
-    if ($user->rol == 'admin') return redirect('/escritorio-admin');
-    if ($user->rol == 'vendedor') return redirect('/escritorio-vendedor');
-    if ($user->rol == 'asistente') return redirect('/escritorio-asistente');
-    if ($user->rol == 'profesional') return redirect('/escritorio-profesional');
-    if ($user->rol == 'auditor') return redirect('/auditoria');
-    if ($user->rol == 'cliente') return redirect('/cliente');
+    if ($user->rol == 'admin') return redirect()->route('admin.home');
+    if ($user->rol == 'vendedor') return redirect()->route('vendedor.home');
+    if ($user->rol == 'asistente') return redirect()->route('asistente.home');
+    if ($user->rol == 'profesional') return redirect()->route('profesional.home');
+    if ($user->rol == 'auditor') return redirect()->route('contraloria.home');
+    if ($user->rol == 'cliente') return redirect()->route('paciente.home');
     abort(403);
 })->middleware('auth');
 
@@ -596,7 +599,9 @@ Route::middleware(['auth', 'rol:vendedor'])->group(function () {
 
 Route::middleware(['auth', 'rol:profesional'])->group(function () {
 
-    Route::get('/escritorio-profesional', function () {
+    Route::get('/escritorio-profesional', function (\App\Http\Controllers\ProfesionalAgendaExternaController $medsdiProfesional, \App\Services\MedsdiAgendaApiService $api) {
+
+        $medsdiProfesional->sincronizarAgenda($api);
 
         $profesionalId = Auth::user()->profesional_id;
 
@@ -611,9 +616,23 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
                 && ! in_array($voucher->estado, ['cobrado', 'usado'], true);
         })->values();
 
-        return view('escritorios.profesional', compact('vouchers', 'pacientesEnEspera'));
+        $pacientesEnEspera = $pacientesEnEspera
+            ->concat($medsdiProfesional->pacientesEnEsperaExternos())
+            ->values();
 
-    });
+        $bonosMedsdi = $medsdiProfesional->misBonos();
+
+        return view('escritorios.profesional', compact('vouchers', 'pacientesEnEspera', 'bonosMedsdi'));
+
+    })->name('profesional.escritorio');
+
+    Route::post('/profesional/medsdi/vouchers/{voucher}/iniciar-atencion',
+        [\App\Http\Controllers\ProfesionalAgendaExternaController::class, 'iniciarAtencion'])
+        ->name('profesional.medsdi.iniciar_atencion');
+
+    Route::post('/profesional/medsdi/vouchers/{voucher}/finalizar-hora',
+        [\App\Http\Controllers\ProfesionalAgendaExternaController::class, 'finalizarHora'])
+        ->name('profesional.medsdi.finalizar_hora');
 
 });
 /* PROFESIONAL */
@@ -693,10 +712,17 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
     Route::post('/vouchers/{id}/cobrar',
         [VoucherWebController::class, 'cobrar'])
         ->name('vouchers.cobrar');
+    Route::post('/profesional/cobros/enviar-seleccionados', [VoucherWebController::class, 'cobrarSeleccionados'])
+        ->middleware('throttle:10,1')
+        ->name('profesional.cobros.seleccionados');
 
     Route::get('/profesional/cobros/{id}/qr/generar',
         [VoucherWebController::class, 'generarQrCobro'])
         ->name('profesional.cobros.qr.generar');
+
+    Route::get('/profesional/cobros/{id}/qr-datos',
+        [VoucherWebController::class, 'cobroQrDatos'])
+        ->name('profesional.cobros.qr.datos');
 
     Route::get('/profesional/cobros/{id}/qr',
         [VoucherWebController::class, 'qrCobro'])
@@ -706,8 +732,11 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
     Route::get('/profesional/cobros', function () {
         $profesionalId = auth()->user()->profesional_id;
 
-        $bonosClinicos = \App\Models\Voucher::with('atencion')
-            ->where('profesional_id', $profesionalId)
+        $bonosClinicos = \App\Models\Voucher::with(['atencion', 'agenda'])
+            ->where(function ($q) use ($profesionalId) {
+                $q->where('profesional_id', $profesionalId)
+                    ->orWhereNotNull('prestador_nombre');
+            })
             ->whereIn('estado', ['atencion_cerrada', 'validado_atencion'])
             ->whereDoesntHave('cobros')
             ->orderBy('id', 'desc')
@@ -728,10 +757,14 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
 
 /* CLIENTE / BENEFICIARIO */
 Route::middleware(['auth', 'rol:cliente', 'phone.otp'])->group(function () {
+    Route::get('/paciente/inicio', [ClienteBonoController::class, 'home'])
+        ->name('paciente.home');
     Route::get('/cliente', [ClienteBonoController::class, 'dashboard'])
         ->name('cliente.dashboard');
     Route::get('/paciente/escritorio', [ClienteBonoController::class, 'dashboard'])
         ->name('paciente.escritorio');
+    Route::put('/paciente/cuenta-bancaria', [ClienteBonoController::class, 'actualizarCuentaBancaria'])
+        ->middleware('throttle:10,1')->name('paciente.cuenta_bancaria.actualizar');
     Route::get('/paciente/agenda', [ClienteBonoController::class, 'agenda'])
         ->name('paciente.agenda');
 
@@ -754,23 +787,59 @@ Route::middleware(['auth', 'rol:cliente', 'phone.otp'])->group(function () {
     Route::post('/cliente/agenda-online/comprar', [ClienteAgendaOnlineController::class, 'comprar'])
         ->middleware('throttle:10,1')
         ->name('cliente.agenda-online.comprar');
+
+    Route::prefix('cliente/medsdi')->name('cliente.medsdi.')->group(function () {
+        Route::get('regiones', [ClienteAgendaExternaController::class, 'regiones'])->name('regiones');
+        Route::get('ciudades', [ClienteAgendaExternaController::class, 'ciudades'])->name('ciudades');
+        Route::get('especialidades', [ClienteAgendaExternaController::class, 'especialidades'])->name('especialidades');
+        Route::get('prestaciones', [ClienteAgendaExternaController::class, 'prestaciones'])->name('prestaciones');
+        Route::post('cotizar', [ClienteAgendaExternaController::class, 'cotizar'])->middleware('throttle:30,1')->name('cotizar');
+        Route::get('tipo-especialidades', [ClienteAgendaExternaController::class, 'tipoEspecialidades'])->name('tipo_especialidades');
+        Route::get('sub-tipo-especialidades', [ClienteAgendaExternaController::class, 'subTipoEspecialidades'])->name('sub_tipo_especialidades');
+        Route::get('profesionales', [ClienteAgendaExternaController::class, 'profesionales'])->name('profesionales');
+        Route::get('dias-laborales', [ClienteAgendaExternaController::class, 'diasLaborales'])->name('dias_laborales');
+        Route::get('horas-disponibles', [ClienteAgendaExternaController::class, 'horasDisponibles'])->name('horas_disponibles');
+        Route::post('agendar', [ClienteAgendaExternaController::class, 'agendar'])->middleware('throttle:10,1')->name('agendar');
+        Route::post('vouchers/{voucher}/confirmar-hora', [ClienteAgendaExternaController::class, 'confirmarHora'])->middleware('throttle:10,1')->name('confirmar_hora');
+        Route::post('vouchers/{voucher}/sincronizar-hora', [ClienteAgendaExternaController::class, 'sincronizarHora'])->middleware('throttle:20,1')->name('sincronizar_hora');
+        Route::post('vouchers/{voucher}/simular-pago', [ClienteAgendaExternaController::class, 'simularPago'])->middleware('throttle:10,1')->name('simular_pago');
+    });
 });
 
 /* ASISTENTES */
 Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
-    Route::get('/escritorio-asistente', function () {
+    Route::get('/escritorio-asistente', function (MedsdiAgendaApiService $medsdiApi) {
+        $sesionMedsdi = $medsdiApi->asistenteAutenticado();
+        $idsRecepcion = array_map('intval', (array) session('asistente_recepcion_voucher_ids', []));
+        $bonosRecepcion = Voucher::with(['agenda', 'profesional', 'servicio'])
+            ->whereIn('id', $idsRecepcion)
+            ->whereHas('agenda', fn ($query) => $query->where('estado', '!=', 'paciente_en_espera'))
+            ->get();
+        $recepcionesPorVoucher = VoucherDeliveryRequest::whereIn('voucher_id', $idsRecepcion)
+            ->where('canal', 'assistant_totem_reception')->latest('id')->get()->unique('voucher_id')->keyBy('voucher_id');
         $pendientesRecepcion = VoucherDeliveryRequest::where('canal', 'assistant_totem_reception')
             ->whereIn('estado', ['prepared', 'simulated', 'sent'])
             ->count();
-        $pacientesEnEspera = \App\Models\VoucherAgenda::where('estado', 'paciente_en_espera')
-            ->where('medichile_estado_id', 4)
-            ->count();
-        $validacionesPendientes = \App\Models\VoucherAtencion::where('estado', 'cerrada_por_profesional')->count();
+        $pacientesEnEsperaDetalle = Voucher::with(['agenda', 'profesional', 'servicio'])
+            ->whereHas('agenda', fn ($query) => $query->where('estado', 'paciente_en_espera')->where('medichile_estado_id', 4))
+            ->orderByDesc('id')
+            ->get();
+        $pacientesEnEspera = $pacientesEnEsperaDetalle->count();
+        $atencionesCerradas = Voucher::with(['agenda', 'atencion'])
+            ->whereIn('estado', ['atencion_cerrada', 'validado_atencion'])
+            ->orderByDesc('atencion_cerrada_at')
+            ->get();
+        $validacionesPendientes = $atencionesCerradas->count();
 
         return view('escritorios.asistente', compact(
             'pendientesRecepcion',
             'pacientesEnEspera',
-            'validacionesPendientes'
+            'validacionesPendientes',
+            'sesionMedsdi',
+            'bonosRecepcion',
+            'recepcionesPorVoucher',
+            'pacientesEnEsperaDetalle',
+            'atencionesCerradas'
         ));
     })->name('asistente.escritorio');
 
@@ -811,7 +880,21 @@ Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
     Route::post('/asistente/recepcion-qr', [AsistenteRecepcionController::class, 'recibirQr'])
         ->middleware('throttle:20,1')
         ->name('asistente.recepcion.qr');
+    Route::post('/asistente/buscar-reserva', [AsistenteRecepcionController::class, 'buscarReserva'])
+        ->middleware('throttle:20,1')
+        ->name('asistente.recepcion.buscar');
 });
+
+Route::get('/asistente/inicio', [RoleHomeController::class, 'asistente'])
+    ->middleware(['auth', 'rol:admin,asistente', '2fa'])->name('asistente.home');
+Route::get('/profesional/inicio', [RoleHomeController::class, 'profesional'])
+    ->middleware(['auth', 'rol:profesional'])->name('profesional.home');
+Route::get('/vendedor/inicio', [RoleHomeController::class, 'vendedor'])
+    ->middleware(['auth', 'rol:vendedor'])->name('vendedor.home');
+Route::get('/administracion/inicio', [RoleHomeController::class, 'administracion'])
+    ->middleware(['auth', 'rol:admin', '2fa'])->name('admin.home');
+Route::get('/contraloria/inicio', [RoleHomeController::class, 'contraloria'])
+    ->middleware(['auth', 'rol:admin,auditor', '2fa'])->name('contraloria.home');
 
 
 /* VOUCHERS COMPARTIDOS */
@@ -834,6 +917,10 @@ Route::get('/voucher/validar/{token}', [VoucherWebController::class, 'validarPan
 Route::get('/voucher/qr/{token}', [VoucherWebController::class, 'qr'])
     ->middleware(['auth', 'rol:admin,asistente,vendedor,profesional,cliente', '2fa'])
     ->name('vouchers.qr');
+
+Route::get('/voucher/qr/{token}/compartir-datos', [VoucherWebController::class, 'compartirDatos'])
+    ->middleware(['auth', 'rol:admin,asistente,vendedor,profesional,cliente', '2fa'])
+    ->name('vouchers.compartirDatos');
 
 Route::get('/voucher/qr/{token}/lector-demo', [VoucherWebController::class, 'simularLectorQr'])
     ->middleware(['auth', 'rol:admin,asistente,vendedor,profesional,cliente', '2fa'])

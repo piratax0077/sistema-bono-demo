@@ -1,5 +1,6 @@
 @php
     $demoStep = (int) ($demoStep ?? 1);
+    $demoGuideInformative = (bool) ($demoGuideInformative ?? false);
     $demoSteps = [
         1 => ['icon' => '📅', 'title' => 'Reservar', 'text' => 'Elegir médico, centro, fecha y hora.', 'security' => 'Agenda bloqueada al confirmar para evitar doble reserva.'],
         2 => ['icon' => '🎫', 'title' => 'Bono y QR', 'text' => 'Pagar el copago y emitir el bono digital.', 'security' => 'Token único, vencimiento y firma HMAC contra alteraciones.'],
@@ -14,12 +15,16 @@
 <section class="demo-guide" aria-label="Recorrido de atención Medichile">
     <div class="demo-guide-head">
         <div><h2>Tu recorrido de atención</h2><p>Cada etapa conserva la relación entre paciente, médico, hora y bono.</p></div>
-        <span class="demo-guide-progress">Etapa {{ $demoStep }} de 5</span>
+        @unless($demoGuideInformative)
+            <span class="demo-guide-progress">Etapa {{ $demoStep }} de 5</span>
+        @endunless
     </div>
     <div class="demo-guide-grid">
         @foreach($demoSteps as $number => $step)
-            <article class="demo-guide-step {{ $number < $demoStep ? 'done' : ($number === $demoStep ? 'current' : '') }}">
-                <span class="demo-guide-status">{{ $number < $demoStep ? 'Completado' : ($number === $demoStep ? 'Ahora' : 'Siguiente') }}</span>
+            <article class="demo-guide-step {{ !$demoGuideInformative ? ($number < $demoStep ? 'done' : ($number === $demoStep ? 'current' : '')) : '' }}">
+                @unless($demoGuideInformative)
+                    <span class="demo-guide-status">{{ $number < $demoStep ? 'Completado' : ($number === $demoStep ? 'Ahora' : 'Siguiente') }}</span>
+                @endunless
                 <span class="demo-guide-icon">{{ $step['icon'] }}</span>
                 <strong>{{ $number }}. {{ $step['title'] }}</strong>
                 <small>{{ $step['text'] }}</small>

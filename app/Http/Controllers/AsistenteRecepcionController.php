@@ -6,6 +6,8 @@ use App\Models\VoucherAgenda;
 use App\Models\VoucherAuditoria;
 use App\Models\VoucherDeliveryRequest;
 use App\Services\MedichileAgendaService;
+use App\Services\MedsdiAgendaApiService;
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +15,67 @@ use Throwable;
 
 class AsistenteRecepcionController extends Controller
 {
+    public function buscarReserva(Request $request, MedsdiAgendaApiService $medsdiApi)
+    {
+        $data = $request->validate([
+            'metodo' => ['required', 'in:codigo,rut'],
+            'codigo' => ['nullable', 'required_if:metodo,codigo', 'string', 'max:500'],
+            'rut' => ['nullable', 'required_if:metodo,rut', 'string', 'max:20'],
+        ]);
+
+        $bonos = collect();
+
+        if ($data['metodo'] === 'codigo') {
+            $valor = trim((string) $data['codigo']);
+            $path = parse_url($valor, PHP_URL_PATH);
+            $token = $valor;
+            if (is_string($path) && $path !== '') {
+                $segmentos = array_values(array_filter(explode('/', trim($path, '/'))));
+                $token = (string) end($segmentos);
+                if (in_array($token, ['usar', 'lector-demo', 'whatsapp-demo'], true) && count($segmentos) > 1) {
+                    $token = $segmentos[count($segmentos) - 2];
+                }
+            }
+
+            $bonos = Voucher::with(['agenda', 'profesional', 'servicio'])
+                ->where(function ($query) use ($valor, $token) {
+                    $query->where('codigo', $valor)->orWhere('qr_token', $token);
+                })->get();
+        } else {
+            $rut = strtoupper((string) preg_replace('/[^0-9K]/i', '', $data['rut']));
+            $resultado = $medsdiApi->horasVigentesPorRut($rut);
+            if (! $resultado['ok']) {
+                return back()->withInput()->with('abrir_recepcion_modal', true)->with('error', $resultado['mensaje']);
+            }
+
+            $idsHoras = collect($resultado['registros'] ?? [])
+                ->map(fn ($hora) => (int) ($hora['id_hora_medica'] ?? $hora['id'] ?? 0))
+                ->filter()->unique()->values()->all();
+            $bonos = Voucher::with(['agenda', 'profesional', 'servicio'])
+                ->whereHas('agenda', fn ($query) => $query->whereIn('medichile_hora_medica_id', $idsHoras))
+                ->get();
+        }
+
+        $bonos = $bonos->filter(function ($bono) {
+            return ! $bono->qr_usado
+                && ! in_array($bono->estado, ['cobrado', 'usado', 'invalidado_cliente'], true)
+                && $bono->agenda
+                && $bono->agenda->estado !== 'paciente_en_espera';
+        })->values();
+
+        if ($bonos->isEmpty()) {
+            $request->session()->forget('asistente_recepcion_voucher_ids');
+            return back()->withInput()->with('abrir_recepcion_modal', true)
+                ->with('error', 'No se encontraron horas vigentes pendientes de llegada para los datos ingresados.');
+        }
+
+        $request->session()->put('asistente_recepcion_voucher_ids', $bonos->pluck('id')->all());
+
+        return redirect()->route('asistente.escritorio')
+            ->with('abrir_recepcion_modal', true)
+            ->with('ok', 'Paciente reconocido. Seleccione la hora que desea enviar a sala de espera.');
+    }
+
     public function recibirQr(Request $request, MedichileAgendaService $medichileAgenda)
     {
         $data = $request->validate([
@@ -173,11 +236,12 @@ class AsistenteRecepcionController extends Controller
     public function dejarEnEspera(
         Request $request,
         VoucherDeliveryRequest $delivery,
-        MedichileAgendaService $medichileAgenda
+        MedichileAgendaService $medichileAgenda,
+        MedsdiAgendaApiService $medsdiApi
     )
     {
         try {
-            return DB::transaction(function () use ($request, $delivery, $medichileAgenda) {
+            return DB::transaction(function () use ($request, $delivery, $medichileAgenda, $medsdiApi) {
                 $delivery = VoucherDeliveryRequest::whereKey($delivery->id)->lockForUpdate()->firstOrFail();
                 $voucher = $delivery->voucher()->lockForUpdate()->firstOrFail();
 
@@ -194,7 +258,24 @@ class AsistenteRecepcionController extends Controller
 
                 // Medichile se actualiza primero: la recepción no se confirma localmente
                 // si la hora médica real no pudo quedar en estado Espera.
-                $sync = $medichileAgenda->dejarPacienteEnEspera($voucher, $agendaExistente);
+                if (! $voucher->profesional_id && $agendaExistente?->medichile_hora_medica_id) {
+                    $rutPaciente = (string) ($voucher->beneficiario_rut_visible ?: $voucher->cliente_rut_visible);
+                    $resultado = $medsdiApi->confirmarLlegadaSalaEspera(
+                        (int) $agendaExistente->medichile_hora_medica_id,
+                        $rutPaciente
+                    );
+                    if (! $resultado['ok']) {
+                        throw new \RuntimeException($resultado['mensaje']);
+                    }
+                    $sync = [
+                        'hora_medica_id' => (int) $agendaExistente->medichile_hora_medica_id,
+                        'estado_id' => (int) ($resultado['registros']['id_estado'] ?? 4),
+                        'estado_nombre' => 'Espera',
+                        'sincronizado_at' => now(),
+                    ];
+                } else {
+                    $sync = $medichileAgenda->dejarPacienteEnEspera($voucher, $agendaExistente);
+                }
                 $llegada = now();
                 $agenda = VoucherAgenda::updateOrCreate(
                     ['voucher_id' => $voucher->id],
@@ -238,7 +319,9 @@ class AsistenteRecepcionController extends Controller
                     'ip' => $request->ip(),
                 ]);
 
-                return back()->with('ok', 'Paciente reconocido. La hora #'.$sync['hora_medica_id'].' quedó en estado Espera en la agenda real de Medichile.');
+                return back()
+                    ->with('abrir_recepcion_modal', true)
+                    ->with('ok', 'Paciente reconocido. La hora #'.$sync['hora_medica_id'].' quedó en estado Espera en la agenda real de Medichile.');
             });
         } catch (Throwable $exception) {
             Log::error('No fue posible sincronizar la espera con Medichile.', [
@@ -246,7 +329,9 @@ class AsistenteRecepcionController extends Controller
                 'error' => $exception->getMessage(),
             ]);
 
-            return back()->with('error', 'No se cambió la recepción: '.$exception->getMessage());
+            return back()
+                ->with('abrir_recepcion_modal', true)
+                ->with('error', 'No se cambió la recepción: '.$exception->getMessage());
         }
     }
 }

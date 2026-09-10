@@ -13,11 +13,6 @@
 <div class="container page-shell py-5">
     <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div><div class="page-kicker">Medichile · Agenda clínica</div><h1 class="h2 fw-bold mb-1">Escritorio profesional</h1><p class="text-muted mb-0">Pacientes recepcionados, atención clínica y gestión de cobros.</p></div>
-        <div class="header-actions">
-            <a href="{{ route('profesional.cobros') }}" class="btn btn-success">Gestión de cobros</a>
-            <a href="{{ route('demo.portal') }}" class="btn btn-outline-secondary">Vista general</a>
-            <form method="POST" action="{{ route('logout') }}">@csrf<button class="btn btn-outline-danger">Cerrar sesión</button></form>
-        </div>
     </header>
 
     @include('partials.demo_flow_guide', ['demoStep' => $pacientesEnEspera->isNotEmpty() ? 4 : 5])
@@ -58,10 +53,17 @@
                             <td><span class="badge bg-warning text-dark">Esperando atención</span></td>
                             <td class="text-end"><div class="patient-actions">
                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('agenda-qr-{{ $voucher->id }}').showModal()">Ficha y QR</button>
-                                <form method="POST" action="{{ route('profesional.vouchers.aceptar', $voucher->id) }}">
-                                    @csrf
-                                    <button class="btn btn-primary btn-sm">Abrir atención</button>
-                                </form>
+                                @if($voucher->prestador_nombre)
+                                    <form method="POST" action="{{ route('profesional.medsdi.iniciar_atencion', $voucher->id) }}">
+                                        @csrf
+                                        <button class="btn btn-primary btn-sm">Atender</button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('profesional.vouchers.aceptar', $voucher->id) }}">
+                                        @csrf
+                                        <button class="btn btn-primary btn-sm">Abrir atención</button>
+                                    </form>
+                                @endif
                             </div></td>
                         </tr>
                     @empty
@@ -94,6 +96,53 @@
             </div>
         </dialog>
     @endforeach
+
+    <div class="card clinical-card border-0 shadow-sm mb-4 overflow-hidden">
+        <div class="card-header bg-white py-3">
+            <div class="text-uppercase text-primary fw-bold small">Med-SDI · Agenda real</div>
+            <h4 class="mb-0">En atención ahora (Jaime Kriman Astorga)</h4>
+            <small class="text-muted">Bonos Med-SDI cuya consulta ya está siendo realizada.</small>
+        </div>
+        @if(! $bonosMedsdi['disponible'])
+            <div class="p-3">
+                <div class="alert alert-warning mb-0">No fue posible consultar Med-SDI: {{ $bonosMedsdi['mensaje'] }}</div>
+            </div>
+        @else
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Prestación</th>
+                            <th>Hora Med-SDI</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($bonosMedsdi['registros'] as $bono)
+                            <tr>
+                                <td>{{ $bono['voucher']?->cliente_nombre ?? '—' }}</td>
+                                <td>{{ $bono['voucher']?->tipo_servicio ?? '—' }}</td>
+                                <td><span class="badge bg-light text-dark border">#{{ $bono['id_hora_medica'] }}</span></td>
+                                <td><span class="badge bg-info text-dark">{{ $bono['estado_medsdi'] }}</span></td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ route('profesional.medsdi.finalizar_hora', $bono['voucher']->id) }}">
+                                        @csrf
+                                        <button class="btn btn-success btn-sm">Finalizar consulta</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted empty-state">No hay consultas en curso en este momento.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
 
     {{--
     Historial general de vouchers asignados oculto para mantener limpio el

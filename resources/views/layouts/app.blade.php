@@ -21,7 +21,8 @@
     <body class="font-sans antialiased">
         @include('partials.demo_user_switcher')
         <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+            @unless(View::hasSection('ocultar-navegacion-app'))
+                @include('layouts.navigation')
 
             <!-- Page Heading -->
             <header class="bg-white shadow">
@@ -31,6 +32,7 @@
                     @endif
                 </div>
             </header>
+            @endunless
 
             <!-- Page Content -->
             <main>

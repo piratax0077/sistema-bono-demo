@@ -10,6 +10,7 @@ use App\Models\VoucherAgenda;
 use App\Models\VoucherAuditoria;
 use App\Models\VoucherDeliveryRequest;
 use App\Services\MedichileAgendaService;
+use App\Services\MedsdiAgendaApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,11 +18,15 @@ use Throwable;
 
 class TotemLocalController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, MedsdiAgendaApiService $medsdiApi)
     {
         abort_unless(config('demo.enabled'), 404);
         $totem = $this->totemActivo($request);
         $bonos = collect();
+        // Solo se consulta Med-SDI cuando realmente se puede reservar (paciente
+        // identificado), para no gastar la llamada externa en visitas anónimas.
+        $perfilRemotoMedsdi = $request->user()?->rol === 'cliente' ? $medsdiApi->pacienteAutenticado() : null;
+        $pacienteMedsdi = $perfilRemotoMedsdi && $perfilRemotoMedsdi['ok'] ? $perfilRemotoMedsdi['paciente'] : null;
         $horariosOnline = AgendaOnlineHorario::with(['profesional', 'servicio'])
             ->where('estado', 'disponible')
             ->where('fecha_hora', '>', now())
@@ -35,6 +40,15 @@ class TotemLocalController extends Controller
         $identificacionAutomatica = false;
 
         if ($request->query('tab') === 'autoatencion') {
+            // Solo se conserva el resultado de una búsqueda manual (QR/RUT) en el
+            // request inmediatamente siguiente a esa búsqueda (marcado por las
+            // acciones abajo); cualquier otra entrada a esta vista (refresco,
+            // volver a la pestaña, etc.) parte con el buscador limpio.
+            if (! $request->session()->pull('totem_mostrar_busqueda_reciente', false)) {
+                $request->session()->forget(['totem_checkin_voucher_ids', 'totem_checkin_rut_hash']);
+                $ids = [];
+            }
+
             $idsAutomaticos = collect($ids);
 
             if ($agendaOnlineResultado) {
@@ -49,7 +63,7 @@ class TotemLocalController extends Controller
                         ->where('qr_usado', false)
                         ->whereNotNull('profesional_id')
                         ->whereHas('agenda', function ($query) {
-                            $query->whereIn('estado', ['hora_confirmada', 'paciente_en_espera']);
+                            $query->where('estado', 'hora_confirmada');
                         })
                         ->latest('id')
                         ->limit(10)
@@ -76,11 +90,13 @@ class TotemLocalController extends Controller
             'bonos',
             'horariosOnline',
             'agendaOnlineResultado',
+            'pacienteMedsdi',
+            'perfilRemotoMedsdi',
             'identificacionAutomatica'
         ));
     }
 
-    public function buscarHora(Request $request)
+    public function buscarHora(Request $request, MedsdiAgendaApiService $medsdiApi)
     {
         abort_unless(config('demo.enabled'), 404);
         $data = $request->validate(['rut' => ['required', 'string', 'max:20']]);
@@ -90,32 +106,45 @@ class TotemLocalController extends Controller
             return back()->withInput()->withErrors(['rut' => 'Ingrese un RUT chileno válido.']);
         }
 
-        $sha = hash('sha256', $rut);
-        $hmac = hash_hmac('sha256', $rut, (string) config('app.key'));
+        $resultadoMedsdi = $medsdiApi->horasVigentesPorRut($rut);
+        if (! $resultadoMedsdi['ok']) {
+            $request->session()->forget(['totem_checkin_voucher_ids', 'totem_checkin_rut_hash']);
+
+            return redirect()->route($this->rutaAutoatencion($request), ['tab' => 'autoatencion'])
+                ->withInput()
+                ->with('error', $resultadoMedsdi['mensaje']);
+        }
+
+        $idsHorasMedsdi = collect($resultadoMedsdi['registros'] ?? [])
+            ->map(fn ($hora) => (int) ($hora['id_hora_medica'] ?? $hora['id'] ?? 0))
+            ->filter()
+            ->unique()
+            ->values();
+
         $bonos = Voucher::with(['agenda', 'profesional', 'servicio'])
-            ->where(function ($query) use ($sha, $hmac) {
-                $query->where('cliente_rut_hash', $sha)
-                    ->orWhereIn('beneficiario_rut_hash', [$sha, $hmac]);
-            })
             ->whereNotIn('estado', ['cobrado', 'usado', 'invalidado_cliente'])
             ->where('qr_usado', false)
-            ->whereHas('agenda')
+            ->whereHas('agenda', function ($query) use ($idsHorasMedsdi) {
+                $query->whereIn('medichile_hora_medica_id', $idsHorasMedsdi->all())
+                    ->where('estado', '!=', 'paciente_en_espera');
+            })
             ->orderByDesc('id')
             ->take(10)
             ->get()
-            ->filter(fn (Voucher $voucher) => $this->normalizarRut($voucher->beneficiario_rut_visible ?: $voucher->cliente_rut_visible) === $rut)
             ->values();
 
         if ($bonos->isEmpty()) {
             $request->session()->forget('totem_checkin_voucher_ids');
-            return redirect()->route('totem.local', ['tab' => 'autoatencion'])
-                ->with('error', 'No se encontró una hora vigente con bono para este RUT.');
+            return redirect()->route($this->rutaAutoatencion($request), ['tab' => 'autoatencion'])
+                ->with('error', 'Med-SDI encontró una hora vigente, pero no existe un bono local vinculado a esa hora.');
         }
 
+        $sha = hash('sha256', $rut);
         $request->session()->put('totem_checkin_voucher_ids', $bonos->pluck('id')->all());
         $request->session()->put('totem_checkin_rut_hash', $sha);
+        $request->session()->put('totem_mostrar_busqueda_reciente', true);
 
-        return redirect()->route('totem.local', ['tab' => 'autoatencion'])
+        return redirect()->route($this->rutaAutoatencion($request), ['tab' => 'autoatencion'])
             ->with('ok', 'Paciente validado. Seleccione la hora y confirme su llegada.');
     }
 
@@ -128,7 +157,7 @@ class TotemLocalController extends Controller
             ->where('qr_token', $token)->first();
 
         if (! $voucher || ! hash_equals((string) $voucher->qr_token, $token)) {
-            return redirect()->route('totem.local', ['tab' => 'autoatencion'])
+            return redirect()->route($this->rutaAutoatencion($request), ['tab' => 'autoatencion'])
                 ->withErrors(['qr' => 'El QR no corresponde a un bono Medichile válido.']);
         }
         if ($voucher->qr_usado
@@ -144,6 +173,7 @@ class TotemLocalController extends Controller
 
         $request->session()->put('totem_checkin_voucher_ids', [$voucher->id]);
         $request->session()->forget('totem_checkin_rut_hash');
+        $request->session()->put('totem_mostrar_busqueda_reciente', true);
         VoucherAuditoria::create([
             'voucher_id' => $voucher->id,
             'accion' => 'qr_anexado_en_totem',
@@ -157,17 +187,18 @@ class TotemLocalController extends Controller
             ->with('ok', 'QR reconocido. Revise la hora y confirme su llegada.');
     }
 
-    public function confirmarLlegada(Request $request, Voucher $voucher, MedichileAgendaService $medichileAgenda)
+    public function confirmarLlegada(Request $request, Voucher $voucher, MedichileAgendaService $medichileAgenda, MedsdiAgendaApiService $medsdiApi)
     {
         abort_unless(config('demo.enabled'), 404);
         $permitidos = array_map('intval', (array) $request->session()->get('totem_checkin_voucher_ids', []));
         if (! in_array((int) $voucher->id, $permitidos, true)) {
-            return redirect()->route('totem.local', ['tab' => 'autoatencion'])
+            return redirect()->route($this->rutaAutoatencion($request), ['tab' => 'autoatencion'])
                 ->with('error', 'Vuelva a validar el RUT antes de confirmar la llegada.');
         }
+        $request->session()->put('totem_mostrar_busqueda_reciente', true);
 
         try {
-            return DB::transaction(function () use ($request, $voucher, $medichileAgenda) {
+            return DB::transaction(function () use ($request, $voucher, $medichileAgenda, $medsdiApi) {
                 $totem = Totem::where('activo', true)->orderBy('id')->lockForUpdate()->first();
                 if (! $totem) {
                     return back()->with('error', 'El tótem está bloqueado o no está provisionado.');
@@ -186,7 +217,34 @@ class TotemLocalController extends Controller
                     return back()->with('ok', 'Su llegada ya estaba confirmada. El profesional ya puede verla en sala de espera.');
                 }
 
-                $sync = $medichileAgenda->dejarPacienteEnEspera($voucher, $agenda);
+                $sync = null;
+                $syncError = null;
+
+                // Bonos del flujo "Reservar hora (Med-SDI)" no tienen convenio local
+                // (profesional_id null) y ya traen su propia hora real vinculada; en
+                // ese caso se marca la llegada directo en medsdi.test en vez de usar
+                // el flujo legacy de convenios locales (que busca por RUT en la base
+                // espejo local y no aplica a estos bonos).
+                if (! $voucher->profesional_id && $agenda->medichile_hora_medica_id) {
+                    $rutPaciente = (string) ($voucher->beneficiario_rut_visible ?: $voucher->cliente_rut_visible);
+                    $resultado = $medsdiApi->confirmarLlegadaSalaEspera(
+                        (int) $agenda->medichile_hora_medica_id,
+                        $rutPaciente
+                    );
+                    if (! $resultado['ok']) {
+                        throw new \RuntimeException($resultado['mensaje']);
+                    }
+                    $sync = [
+                        'hora_medica_id' => (int) $agenda->medichile_hora_medica_id,
+                        'estado_id' => (int) ($resultado['registros']['id_estado'] ?? $agenda->medichile_estado_id ?? 4),
+                        'estado_nombre' => 'Espera',
+                        'sincronizado_at' => $resultado['ok'] ? now() : null,
+                    ];
+                    $syncError = $resultado['ok'] ? null : $resultado['mensaje'];
+                } else {
+                    $sync = $medichileAgenda->dejarPacienteEnEspera($voucher, $agenda);
+                }
+
                 $llegada = now();
                 $agenda->update([
                     'estado' => 'paciente_en_espera',
@@ -194,7 +252,7 @@ class TotemLocalController extends Controller
                     'medichile_hora_medica_id' => $sync['hora_medica_id'],
                     'medichile_estado_id' => $sync['estado_id'],
                     'medichile_sincronizado_at' => $sync['sincronizado_at'],
-                    'medichile_sync_error' => null,
+                    'medichile_sync_error' => $syncError,
                 ]);
 
                 $delivery = VoucherDeliveryRequest::where('voucher_id', $voucher->id)
@@ -227,12 +285,12 @@ class TotemLocalController extends Controller
                     'ip' => $request->ip(),
                 ]);
 
-                return redirect()->route('totem.local', ['tab' => 'autoatencion'])
+                return redirect()->route($this->rutaAutoatencion($request), ['tab' => 'autoatencion'])
                     ->with('checkin_ok', 'Llegada confirmada. Su hora está en ESPERA y el profesional fue notificado en su escritorio.');
             });
         } catch (Throwable $exception) {
             Log::error('Error de autoatención en tótem local.', ['voucher_id' => $voucher->id, 'error' => $exception->getMessage()]);
-            return redirect()->route('totem.local', ['tab' => 'autoatencion'])
+            return redirect()->route($this->rutaAutoatencion($request), ['tab' => 'autoatencion'])
                 ->with('error', 'No se cambió la hora: '.$exception->getMessage());
         }
     }
@@ -244,6 +302,13 @@ class TotemLocalController extends Controller
             $totem->update(['ultimo_ping' => now(), 'ultimo_acceso' => now(), 'estado_operacional' => 'ok', 'ultima_alerta_mensaje' => null]);
         }
         return $totem?->fresh();
+    }
+
+    private function rutaAutoatencion(Request $request): string
+    {
+        return $request->input('origen') === 'paciente-totem'
+            ? 'paciente.totem'
+            : 'totem.local';
     }
 
     private function normalizarRut(string $rut): string

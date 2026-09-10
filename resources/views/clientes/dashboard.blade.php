@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SDI - Beneficiario</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @vite('resources/js/flatpickr.js')
     <style>
         body { background:#edf4ff; color:#1f2d3d; }
         .shell { max-width:1180px; margin:0 auto; padding:32px 18px; }
@@ -16,38 +18,60 @@
         .table td { vertical-align:middle; }
         .secure-note { background:#effafa; border:1px solid #bce5e5; border-radius:16px; padding:14px; }
         .qr-route { word-break:break-word; }
-        .patient-hero{position:relative;overflow:hidden;padding:34px;border-radius:28px;background:linear-gradient(125deg,#153d8d,#1e69ad 55%,#31bebe);color:#fff;box-shadow:0 24px 58px rgba(24,72,161,.22)}.patient-hero:after{content:"";position:absolute;width:280px;height:280px;border-radius:50%;right:-80px;top:-120px;background:#ffffff18}.patient-hero .eyebrow,.patient-hero h1{color:#fff}.patient-hero p{color:#ddf5ff;max-width:720px}.patient-profile{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.patient-chip{padding:8px 12px;border:1px solid #ffffff44;border-radius:999px;background:#ffffff16;font-size:.85rem;font-weight:700}.journey-actions{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:20px 0 28px}.journey-action{display:flex;flex-direction:column;min-height:210px;padding:18px;border:1px solid #d2dff1;border-radius:20px;background:#fff;text-decoration:none;color:#263b57;box-shadow:0 12px 30px rgba(24,72,161,.08);transition:.18s}.journey-action:hover{transform:translateY(-3px);border-color:#31bebe;color:#263b57}.journey-action button{border:0;background:transparent;text-align:left;padding:0;color:inherit}.journey-number{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#1848a1;color:#fff;font-weight:900}.journey-icon{font-size:28px;margin:14px 0 8px}.journey-action strong{font-size:1rem}.journey-action small{color:#6d7d91;line-height:1.4;margin-top:7px}.journey-go{margin-top:auto;padding-top:13px;color:#1848a1;font-weight:900;font-size:.82rem}.journey-action form{margin-top:auto}.journey-subactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:10px}.journey-subactions a,.journey-subactions button{padding:7px 9px;border-radius:9px;background:#edf4ff;color:#1848a1;font-size:.72rem;font-weight:850;text-decoration:none}.authorization-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px}.authorization-choice button{padding:16px;border:0;border-radius:14px;font-weight:900}.auth-approve{background:#31bebe;color:#fff}.auth-reject{background:#fff0f1;color:#a8333e}@media(max-width:1050px){.journey-actions{grid-template-columns:repeat(2,1fr)}.journey-action:last-child{grid-column:1/-1}}@media(max-width:620px){.patient-hero{padding:24px}.journey-actions{grid-template-columns:1fr}.journey-action:last-child{grid-column:auto}}
+        .share-modal-backdrop { align-items:center; background:rgba(3,22,19,.66); display:flex; inset:0; justify-content:center; padding:22px; position:fixed; z-index:1050; }
+        .share-modal-backdrop[hidden] { display:none !important; }
+        .share-modal { background:#fff; border-radius:28px; box-shadow:0 30px 90px rgba(0,0,0,.28); max-height:92vh; overflow:auto; width:min(980px,100%); }
+        .share-modal-header { align-items:flex-start; border-bottom:1px solid #dcebe8; display:flex; gap:18px; justify-content:space-between; padding:26px 28px 18px; }
+        .share-close { align-items:center; background:#e8f4f1; border:0; border-radius:16px; color:#063d37; display:inline-flex; font-size:1.5rem; height:44px; justify-content:center; line-height:1; width:44px; }
+        .share-modal-body { padding:24px 28px 28px; }
+        .share-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+        .share-option-card { border:1px solid #d6e8e4; border-radius:18px; cursor:pointer; display:block; padding:16px; transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease; }
+        .share-option-card:hover { border-color:#009688; box-shadow:0 10px 28px rgba(0,121,107,.12); transform:translateY(-1px); }
+        .share-option-card input { margin-right:8px; }
+        .qr-share-preview { background:#f4fbfa; border:1px solid #d6e8e4; border-radius:22px; padding:14px; }
+        .qr-share-preview img { border-radius:18px; display:block; margin:0 auto; max-width:260px; width:100%; }
+        .share-channel-list { display:flex; flex-wrap:wrap; gap:10px; }
+        .share-channel { align-items:center; border:1px solid #d6e8e4; border-radius:999px; cursor:pointer; display:inline-flex; gap:8px; padding:11px 15px; }
+        .share-results { background:#f7fbfa; border:1px solid #dcebe8; border-radius:18px; padding:14px; }
+        .share-result-item { align-items:center; border-bottom:1px solid #e2eeeb; display:flex; gap:12px; justify-content:space-between; padding:12px 0; }
+        .share-result-item:last-child { border-bottom:0; }
+        .share-muted { color:#5f7470; font-size:.88rem; }
+        .section-title { color:#00796b; font-size:.8rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+        .patient-hero{position:relative;overflow:hidden;padding:34px;border-radius:28px;background:linear-gradient(125deg,#153d8d,#1e69ad 55%,#31bebe);color:#fff;box-shadow:0 24px 58px rgba(24,72,161,.22)}.patient-hero:after{content:"";position:absolute;width:280px;height:280px;border-radius:50%;right:-80px;top:-120px;background:#ffffff18}.patient-hero .eyebrow,.patient-hero h1{color:#fff}.patient-hero p{color:#ddf5ff;max-width:720px}.patient-profile{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.patient-chip{padding:8px 12px;border:1px solid #ffffff44;border-radius:999px;background:#ffffff16;font-size:.85rem;font-weight:700}.journey-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 28px}.journey-action{display:flex;flex-direction:column;min-height:210px;padding:18px;border:1px solid #d2dff1;border-radius:20px;background:#fff;text-decoration:none;color:#263b57;box-shadow:0 12px 30px rgba(24,72,161,.08);transition:.18s}.journey-action:hover{transform:translateY(-3px);border-color:#31bebe;color:#263b57}.journey-action button{border:0;background:transparent;text-align:left;padding:0;color:inherit}.journey-number{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#1848a1;color:#fff;font-weight:900}.journey-icon{font-size:28px;margin:14px 0 8px}.journey-action strong{font-size:1rem}.journey-action small{color:#6d7d91;line-height:1.4;margin-top:7px}.journey-go{margin-top:auto;padding-top:13px;color:#1848a1;font-weight:900;font-size:.82rem}.journey-action form{margin-top:auto}.journey-subactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:10px}.journey-subactions a,.journey-subactions button{padding:7px 9px;border-radius:9px;background:#edf4ff;color:#1848a1;font-size:.72rem;font-weight:850;text-decoration:none}.authorization-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px}.authorization-choice button{padding:16px;border:0;border-radius:14px;font-weight:900}.auth-approve{background:#31bebe;color:#fff}.auth-reject{background:#fff0f1;color:#a8333e}@media(max-width:1050px){.journey-actions{grid-template-columns:repeat(2,1fr)}.journey-action:last-child{grid-column:1/-1}}@media(max-width:620px){.patient-hero{padding:24px}.journey-actions{grid-template-columns:1fr}.journey-action:last-child{grid-column:auto}}
     </style>
 </head>
 <body>
 @include('partials.demo_user_switcher')
 <main class="shell">
-    @php($qrRespaldo = $agendaOnlineResultado ?: $vouchers->first())
+    @php
+        $qrRespaldo = $agendaOnlineResultado ?? $vouchers->first();
+        $nombrePacienteReal = $pacienteMedsdi
+            ? trim(implode(' ', array_filter([$pacienteMedsdi['nombres'] ?? null, $pacienteMedsdi['apellido_uno'] ?? null, $pacienteMedsdi['apellido_dos'] ?? null])))
+            : $user->name;
+        $rutPacienteReal = $pacienteMedsdi['rut'] ?? $user->rut;
+        $telefonoPacienteReal = $pacienteMedsdi['telefono_uno'] ?? $user->telefono;
+    @endphp
     <section class="patient-hero mb-4">
         <div class="eyebrow">Medichile · Portal del paciente</div>
-        <h1 class="display-6 fw-bold mt-2 mb-2">Hola, {{ $user->name }}</h1>
+        <h1 class="display-6 fw-bold mt-2 mb-2">Hola, {{ $nombrePacienteReal }}</h1>
         <p class="mb-0">Reserva tu hora, confirma el copago y llega al centro médico. La hora, el médico, el pago y el QR permanecen vinculados durante todo el recorrido.</p>
-        <div class="patient-profile"><span class="patient-chip">Sesión demo-bono</span><span class="patient-chip">RUT {{ sdi_formatear_rut($user->rut) }}</span><span class="patient-chip">WhatsApp {{ $user->telefono ?: 'no registrado' }}</span><span class="patient-chip">Identidad autenticada sin solicitar clave</span></div>
+        <div class="patient-profile"><span class="patient-chip">Paciente Med-SDI #{{ $pacienteMedsdi['id'] ?? 'no disponible' }}</span><span class="patient-chip">RUT {{ sdi_formatear_rut($rutPacienteReal) }}</span><span class="patient-chip">WhatsApp {{ $telefonoPacienteReal ?: 'no registrado' }}</span>@if($pacienteMedsdi)<span class="patient-chip">{{ $pacienteMedsdi['email'] ?? 'Correo no registrado' }}</span>@endif</div>
     </section>
 
     <section aria-label="Acciones principales del paciente">
         <div class="journey-actions">
-            <a class="journey-action" href="https://med-sdi.cl/Paciente/Reservar_Hora" target="_blank" rel="noopener">
-                <span class="journey-number">1</span><span class="journey-icon">🌐</span><strong>Reservar en Med‑SDI</strong><small>Abre el portal real de reserva de horas del paciente.</small><span class="journey-go">Abrir portal externo →</span>
-            </a>
-            <div class="journey-action" role="button" tabindex="0" id="abrirAgendaOnlinePrincipal">
-                <span class="journey-number">2</span><span class="journey-icon">📅</span><strong>Buscar y confirmar hora</strong><small>Busca la agenda, selecciona médico y confirma la reserva dentro del demo.</small><span class="journey-go">Comenzar reserva →</span>
+            <div class="journey-action" role="button" tabindex="0" id="abrirReservaMedsdi">
+                <span class="journey-number">1</span><span class="journey-icon">📅</span><strong>Reservar hora (Med-SDI)</strong><small>Busca profesionales reales del centro configurado vía la API de Med-SDI y confirma la reserva.</small><span class="journey-go">Buscar profesional →</span>
             </div>
-            <a class="journey-action" href="https://med-sdi.cl/Profesional/mi_agenda?lugares_atencion=69" target="_blank" rel="noopener">
-                <span class="journey-number">3</span><span class="journey-icon">🩺</span><strong>Agenda profesional</strong><small>Consulta la vista real del profesional para el lugar de atención 69.</small><span class="journey-go">Abrir agenda externa →</span>
-            </a>
             <div class="journey-action" role="button" tabindex="0" id="abrirAutorizacionDemo">
-                <span class="journey-number">4</span><span class="journey-icon">📲</span><strong>Autorizar por App o WhatsApp</strong><small>Simula la aprobación o rechazo del copago antes de emitir el bono.</small><span class="journey-go">Simular autorización →</span>
+                <span class="journey-number">2</span><span class="journey-icon">📲</span><strong>Autorizar por App o WhatsApp</strong><small>Simula la aprobación o rechazo del copago antes de emitir el bono.</small><span class="journey-go">Simular autorización →</span>
             </div>
             <div class="journey-action">
-                <span class="journey-number">5</span><span class="journey-icon">▦</span><strong>QR de respaldo y llegada</strong><small>El QR queda disponible en la agenda profesional; úsalo solo como respaldo en tótem o secretaría.</small>
+                <span class="journey-number">3</span><span class="journey-icon">▦</span><strong>QR de respaldo y llegada</strong><small>El QR queda disponible en la agenda profesional; úsalo solo como respaldo en tótem o secretaría.</small>
                 <div class="journey-subactions">
-                    @if($qrRespaldo?->qr_token)<a href="{{ route('vouchers.qr', $qrRespaldo->qr_token) }}">Ver QR</a>@endif
+                    @if($qrRespaldo && $qrRespaldo->qr_token && $qrRespaldo->estado === 'activo')
+                        <a href="{{ route('vouchers.qr', $qrRespaldo->qr_token) }}">Ver QR</a>
+                    @endif
                     <a href="{{ route('totem.local', ['tab' => 'autoatencion']) }}">Vista tótem</a>
                     <form method="POST" action="{{ route('demo.switch-user', 'asistente') }}">@csrf<button type="submit">Vista secretaría</button></form>
                 </div>
@@ -58,18 +82,16 @@
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
             <div class="eyebrow">Portal beneficiario</div>
-            <h1 class="h3 mb-1">Hola, {{ $user->name }}</h1>
+            <h1 class="h3 mb-1">Hola, {{ $nombrePacienteReal }}</h1>
             <p class="text-muted mb-0">
-                Entra por el login del sistema, valida tu telefono y compra el bono con verificacion de base externa.
+                Perfil autenticado en Med-SDI · RUT {{ sdi_formatear_rut($rutPacienteReal) }} · {{ $telefonoPacienteReal ?: 'Teléfono no registrado' }}.
             </p>
         </div>
-
-        <div class="d-flex gap-2">
-            <button type="button" id="abrirAgendaOnline" class="btn btn-success">
-                Pedir hora online
-            </button>
-        </div>
     </div>
+
+    @if(! $perfilRemotoMedsdi['ok'])
+        <div class="alert alert-warning">No fue posible cargar el perfil real desde Med-SDI: {{ $perfilRemotoMedsdi['mensaje'] }}</div>
+    @endif
 
     @if(session('ok'))
         <div class="alert alert-success">{{ session('ok') }}</div>
@@ -159,7 +181,7 @@
         <div class="col-md-4">
             <div class="card metric p-4">
                 <span class="text-muted">Telefono validado</span>
-                <strong class="fs-4">{{ $user->telefono ?: 'Sin telefono' }}</strong>
+                <strong class="fs-4">{{ $telefonoPacienteReal ?: 'Sin teléfono' }}</strong>
             </div>
         </div>
     </section>
@@ -194,7 +216,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Telefono autorizado</label>
-                        <input type="text" class="form-control" value="{{ $user->telefono }}" readonly>
+                        <input type="text" class="form-control" value="{{ $telefonoPacienteReal }}" readonly>
                         <small class="text-muted">El login de beneficiario usa OTP telefonico, no Google Authenticator.</small>
                     </div>
 
@@ -249,7 +271,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Envío obligatorio</label>
-                        <input type="text" class="form-control mb-2" value="WhatsApp propio: {{ $user->telefono }}" readonly>
+                        <input type="text" class="form-control mb-2" value="WhatsApp propio: {{ $telefonoPacienteReal }}" readonly>
                         <label class="form-label small">Enviar además a</label>
                         <select name="destino_qr" class="form-select" required>
                             <option value="provider_whatsapp" @selected(old('destino_qr', 'provider_whatsapp') === 'provider_whatsapp')>WhatsApp del profesional</option>
@@ -357,34 +379,73 @@
                 </thead>
                 <tbody>
                     @forelse($vouchers as $voucher)
-                        <tr>
+                        <tr id="voucher-row-{{ $voucher->id }}">
                             <td>
                                 <strong>{{ $voucher->codigo }}</strong><br>
-                                <small class="text-muted">ID {{ $voucher->id }}</small>
+                                <small class="text-muted">Bono #{{ $voucher->id }}</small>
+                                @if(optional($voucher->agenda)->medichile_hora_medica_id)
+                                    <br><small class="text-primary fw-semibold">Hora Med-SDI #{{ $voucher->agenda->medichile_hora_medica_id }}</small>
+                                @endif
                             </td>
                             <td>{{ $voucher->tipo_servicio }}</td>
                             <td>{{ $voucher->prestador_nombre ?: optional($voucher->profesional)->nombre ?: '-' }}</td>
                             <td>{{ $voucher->mascota_nombre ?: $voucher->cliente_nombre }}</td>
                             <td>${{ number_format($voucher->valor, 0, ',', '.') }}</td>
                             <td>
-                                <span class="badge {{ $voucher->estado === 'activo' ? 'text-bg-success' : 'text-bg-secondary' }}">
-                                    {{ $voucher->estado }}
-                                </span>
+                                <div id="voucher-estado-{{ $voucher->id }}">
+                                    @include('partials.voucher_estado_celda', ['voucher' => $voucher])
+                                </div>
                             </td>
                             <td>{{ $voucher->fecha_vencimiento ? \Illuminate\Support\Carbon::parse($voucher->fecha_vencimiento)->format('d-m-Y') : '-' }}</td>
                             <td class="text-end">
-                                @if($voucher->qr_token)
-                                    <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                        <a href="{{ route('vouchers.qr', $voucher->qr_token) }}" class="btn btn-sm btn-outline-success">
-                                            Ver QR
+                                <div class="d-flex justify-content-end align-items-center flex-wrap gap-2">
+                                    @if(optional($voucher->agenda)->medichile_hora_medica_id)
+                                        <form method="POST" action="{{ route('cliente.medsdi.sincronizar_hora', $voucher) }}" class="m-0" data-medsdi-sync data-voucher-id="{{ $voucher->id }}">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-primary" type="submit" title="Actualizar estado Med-SDI">
+                                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                                <span class="btn-label" aria-hidden="true">🔄</span>
+                                                <span class="visually-hidden">Actualizar estado Med-SDI</span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    @if($voucher->estado === 'pendiente_confirmacion' && optional($voucher->agenda)->medichile_hora_medica_id)
+                                        <form method="POST" action="{{ route('cliente.medsdi.confirmar_hora', $voucher) }}" class="m-0" data-confirm-action="¿Confirma que desea registrar esta hora médica para el paciente?" data-confirm-title="Confirmar hora" data-confirm-icon="info">
+                                            @csrf
+                                            <button class="btn btn-sm btn-primary" type="submit" title="Confirmar hora">
+                                                <span aria-hidden="true">✅</span>
+                                                <span class="visually-hidden">Confirmar hora</span>
+                                            </button>
+                                        </form>
+                                    @elseif($voucher->estado === 'pendiente_pago')
+                                        <button type="button" class="btn btn-sm btn-warning abrir-pago-bono" title="Pagar bono"
+                                            data-action-url="{{ route('cliente.medsdi.simular_pago', $voucher) }}"
+                                            data-codigo="{{ $voucher->codigo }}"
+                                            data-profesional="{{ $voucher->prestador_nombre ?: optional($voucher->profesional)->nombre ?: '-' }}"
+                                            data-valor="{{ $voucher->valor }}"
+                                            data-copago="{{ $voucher->copago_usuario }}"
+                                            data-bonificacion="{{ max($voucher->valor - $voucher->copago_usuario, 0) }}">
+                                            <span aria-hidden="true">💳</span>
+                                            <span class="visually-hidden">Pagar bono</span>
+                                        </button>
+                                    @elseif($voucher->estado === 'activo' && $voucher->qr_token)
+                                        <a href="{{ route('vouchers.qr', $voucher->qr_token) }}" class="btn btn-sm btn-outline-success" title="Ver QR">
+                                            <span aria-hidden="true">🔳</span>
+                                            <span class="visually-hidden">Ver QR</span>
                                         </a>
-                                        <a href="{{ route('vouchers.qr.lectorDemo', $voucher->qr_token) }}" class="btn btn-sm btn-success">
-                                            Lector simulado
+                                        <button type="button" class="btn btn-sm btn-outline-primary" title="Compartir"
+                                            data-share-voucher-url="{{ route('vouchers.compartirDatos', $voucher->qr_token) }}">
+                                            <span aria-hidden="true">📤</span>
+                                            <span class="visually-hidden">Compartir</span>
+                                        </button>
+                                        <a href="{{ route('vouchers.qr.lectorDemo', $voucher->qr_token) }}" class="btn btn-sm btn-success" title="Lector simulado">
+                                            <span aria-hidden="true">📷</span>
+                                            <span class="visually-hidden">Lector simulado</span>
                                         </a>
-                                    </div>
-                                @else
-                                    <span class="text-muted">Sin QR</span>
-                                @endif
+                                    @elseif(!$voucher->qr_token)
+                                        <span class="text-muted">Sin QR</span>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -404,8 +465,10 @@
     </section>
 
     <section class="card p-4">
-        <div class="eyebrow">Devoluciones</div>
-        <h2 class="h5 mb-3">Saldos del cliente</h2>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div><div class="eyebrow">Devoluciones</div><h2 class="h5 mb-0">Saldos del cliente</h2></div>
+            <button type="button" class="btn btn-outline-primary" onclick="abrirCuentaBancaria()">🏦 Mis datos bancarios</button>
+        </div>
 
         @if($saldos->count())
             <div class="table-responsive">
@@ -437,6 +500,145 @@
         @endif
     </section>
 </main>
+
+@php
+    $cuentaBanco = $cuentaBancariaMedsdi['cuenta'] ?? [];
+    $pacienteCuenta = $cuentaBancariaMedsdi['paciente'] ?? [];
+@endphp
+<div class="modal fade" id="modalCuentaBancaria" tabindex="-1" aria-labelledby="modalCuentaBancariaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0" style="border-radius:22px">
+            <div class="modal-header text-white" style="background:linear-gradient(120deg,#1848a1,#31bebe);border-radius:22px 22px 0 0">
+                <div><div class="small fw-bold text-uppercase opacity-75">Devoluciones Med-SDI</div><h2 class="h4 modal-title text-white mb-0" id="modalCuentaBancariaTitulo">Datos de cuenta bancaria</h2></div>
+                <button type="button" class="btn-close btn-close-white" onclick="cerrarCuentaBancaria()" aria-label="Cerrar"></button>
+            </div>
+            <form method="POST" action="{{ route('paciente.cuenta_bancaria.actualizar') }}">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4">
+                    @if(! $cuentaBancariaMedsdi['ok'])
+                        <div class="alert alert-warning">{{ $cuentaBancariaMedsdi['mensaje'] }}</div>
+                    @elseif(!$cuentaBanco)
+                        <div class="alert alert-info">Aún no tienes una cuenta bancaria registrada. Completa los datos para futuras devoluciones.</div>
+                    @else
+                        <div class="alert alert-success">Cuenta obtenida desde Med-SDI. Puedes actualizarla a continuación.</div>
+                    @endif
+                    @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+
+                    <div class="row g-3">
+                        <div class="col-md-8"><label class="form-label fw-bold">Titular</label><input class="form-control" name="titular" value="{{ old('titular', $cuentaBanco['titular'] ?? $pacienteCuenta['nombre'] ?? $nombrePacienteReal) }}" required></div>
+                        <div class="col-md-4"><label class="form-label fw-bold">RUT del titular</label><input class="form-control" value="{{ sdi_formatear_rut($cuentaBanco['rut'] ?? $pacienteCuenta['rut'] ?? $rutPacienteReal) }}" readonly></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">Banco</label><select class="form-select" name="banco_id" required><option value="">Seleccione</option>@foreach($cuentaBancariaMedsdi['bancos'] ?? [] as $banco)<option value="{{ $banco['id'] }}" @selected((string) old('banco_id', $cuentaBanco['banco_id'] ?? '') === (string) $banco['id'])>{{ $banco['nombre'] }}</option>@endforeach</select></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">Tipo de cuenta</label><select class="form-select" name="tipo_cuenta" required><option value="">Seleccione</option>@foreach($cuentaBancariaMedsdi['tipos_cuenta'] ?? [] as $tipo)<option value="{{ $tipo['descripcion'] }}" @selected(old('tipo_cuenta', $cuentaBanco['tipo_cuenta'] ?? '') === $tipo['descripcion'])>{{ $tipo['descripcion'] }}</option>@endforeach</select></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">Número de cuenta</label><input class="form-control" name="numero_cuenta" value="{{ old('numero_cuenta', $cuentaBanco['numero_cuenta'] ?? '') }}" autocomplete="off" required></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">Correo para notificaciones</label><input type="email" class="form-control" name="email" value="{{ old('email', $cuentaBanco['email'] ?? $pacienteCuenta['email'] ?? $pacienteMedsdi['email'] ?? '') }}" required></div>
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">Estos datos se almacenan cifrados en Med-SDI y se utilizarán exclusivamente para gestionar devoluciones.</p>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" onclick="cerrarCuentaBancaria()">Cancelar</button><button class="btn btn-primary" @disabled(! $cuentaBancariaMedsdi['ok'])>Guardar cambios</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirCuentaBancaria() {
+    const modal = document.getElementById('modalCuentaBancaria');
+    if (!modal) return;
+    modal.style.display = 'block';
+    modal.classList.add('show');
+    modal.removeAttribute('aria-hidden');
+    modal.setAttribute('aria-modal', 'true');
+    document.body.classList.add('modal-open');
+    if (!document.getElementById('fondoCuentaBancaria')) {
+        const fondo = document.createElement('div');
+        fondo.id = 'fondoCuentaBancaria';
+        fondo.className = 'modal-backdrop fade show';
+        fondo.addEventListener('click', cerrarCuentaBancaria);
+        document.body.appendChild(fondo);
+    }
+}
+function cerrarCuentaBancaria() {
+    const modal = document.getElementById('modalCuentaBancaria');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.removeAttribute('aria-modal');
+    }
+    document.body.classList.remove('modal-open');
+    document.getElementById('fondoCuentaBancaria')?.remove();
+}
+</script>
+
+<div class="share-modal-backdrop" id="shareVoucherModal" hidden>
+    <div class="share-modal" role="dialog" aria-modal="true" aria-labelledby="shareVoucherTitle">
+        <div class="share-modal-header">
+            <div>
+                <div class="section-title mb-2">Envío digital sin papel</div>
+                <h3 class="fw-bold mb-2" id="shareVoucherTitle">Compartir QR Medichile</h3>
+                <p class="text-muted mb-0">
+                    Selecciona uno o más destinatarios y uno o más métodos de envío. El sistema prepara la imagen QR
+                    para compartirla sin imprimir papel.
+                </p>
+            </div>
+            <button type="button" class="share-close" id="closeShareVoucherModal" aria-label="Cerrar">×</button>
+        </div>
+
+        <div class="share-modal-body">
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="section-title mb-2">1. Destinatarios</div>
+                    <div class="share-grid" id="shareVoucherRecipients"></div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="section-title mb-2">2. Imagen QR</div>
+                    <div class="qr-share-preview mb-3">
+                        <img id="shareVoucherImage" src="" alt="Imagen QR">
+                        <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
+                            <a href="#" id="shareVoucherDownload" class="btn btn-sm btn-success" download>Descargar imagen</a>
+                            <button type="button" class="btn btn-sm btn-outline-dark" id="copyVoucherImage">Copiar imagen</button>
+                        </div>
+                    </div>
+
+                    <div class="section-title mb-2">3. Métodos</div>
+                    <div class="share-channel-list mb-3">
+                        <label class="share-channel">
+                            <input type="checkbox" class="share-channel-input" value="whatsapp" checked>
+                            WhatsApp
+                        </label>
+                        <label class="share-channel">
+                            <input type="checkbox" class="share-channel-input" value="email">
+                            Email
+                        </label>
+                        <label class="share-channel">
+                            <input type="checkbox" class="share-channel-input" value="copy">
+                            Copiar imagen
+                        </label>
+                    </div>
+
+                    <label class="form-label fw-semibold" for="shareVoucherMessage">Mensaje QR editable</label>
+                    <textarea class="form-control" id="shareVoucherMessage" rows="9"></textarea>
+                    <p class="share-muted mt-2 mb-0">
+                        WhatsApp Web no adjunta imágenes desde un enlace automático; descarga o copia la imagen QR y adjúntala en la conversación.
+                    </p>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap mt-4">
+                <button type="button" class="btn btn-success" id="prepareShareVoucher">Preparar envíos</button>
+                <button type="button" class="btn btn-outline-dark" id="copyVoucherLink">Copiar imagen QR</button>
+                <button type="button" class="btn btn-outline-secondary" id="cancelShareVoucher">Cerrar</button>
+            </div>
+
+            <div class="share-results mt-4" id="shareVoucherResults" hidden>
+                <div class="section-title mb-2">Envíos QR preparados</div>
+                <div id="shareVoucherResultsList"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="modal fade" id="modalAgendaOnline" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content border-0" style="border-radius:22px;overflow:hidden">
@@ -492,12 +694,131 @@
     </div></div>
 </div>
 
+<div class="modal fade" id="modalReservaMedsdi" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content border-0" style="border-radius:22px;overflow:hidden">
+        <div class="modal-header text-white" style="background:#1848a1">
+            <div><div class="eyebrow text-white-50">Conectado a Med-SDI</div><h2 class="h5 modal-title">Buscar profesional y reservar hora</h2></div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+            <div id="medsdiEstadoServicio" class="alert alert-warning d-none"></div>
+
+            <div class="border rounded-4 p-3 mb-3 bg-light">
+                <div class="eyebrow mb-2">1 · Beneficiario</div>
+                @if($pacienteMedsdi)
+                    <strong>{{ trim(data_get($pacienteMedsdi, 'nombres').' '.data_get($pacienteMedsdi, 'apellido_uno').' '.data_get($pacienteMedsdi, 'apellido_dos')) }}</strong>
+                    <div class="small text-muted">RUT {{ sdi_formatear_rut(data_get($pacienteMedsdi, 'rut')) }} · Validación simulada FONASA</div>
+                    <div class="small text-success fw-semibold mt-2">✓ Beneficiario autenticado en Med-SDI</div>
+                @else
+                    <div class="text-danger">{{ data_get($perfilRemotoMedsdi, 'mensaje', 'No fue posible obtener el beneficiario.') }}</div>
+                @endif
+            </div>
+
+            <div class="border rounded-4 p-3 mb-3">
+                <div id="medsdiPrestacionForm">
+                    <div class="eyebrow mb-2">2 · Prestación FONASA</div>
+                    <label class="form-label small" for="medsdiPrestacionBuscar">Busca por nombre o código</label>
+                    <div class="input-group">
+                        <input type="search" id="medsdiPrestacionBuscar" class="form-control" autocomplete="off" placeholder="Ej.: consulta médica o 0101301" @disabled(!$pacienteMedsdi)>
+                        <button type="button" id="medsdiPrestacionBuscarBtn" class="btn btn-info text-white" @disabled(!$pacienteMedsdi)>Buscar</button>
+                    </div>
+                    <div id="medsdiPrestacionResultados" class="list-group mt-2 d-none" style="max-height:260px;overflow-y:auto"></div>
+                </div>
+                <div id="medsdiPrestacionSeleccionada" class="alert alert-info mt-3 mb-0 d-none d-flex justify-content-between align-items-center gap-2">
+                    <span id="medsdiPrestacionSeleccionadaTexto"></span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="medsdiCambiarPrestacion">Cambiar</button>
+                </div>
+            </div>
+
+            <div id="medsdiPasoBusqueda" class="d-none border rounded-4 p-3">
+                <div class="eyebrow mb-2">3 · Ubicación y profesional</div>
+                <div id="medsdiUbicacionBuscadorWrap">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small">Región</label>
+                            <select id="medsdiRegion" class="form-select">
+                                <option value="">Centro INSI (predeterminado)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Ciudad</label>
+                            <select id="medsdiCiudad" class="form-select" disabled>
+                                <option value="">Primero seleccione una región</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4"><label class="form-label small">Especialidad</label><select id="medsdiEspecialidad" class="form-select"><option value="">Todas</option></select></div>
+                        <div class="col-md-4"><label class="form-label small">Tipo</label><select id="medsdiTipoEspecialidad" class="form-select" disabled><option value="">Todos</option></select></div>
+                        <div class="col-md-4"><label class="form-label small">Subtipo</label><select id="medsdiSubTipoEspecialidad" class="form-select" disabled><option value="">Todos</option></select></div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="text" id="medsdiNombreProfesional" class="form-control" placeholder="Buscar por nombre del profesional (opcional)">
+                        <button type="button" id="medsdiBuscarBtn" class="btn btn-primary">Buscar profesionales</button>
+                    </div>
+                    <div id="medsdiResultados" class="row g-2"></div>
+                </div>
+            </div>
+
+            <div id="medsdiPasoCotizacion" class="d-none mt-4 pt-3 border-top">
+                <div class="eyebrow mb-2">4 · Cotización</div>
+                <div id="medsdiCotizacion" class="alert alert-info mb-0">Calculando convenio FONASA...</div>
+            </div>
+
+            <div id="medsdiPasoHorario" class="d-none mt-4 pt-3 border-top">
+                <div class="eyebrow mb-2">5 · Fecha y hora</div>
+                <div id="medsdiProfesionalElegido" class="alert alert-info d-flex justify-content-between align-items-center gap-2">
+                    <span id="medsdiProfesionalElegidoTexto"></span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="medsdiCambiarProfesional">Cambiar</button>
+                </div>
+                <div id="medsdiDiasAtencion" class="small fw-semibold text-primary mb-2">Consultando días de atención...</div>
+                <div class="row g-2 align-items-end mb-3">
+                    <div class="col-md-4"><label class="form-label small">Fecha</label><input type="text" id="medsdiFecha" class="form-control" placeholder="Seleccione un día disponible" disabled></div>
+                    <div class="col-md-3"><button type="button" id="medsdiVerHorasBtn" class="btn btn-outline-primary w-100">Ver horas disponibles</button></div>
+                </div>
+                <div id="medsdiHoras" class="d-flex flex-wrap gap-2"></div>
+            </div>
+
+            <form id="medsdiFormConfirmar" method="POST" action="{{ route('cliente.medsdi.agendar') }}" class="d-none mt-4 pt-3 border-top">
+                @csrf
+                <input type="hidden" name="id_profesional" id="medsdiInputProfesionalId">
+                <input type="hidden" name="id_especialidad" id="medsdiInputEspecialidadId">
+                <input type="hidden" name="nombre_profesional" id="medsdiInputProfesionalNombre">
+                <input type="hidden" name="especialidad" id="medsdiInputEspecialidad">
+                <input type="hidden" name="id_lugar" id="medsdiInputLugarId">
+                <input type="hidden" name="lugar_nombre" id="medsdiInputLugarNombre">
+                <input type="hidden" name="direccion" id="medsdiInputDireccion">
+                <input type="hidden" name="fecha_hora" id="medsdiInputFechaHora">
+                <input type="hidden" name="id_prestacion" id="medsdiInputPrestacionId">
+                <input type="hidden" name="origen_prestacion" id="medsdiInputPrestacionOrigen">
+                <input type="hidden" name="prestacion_codigo" id="medsdiInputPrestacionCodigo">
+                <input type="hidden" name="prestacion_nombre" id="medsdiInputPrestacionNombre">
+                <div class="eyebrow mb-2">6 · Confirmación</div>
+                <div id="medsdiResumenReserva" class="alert alert-success d-flex justify-content-between align-items-center gap-2">
+                    <span id="medsdiResumenReservaTexto"></span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="medsdiCambiarHora">Cambiar hora</button>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">RUT del paciente autenticado en Med-SDI</label>
+                    <input type="text" name="rut" id="medsdiRutPaciente" class="form-control" value="{{ data_get($pacienteMedsdi, 'rut', '') }}" readonly>
+                    @if($pacienteMedsdi)
+                        <div class="form-text">{{ trim(data_get($pacienteMedsdi, 'nombres').' '.data_get($pacienteMedsdi, 'apellido_uno').' '.data_get($pacienteMedsdi, 'apellido_dos')) }}</div>
+                    @else
+                        <div class="text-danger small mt-1">{{ data_get($perfilRemotoMedsdi, 'mensaje', 'No fue posible obtener el paciente autenticado.') }}</div>
+                    @endif
+                </div>
+                <button class="btn btn-success w-100" @disabled(!$pacienteMedsdi)>Confirmar reserva y generar bono</button>
+            </form>
+        </div>
+    </div></div>
+</div>
+
 <div class="modal fade" id="modalAutorizacionDemo" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0" style="border-radius:22px;overflow:hidden">
         <div class="modal-header text-white" style="background:linear-gradient(110deg,#1848a1,#31bebe)"><div><div class="eyebrow text-white-50">Verificación de identidad y copago</div><h2 class="h5 modal-title">Autorizar desde App o WhatsApp</h2></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
         <div class="modal-body p-4">
             <div class="secure-note mb-3"><strong>Solicitud segura:</strong> confirma paciente, médico, prestación, hora y monto antes de mover el copago.</div>
-            <p class="mb-2"><strong>Paciente:</strong> {{ $user->name }} · {{ sdi_formatear_rut($user->rut) }}</p>
+            <p class="mb-2"><strong>Paciente:</strong> {{ $nombrePacienteReal }} · {{ sdi_formatear_rut($rutPacienteReal) }}</p>
             <p class="mb-2"><strong>Canal:</strong> WhatsApp registrado o App Medichile</p>
             <p class="text-muted">En producción se usa un token de un solo uso con vencimiento. En esta demo puede aprobar o rechazar manualmente.</p>
             <div class="authorization-choice"><button type="button" class="auth-reject" id="rechazarAutorizacionDemo">No autorizar</button><button type="button" class="auth-approve" id="aprobarAutorizacionDemo">Aceptar y autorizar</button></div>
@@ -506,8 +827,26 @@
 </div>
 
 @if($agendaOnlineResultado)
-<div class="modal fade" id="modalAgendaOnlineResultado" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0" style="border-radius:22px"><div class="modal-body text-center p-5"><div class="medichile-alert-icon" style="border-color:#48b88a;color:#198754">✓</div><h2 class="h4">Hora y bono confirmados</h2><p>{{ $agendaOnlineResultado->codigo }}</p><p class="text-muted">{{ optional($agendaOnlineResultado->agenda?->fecha_hora_confirmada)->format('d-m-Y H:i') }} · {{ $agendaOnlineResultado->prestador_nombre }}</p><div class="d-flex justify-content-center gap-2 flex-wrap"><a href="{{ route('vouchers.qr', $agendaOnlineResultado->qr_token) }}" class="btn btn-outline-success">Ver QR generado</a><a href="{{ route('vouchers.qr.lectorDemo', $agendaOnlineResultado->qr_token) }}" class="btn btn-success">Leer QR simulado</a><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button></div></div></div></div></div>
+<div class="modal fade" id="modalAgendaOnlineResultado" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0" style="border-radius:22px"><div class="modal-body text-center p-5"><div class="medichile-alert-icon" style="border-color:#48b88a;color:#198754">✓</div><h2 class="h4">Hora reservada</h2><p>{{ $agendaOnlineResultado->codigo }}</p><p class="text-muted">Hora Med-SDI #{{ optional($agendaOnlineResultado->agenda)->medichile_hora_medica_id }} · pendiente de confirmación</p><div class="d-flex justify-content-center gap-2 flex-wrap"><button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ir al historial</button></div></div></div></div></div>
 @endif
+
+<div class="modal fade" id="modalRecorridoMedsdi" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0" style="border-radius:22px;overflow:hidden">
+            <div class="modal-header text-white" style="background:#1848a1">
+                <div>
+                    <div class="eyebrow text-white-50" id="modalRecorridoMedsdiCodigo"></div>
+                    <h2 class="h5 modal-title" id="modalRecorridoMedsdiTitulo"></h2>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="modalRecorridoMedsdiBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="medichileRutAlert" class="medichile-alert-overlay d-none" role="dialog" aria-modal="true" aria-labelledby="medichileRutAlertTitle">
     <div class="medichile-alert-card">
@@ -593,9 +932,299 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalPagoBono" tabindex="-1" aria-labelledby="modalPagoBonoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:22px; border:0; overflow:hidden;">
+            <div class="modal-header text-white" style="background:#087f6f;">
+                <div>
+                    <div class="eyebrow text-white-50">Recepción de pago</div>
+                    <h5 class="modal-title" id="modalPagoBonoLabel">Pagar copago del bono</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form method="POST" id="formPagoBono">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger py-2 px-3">
+                        Recuerde validar los datos del paciente, profesional y convenio con los datos del bono físico.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">RUT del paciente</label>
+                            <input type="text" class="form-control" value="{{ sdi_formatear_rut($rutPacienteReal) }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre del paciente</label>
+                            <input type="text" class="form-control" value="{{ $nombrePacienteReal }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre profesional</label>
+                            <input type="text" class="form-control" id="pagoBonoProfesional" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Convenio</label>
+                            <input type="text" class="form-control" value="Fonasa" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">N° de bono o programa</label>
+                            <input type="text" class="form-control" id="pagoBonoCodigo" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Método de pago</label>
+                            <select name="metodo_pago" id="pagoBonoMetodo" class="form-select" required>
+                                <option value="tarjeta_credito">Tarjeta de crédito</option>
+                                <option value="tarjeta_debito">Tarjeta de débito</option>
+                                <option value="transferencia">Transferencia bancaria</option>
+                                <option value="efectivo">Efectivo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Valor prestación</label>
+                            <input type="text" class="form-control" id="pagoBonoValor" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Valor bonificación</label>
+                            <input type="text" class="form-control" id="pagoBonoBonificacion" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Valor a pagar</label>
+                            <input type="text" class="form-control fw-bold text-success" id="pagoBonoCopago" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success"><i class="feather icon-check"></i> Pagar bono</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="{{ asset('js/plugins/sweetalert.min.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    (() => {
+        const modal = document.getElementById('shareVoucherModal');
+        if (!modal) return;
+
+        const titleEl = document.getElementById('shareVoucherTitle');
+        const closeButton = document.getElementById('closeShareVoucherModal');
+        const cancelButton = document.getElementById('cancelShareVoucher');
+        const prepareButton = document.getElementById('prepareShareVoucher');
+        const copyLinkButton = document.getElementById('copyVoucherLink');
+        const copyImageButton = document.getElementById('copyVoucherImage');
+        const messageInput = document.getElementById('shareVoucherMessage');
+        const results = document.getElementById('shareVoucherResults');
+        const resultsList = document.getElementById('shareVoucherResultsList');
+        const recipientsContainer = document.getElementById('shareVoucherRecipients');
+        const imageEl = document.getElementById('shareVoucherImage');
+        const downloadLink = document.getElementById('shareVoucherDownload');
+
+        let currentData = null;
+        const channelLabels = { whatsapp: 'WhatsApp', email: 'Email', copy: 'Copiar imagen' };
+
+        const closeModal = () => { modal.hidden = true; };
+
+        const renderRecipients = (recipients) => {
+            recipientsContainer.innerHTML = '';
+            if (!recipients.length) {
+                recipientsContainer.innerHTML = '<div class="alert alert-warning mb-0">No hay contactos guardados. Puedes descargar la imagen QR y enviarla por tu canal autorizado.</div>';
+                return;
+            }
+            recipients.forEach((recipient, index) => {
+                const label = document.createElement('label');
+                label.className = 'share-option-card';
+                const phoneLine = recipient.phone ? `<div class="small mt-2">WhatsApp: +${recipient.phone}</div>` : '';
+                const emailLine = recipient.email ? `<div class="small">Email: ${recipient.email}</div>` : '';
+                label.innerHTML = `<div class="d-flex align-items-start">
+                        <input type="checkbox" class="share-recipient" value="${recipient.id}" ${index === 0 ? 'checked' : ''}>
+                        <div>
+                            <strong>${recipient.label}</strong>
+                            <div class="share-muted">${recipient.role}</div>
+                            ${phoneLine}${emailLine}
+                        </div>
+                    </div>`;
+                recipientsContainer.appendChild(label);
+            });
+        };
+
+        const selectedRecipients = () => {
+            const checked = [...document.querySelectorAll('.share-recipient:checked')].map((item) => item.value);
+            return (currentData?.recipients || []).filter((recipient) => checked.includes(recipient.id));
+        };
+
+        const selectedChannels = () => [...document.querySelectorAll('.share-channel-input:checked')].map((item) => item.value);
+
+        const copyTextToClipboard = async (text) => {
+            try {
+                await navigator.clipboard.writeText(text);
+                alert('Copiado al portapapeles.');
+            } catch (error) {
+                window.prompt('Copia este texto:', text);
+            }
+        };
+
+        const copyQrImageToClipboard = async () => {
+            try {
+                if (!navigator.clipboard || !window.ClipboardItem) throw new Error('Clipboard image no disponible');
+                const response = await fetch(currentData.qr_image_url, { cache: 'no-store' });
+                const blob = await response.blob();
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                alert('Imagen QR copiada. Ahora puedes pegarla en WhatsApp o email.');
+            } catch (error) {
+                window.open(currentData.qr_image_url, '_blank', 'noopener');
+                alert('Tu navegador no permitió copiar la imagen. Abrí la imagen QR para que puedas descargarla o copiarla manualmente.');
+            }
+        };
+
+        const createActionItem = ({ title, detail, url, buttonText, copyImage, disabled }) => {
+            const item = document.createElement('div');
+            item.className = 'share-result-item';
+            const text = document.createElement('div');
+            text.innerHTML = `<strong>${title}</strong><div class="share-muted">${detail}</div>`;
+            item.appendChild(text);
+
+            if (disabled) {
+                const badge = document.createElement('span');
+                badge.className = 'badge text-bg-warning';
+                badge.textContent = 'Dato faltante';
+                item.appendChild(badge);
+                return item;
+            }
+
+            if (url) {
+                const action = document.createElement('a');
+                action.className = 'btn btn-sm btn-success';
+                action.href = url;
+                action.target = '_blank';
+                action.rel = 'noopener';
+                action.textContent = buttonText;
+                item.appendChild(action);
+                return item;
+            }
+
+            const copyButton = document.createElement('button');
+            copyButton.type = 'button';
+            copyButton.className = 'btn btn-sm btn-outline-dark';
+            copyButton.textContent = buttonText;
+            copyButton.addEventListener('click', () => (copyImage ? copyQrImageToClipboard() : copyTextToClipboard(detail)));
+            item.appendChild(copyButton);
+            return item;
+        };
+
+        const prepareShares = () => {
+            const channels = selectedChannels();
+            const people = selectedRecipients();
+            const message = messageInput.value.trim() || 'Medichile · se adjunta imagen QR.';
+            resultsList.innerHTML = '';
+
+            if (!channels.length) {
+                alert('Selecciona al menos un método de envío.');
+                return;
+            }
+            if (!people.length && !channels.includes('copy')) {
+                alert('Selecciona al menos un destinatario o usa la opción Copiar imagen.');
+                return;
+            }
+
+            if (channels.includes('whatsapp') || channels.includes('email') || channels.includes('copy')) {
+                resultsList.appendChild(createActionItem({
+                    title: 'Imagen QR Medichile',
+                    detail: 'Copia o descarga esta imagen y adjúntala en WhatsApp/email. No se envía link largo al paciente.',
+                    copyImage: true,
+                    buttonText: 'Copiar imagen QR',
+                }));
+            }
+
+            people.forEach((recipient) => {
+                channels.forEach((channel) => {
+                    if (channel === 'copy') return;
+
+                    if (channel === 'whatsapp') {
+                        if (!recipient.phone) {
+                            resultsList.appendChild(createActionItem({ title: `${recipient.label} · ${channelLabels[channel]}`, detail: 'Este destinatario no tiene teléfono registrado.', disabled: true }));
+                            return;
+                        }
+                        resultsList.appendChild(createActionItem({
+                            title: `${recipient.label} · WhatsApp`,
+                            detail: `Enviar a +${recipient.phone}`,
+                            url: `${currentData.whatsapp_demo_url}?destino=${encodeURIComponent(recipient.id)}`,
+                            buttonText: 'Abrir y enviar simulado',
+                        }));
+                    }
+
+                    if (channel === 'email') {
+                        if (!recipient.email) {
+                            resultsList.appendChild(createActionItem({ title: `${recipient.label} · ${channelLabels[channel]}`, detail: 'Este destinatario no tiene email registrado.', disabled: true }));
+                            return;
+                        }
+                        resultsList.appendChild(createActionItem({
+                            title: `${recipient.label} · Email`,
+                            detail: `Enviar a ${recipient.email}`,
+                            url: `mailto:${recipient.email}?subject=${encodeURIComponent(currentData.subject)}&body=${encodeURIComponent(message)}`,
+                            buttonText: 'Abrir email',
+                        }));
+                    }
+                });
+            });
+
+            if (channels.includes('copy')) {
+                resultsList.appendChild(createActionItem({
+                    title: 'Abrir imagen QR',
+                    detail: 'Abre la imagen guardada para descargarla o compartirla.',
+                    url: currentData.qr_image_url,
+                    buttonText: 'Abrir imagen',
+                }));
+            }
+
+            results.hidden = false;
+        };
+
+        const abrirCompartir = async (url) => {
+            try {
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('No se pudo cargar la información de envío.');
+                currentData = await response.json();
+
+                titleEl.textContent = 'Compartir QR Medichile ' + currentData.codigo;
+                renderRecipients(currentData.recipients);
+                imageEl.src = currentData.qr_image_url;
+                imageEl.alt = 'Imagen QR Medichile ' + currentData.codigo;
+                downloadLink.href = currentData.qr_image_url;
+                downloadLink.setAttribute('download', currentData.qr_image_download_name);
+                messageInput.value = currentData.message;
+                results.hidden = true;
+                resultsList.innerHTML = '';
+
+                modal.hidden = false;
+                prepareButton.focus();
+            } catch (error) {
+                if (typeof swal === 'function') {
+                    swal({ title: 'No se pudo abrir Compartir', text: error.message, icon: 'error', button: 'Aceptar' });
+                } else {
+                    alert(error.message);
+                }
+            }
+        };
+
+        document.querySelectorAll('[data-share-voucher-url]').forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                abrirCompartir(button.dataset.shareVoucherUrl);
+            });
+        });
+
+        closeButton?.addEventListener('click', closeModal);
+        cancelButton?.addEventListener('click', closeModal);
+        prepareButton?.addEventListener('click', prepareShares);
+        copyLinkButton?.addEventListener('click', copyQrImageToClipboard);
+        copyImageButton?.addEventListener('click', copyQrImageToClipboard);
+        modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !modal.hidden) closeModal(); });
+    })();
+
+
     const convenios = @json($conveniosCompra);
     const oldProfesional = @json((string) old('profesional_id'));
     const oldServicio = @json((string) old('servicio_id'));
@@ -682,6 +1311,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const money = value => new Intl.NumberFormat('es-CL', {style: 'currency', currency: 'CLP', maximumFractionDigits: 0}).format(value || 0);
     const nivelLabel = value => String(value || 'nivel_1').replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
 
+    document.querySelectorAll('form[data-confirm-action]').forEach(form => {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const title = form.dataset.confirmTitle || 'Confirmar acción';
+            const text = form.dataset.confirmAction || '¿Estás seguro de continuar?';
+            const icon = form.dataset.confirmIcon || 'warning';
+
+            if (typeof swal === 'function') {
+                swal({
+                    title: title,
+                    text: text,
+                    icon: icon,
+                    buttons: ['Cancelar', 'Continuar'],
+                    dangerMode: false,
+                }).then((confirmado) => {
+                    if (confirmado) form.submit();
+                });
+                return;
+            }
+
+            form.submit();
+        });
+    });
+
     function profesionalesUnicos(filtro = '') {
         const texto = filtro.trim().toLocaleLowerCase('es');
         const mapa = new Map();
@@ -744,6 +1397,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const formCompraAgenda = document.getElementById('formCompraAgendaOnline');
     let compraAutorizada = false;
     let compraEsperandoAutorizacion = false;
+    let formularioPendienteAutorizacion = null;
     const rutAgenda = document.getElementById('rutAgendaOnline');
     const personaAgenda = document.getElementById('personaAgendaOnline');
     const errorRutAgenda = document.getElementById('errorRutAgendaOnline');
@@ -768,13 +1422,25 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.removeAttribute('role');
         if (!document.querySelector('.modal.demo-modal-visible')) document.body.classList.remove('demo-modal-open');
     }
-    document.getElementById('abrirAgendaOnline').addEventListener('click', () => mostrarModalDemo(modalHorario));
-    document.getElementById('abrirAgendaOnlinePrincipal')?.addEventListener('click', () => mostrarModalDemo(modalHorario));
-    document.getElementById('abrirAgendaOnlinePrincipal')?.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') mostrarModalDemo(modalHorario); });
+    document.getElementById('abrirAgendaOnline')?.addEventListener('click', () => mostrarModalDemo(modalHorario));
+    document.getElementById('abrirReservaMedsdi')?.addEventListener('click', () => { mostrarModalDemo(document.getElementById('modalReservaMedsdi')); inicializarReservaMedsdi(); });
+    document.getElementById('abrirReservaMedsdi')?.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { mostrarModalDemo(document.getElementById('modalReservaMedsdi')); inicializarReservaMedsdi(); } });
     document.getElementById('abrirAutorizacionDemo')?.addEventListener('click', () => { compraEsperandoAutorizacion = false; mostrarModalDemo(modalAutorizacion); });
     document.getElementById('abrirAutorizacionDemo')?.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') mostrarModalDemo(modalAutorizacion); });
     document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => {
         button.addEventListener('click', () => ocultarModalDemo(button.closest('.modal')));
+    });
+
+    document.querySelectorAll('.abrir-pago-bono').forEach(button => {
+        button.addEventListener('click', () => {
+            document.getElementById('formPagoBono').action = button.dataset.actionUrl;
+            document.getElementById('pagoBonoCodigo').value = button.dataset.codigo;
+            document.getElementById('pagoBonoProfesional').value = button.dataset.profesional;
+            document.getElementById('pagoBonoValor').value = money(button.dataset.valor);
+            document.getElementById('pagoBonoBonificacion').value = money(button.dataset.bonificacion);
+            document.getElementById('pagoBonoCopago').value = money(button.dataset.copago);
+            mostrarModalDemo(document.getElementById('modalPagoBono'));
+        });
     });
 
     document.querySelectorAll('.seleccionar-horario-online').forEach(button => {
@@ -817,11 +1483,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (compraAutorizada) return;
         event.preventDefault();
         compraEsperandoAutorizacion = true;
+        formularioPendienteAutorizacion = formCompraAgenda;
         ocultarModalDemo(modalCompra);
         setTimeout(() => mostrarModalDemo(modalAutorizacion), 120);
     });
     document.getElementById('rechazarAutorizacionDemo')?.addEventListener('click', () => {
         compraEsperandoAutorizacion = false;
+        formularioPendienteAutorizacion = null;
         ocultarModalDemo(modalAutorizacion);
         if (typeof swal === 'function') swal({title:'Autorización rechazada',text:'No se realizó el cargo ni se reservó la hora. Puede volver a revisar los datos.',icon:'error',button:'Entendido',dangerMode:true});
     });
@@ -830,7 +1498,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const continuar = () => {
             if (!compraEsperandoAutorizacion) return;
             compraAutorizada = true;
-            formCompraAgenda.requestSubmit();
+            formularioPendienteAutorizacion?.requestSubmit();
         };
         if (typeof swal === 'function') {
             swal({title:'Autorización aprobada',text:'Identidad verificada. Copago autorizado y depositado en la cuenta registrada del usuario. Se generará el bono.',icon:'success',button:'Continuar'}).then(continuar);
@@ -844,10 +1512,429 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => mostrarModalDemo(document.getElementById('modalAgendaOnlineResultado')), 120);
     @endif
 
+    document.querySelectorAll('form[data-medsdi-sync]').forEach(form => {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const boton = form.querySelector('button[type="submit"]');
+            const spinner = boton?.querySelector('.spinner-border');
+            boton && (boton.disabled = true);
+            spinner?.classList.remove('d-none');
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: new FormData(form),
+            })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(({ ok, data }) => {
+                    const celda = document.getElementById('voucher-estado-' + form.dataset.voucherId);
+                    if (celda && data.estado_html) celda.innerHTML = data.estado_html;
+
+                    if (!ok || !data.ok) {
+                        if (typeof swal === 'function') {
+                            swal({ title: 'No se pudo sincronizar', text: data.mensaje || 'Intente nuevamente.', icon: 'error', button: 'Aceptar', dangerMode: true });
+                        }
+                        return;
+                    }
+
+                    document.getElementById('modalRecorridoMedsdiCodigo').textContent = 'Bono ' + data.codigo;
+                    document.getElementById('modalRecorridoMedsdiTitulo').textContent = 'Estado Med-SDI: ' + data.estado_texto;
+                    document.getElementById('modalRecorridoMedsdiBody').innerHTML = data.recorrido_html || '';
+                    mostrarModalDemo(document.getElementById('modalRecorridoMedsdi'));
+                })
+                .catch(() => {
+                    if (typeof swal === 'function') {
+                        swal({ title: 'Error de conexión', text: 'No fue posible comunicarse con el servidor.', icon: 'error', button: 'Aceptar', dangerMode: true });
+                    }
+                })
+                .finally(() => {
+                    boton && (boton.disabled = false);
+                    spinner?.classList.add('d-none');
+                });
+        });
+    });
+
+    // --- Reserva de hora vía API real Med-SDI ---
+    let medsdiInicializado = false;
+    let medsdiSeleccion = null;
+    let medsdiPrestacion = null;
+    let medsdiCotizacionActual = null;
+    let medsdiPrestacionTimer = null;
+    let medsdiCalendario = null;
+    const medsdiEstado = document.getElementById('medsdiEstadoServicio');
+    const medsdiRegion = document.getElementById('medsdiRegion');
+    const medsdiCiudad = document.getElementById('medsdiCiudad');
+    const medsdiEspecialidad = document.getElementById('medsdiEspecialidad');
+    const medsdiTipoEspecialidad = document.getElementById('medsdiTipoEspecialidad');
+    const medsdiSubTipoEspecialidad = document.getElementById('medsdiSubTipoEspecialidad');
+    const medsdiResultados = document.getElementById('medsdiResultados');
+    const medsdiPasoHorario = document.getElementById('medsdiPasoHorario');
+    const medsdiPasoBusqueda = document.getElementById('medsdiPasoBusqueda');
+    const medsdiPasoCotizacion = document.getElementById('medsdiPasoCotizacion');
+    const medsdiCotizacion = document.getElementById('medsdiCotizacion');
+    const medsdiPrestacionBuscar = document.getElementById('medsdiPrestacionBuscar');
+    const medsdiPrestacionResultados = document.getElementById('medsdiPrestacionResultados');
+    const medsdiPrestacionSeleccionada = document.getElementById('medsdiPrestacionSeleccionada');
+    const medsdiHoras = document.getElementById('medsdiHoras');
+    const medsdiFormConfirmar = document.getElementById('medsdiFormConfirmar');
+    const medsdiFecha = document.getElementById('medsdiFecha');
+    const medsdiDiasAtencion = document.getElementById('medsdiDiasAtencion');
+
+    medsdiFormConfirmar?.addEventListener('submit', event => {
+        if (compraAutorizada) return;
+        event.preventDefault();
+        compraEsperandoAutorizacion = true;
+        formularioPendienteAutorizacion = medsdiFormConfirmar;
+        ocultarModalDemo(document.getElementById('modalReservaMedsdi'));
+        setTimeout(() => mostrarModalDemo(modalAutorizacion), 120);
+    });
+
+    function medsdiMostrarAviso(mensaje) {
+        medsdiEstado.textContent = mensaje;
+        medsdiEstado.classList.remove('d-none');
+    }
+
+    function medsdiLimpiarSeleccion() {
+        medsdiSeleccion = null;
+        medsdiCotizacionActual = null;
+        document.getElementById('medsdiUbicacionBuscadorWrap')?.classList.remove('d-none');
+        medsdiPasoCotizacion.classList.add('d-none');
+        medsdiPasoHorario.classList.add('d-none');
+        medsdiHoras.innerHTML = '';
+        medsdiFormConfirmar.classList.add('d-none');
+        medsdiCalendario?.destroy();
+        medsdiCalendario = null;
+        medsdiFecha.value = '';
+        medsdiFecha.disabled = true;
+        medsdiDiasAtencion.textContent = '';
+    }
+
+    const medsdiNombresDias = ['', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO'];
+
+    async function medsdiCargarDiasLaborales() {
+        medsdiDiasAtencion.textContent = 'Consultando días de atención...';
+        const params = new URLSearchParams({
+            id_profesional: medsdiSeleccion.idProfesional,
+            id_lugar: medsdiSeleccion.idLugar,
+        });
+        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.dias_laborales') }}?${params.toString()}`);
+        const dias = String(resp.registros?.horario_agenda_laboral || '')
+            .split(',').map(Number).filter(dia => dia >= 1 && dia <= 7);
+
+        if (!resp.ok || !dias.length) {
+            medsdiDiasAtencion.textContent = 'El profesional no tiene días de atención informados.';
+            medsdiFecha.disabled = true;
+            return;
+        }
+
+        medsdiDiasAtencion.textContent = `Atiende los días: ${dias.map(dia => medsdiNombresDias[dia]).join(' · ')}`;
+        medsdiFecha.disabled = false;
+        medsdiCalendario = flatpickr(medsdiFecha, {
+            disableMobile: true,
+            minDate: 'today',
+            maxDate: new Date().fp_incr(60),
+            dateFormat: 'Y-m-d',
+            disable: [date => !dias.includes(date.getDay() === 0 ? 7 : date.getDay())],
+            locale: {
+                firstDayOfWeek: 1,
+                weekdays: {
+                    shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                    longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                },
+                months: {
+                    shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                    longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                },
+            },
+            onChange: () => document.getElementById('medsdiVerHorasBtn').click(),
+        });
+    }
+
+    async function medsdiFetchJson(url) {
+        const respuesta = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        return respuesta.json();
+    }
+
+    async function medsdiPostJson(url, data) {
+        const respuesta = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify(data),
+        });
+        const payload = await respuesta.json();
+        if (!respuesta.ok && !payload.mensaje) payload.mensaje = 'La solicitud no pudo ser procesada.';
+        return payload;
+    }
+
+    async function medsdiBuscarPrestaciones() {
+        const buscar = medsdiPrestacionBuscar.value.trim();
+        if (buscar.length < 2) {
+            medsdiPrestacionResultados.classList.add('d-none');
+            return;
+        }
+        medsdiPrestacionResultados.innerHTML = '<div class="list-group-item text-muted">Buscando prestaciones...</div>';
+        medsdiPrestacionResultados.classList.remove('d-none');
+        const params = new URLSearchParams({buscar});
+        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.prestaciones') }}?${params.toString()}`);
+        medsdiPrestacionResultados.innerHTML = '';
+        if (!resp.ok || !(resp.registros || []).length) {
+            const vacio = document.createElement('div');
+            vacio.className = 'list-group-item text-muted';
+            vacio.textContent = resp.mensaje || 'No se encontraron prestaciones.';
+            medsdiPrestacionResultados.appendChild(vacio);
+            return;
+        }
+        resp.registros.forEach(prestacion => {
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 'list-group-item list-group-item-action text-start';
+            boton.dataset.prestacion = JSON.stringify(prestacion);
+            const codigo = document.createElement('strong');
+            codigo.textContent = prestacion.codigo || 'Sin código';
+            const nombre = document.createElement('span');
+            nombre.textContent = ` · ${prestacion.nombre}`;
+            boton.append(codigo, nombre);
+            medsdiPrestacionResultados.appendChild(boton);
+        });
+    }
+
+    document.getElementById('medsdiPrestacionBuscarBtn')?.addEventListener('click', medsdiBuscarPrestaciones);
+    medsdiPrestacionBuscar?.addEventListener('input', () => {
+        clearTimeout(medsdiPrestacionTimer);
+        medsdiPrestacionTimer = setTimeout(medsdiBuscarPrestaciones, 300);
+    });
+    medsdiPrestacionResultados?.addEventListener('click', event => {
+        const boton = event.target.closest('button[data-prestacion]');
+        if (!boton) return;
+        medsdiPrestacion = JSON.parse(boton.dataset.prestacion);
+        medsdiPrestacionResultados.classList.add('d-none');
+        document.getElementById('medsdiPrestacionSeleccionadaTexto').textContent = `${medsdiPrestacion.codigo} · ${medsdiPrestacion.nombre}`;
+        medsdiPrestacionSeleccionada.classList.remove('d-none');
+        document.getElementById('medsdiPrestacionForm').classList.add('d-none');
+        medsdiPasoBusqueda.classList.remove('d-none');
+        medsdiLimpiarSeleccion();
+        medsdiResultados.innerHTML = '';
+        medsdiPasoBusqueda.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    });
+
+    document.getElementById('medsdiCambiarPrestacion')?.addEventListener('click', () => {
+        document.getElementById('medsdiPrestacionForm').classList.remove('d-none');
+        medsdiPrestacionSeleccionada.classList.add('d-none');
+        medsdiPasoBusqueda.classList.add('d-none');
+        medsdiPrestacion = null;
+        medsdiResultados.innerHTML = '';
+        medsdiLimpiarSeleccion();
+    });
+
+    function medsdiLlenarSelect(select, registros, campoValor, campoTexto, placeholder) {
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        registros.forEach(registro => {
+            select.add(new Option(registro[campoTexto], registro[campoValor]));
+        });
+        select.disabled = registros.length === 0;
+    }
+
+    async function inicializarReservaMedsdi() {
+        if (medsdiInicializado) return;
+        medsdiInicializado = true;
+
+        const [regiones, especialidades] = await Promise.all([
+            medsdiFetchJson('{{ route('cliente.medsdi.regiones') }}'),
+            medsdiFetchJson('{{ route('cliente.medsdi.especialidades') }}'),
+        ]);
+        if (regiones.ok) {
+            medsdiLlenarSelect(medsdiRegion, regiones.registros || [], 'id', 'nombre', 'Centro INSI (predeterminado)');
+            medsdiRegion.disabled = false;
+        } else {
+            medsdiMostrarAviso(regiones.mensaje || 'No fue posible cargar las regiones de Med-SDI.');
+        }
+        if (!especialidades.disponible) {
+            medsdiMostrarAviso(especialidades.mensaje || 'Servicio Med-SDI no disponible en este momento.');
+        }
+        medsdiLlenarSelect(medsdiEspecialidad, especialidades.registros || [], 'id', 'nombre', 'Todas');
+        medsdiEspecialidad.disabled = false;
+    }
+
+    medsdiRegion?.addEventListener('change', async () => {
+        medsdiLimpiarSeleccion();
+        medsdiResultados.innerHTML = '';
+        medsdiLlenarSelect(medsdiCiudad, [], 'id', 'nombre', medsdiRegion.value ? 'Todas las ciudades' : 'Primero seleccione una región');
+        if (!medsdiRegion.value) return;
+
+        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.ciudades') }}?id_region=${medsdiRegion.value}`);
+        medsdiLlenarSelect(medsdiCiudad, resp.registros || [], 'id', 'nombre', 'Todas las ciudades');
+        medsdiCiudad.disabled = !resp.ok;
+        if (!resp.ok) medsdiMostrarAviso(resp.mensaje || 'No fue posible cargar las ciudades de la región.');
+    });
+
+    medsdiCiudad?.addEventListener('change', () => {
+        medsdiLimpiarSeleccion();
+        medsdiResultados.innerHTML = '';
+    });
+
+    medsdiEspecialidad?.addEventListener('change', async () => {
+        medsdiLimpiarSeleccion();
+        medsdiResultados.innerHTML = '';
+        medsdiLlenarSelect(medsdiTipoEspecialidad, [], 'id', 'nombre', 'Todos');
+        medsdiLlenarSelect(medsdiSubTipoEspecialidad, [], 'id', 'nombre', 'Todos');
+        if (!medsdiEspecialidad.value) return;
+        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.tipo_especialidades') }}?id_especialidad=${medsdiEspecialidad.value}`);
+        medsdiLlenarSelect(medsdiTipoEspecialidad, resp.registros || [], 'id', 'nombre', 'Todos');
+    });
+
+    medsdiTipoEspecialidad?.addEventListener('change', async () => {
+        medsdiLimpiarSeleccion();
+        medsdiResultados.innerHTML = '';
+        medsdiLlenarSelect(medsdiSubTipoEspecialidad, [], 'id', 'nombre', 'Todos');
+        if (!medsdiTipoEspecialidad.value) return;
+        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.sub_tipo_especialidades') }}?id_tipo_especialidad=${medsdiTipoEspecialidad.value}`);
+        medsdiLlenarSelect(medsdiSubTipoEspecialidad, resp.registros || [], 'id', 'nombre', 'Todos');
+    });
+
+    document.getElementById('medsdiBuscarBtn')?.addEventListener('click', async () => {
+        medsdiLimpiarSeleccion();
+        medsdiEstado.classList.add('d-none');
+        medsdiResultados.innerHTML = '<div class="col-12 text-muted">Buscando en Med-SDI...</div>';
+        const params = new URLSearchParams();
+        if (medsdiRegion.value) params.set('id_region', medsdiRegion.value);
+        if (medsdiCiudad.value) params.set('id_ciudad', medsdiCiudad.value);
+        if (medsdiEspecialidad.value) params.set('id_especialidad', medsdiEspecialidad.value);
+        if (medsdiTipoEspecialidad.value) params.set('id_tipo_especialidad', medsdiTipoEspecialidad.value);
+        if (medsdiSubTipoEspecialidad.value) params.set('id_sub_tipo_especialidad', medsdiSubTipoEspecialidad.value);
+        if (document.getElementById('medsdiNombreProfesional').value.trim()) params.set('nombre_profesional', document.getElementById('medsdiNombreProfesional').value.trim());
+
+        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.profesionales') }}?${params.toString()}`);
+        if (!resp.disponible) { medsdiResultados.innerHTML = ''; medsdiMostrarAviso(resp.mensaje); return; }
+        if (!resp.ok || !(resp.registros || []).length) { medsdiResultados.innerHTML = `<div class="col-12 alert alert-warning mb-0">${resp.mensaje || 'No se encontraron profesionales para los filtros indicados.'}</div>`; return; }
+
+        medsdiResultados.innerHTML = '';
+        resp.registros.forEach(prof => {
+            const nombreCompleto = `${prof.nombre} ${prof.apellido_uno || ''} ${prof.apellido_dos || ''}`.trim();
+            const especialidadProfesional = prof.nombre_especialidad || medsdiEspecialidad.options[medsdiEspecialidad.selectedIndex]?.text || '';
+            const lugares = (prof.lugares_atencion || []).map(lugar => `
+                <button type="button" class="btn btn-outline-success btn-sm me-1 mb-1 medsdi-elegir-lugar"
+                    data-id-profesional="${prof.id}" data-nombre-profesional="${nombreCompleto}"
+                    data-especialidad="${especialidadProfesional}" data-id-lugar="${lugar.id}"
+                    data-lugar-nombre="${lugar.nombre}">${lugar.nombre}</button>`).join('');
+            const div = document.createElement('div');
+            div.className = 'col-md-6';
+            div.innerHTML = `<div class="card border-0 shadow-sm h-100"><div class="card-body p-3">
+                <strong>${nombreCompleto}</strong><br>
+                <span class="text-muted small">${especialidadProfesional}${prof.nombre_sub_tipo_especialidad ? ' · '+prof.nombre_sub_tipo_especialidad : ''}</span>
+                <div class="mt-2">${lugares || '<span class="text-muted small">Sin lugares de atención disponibles.</span>'}</div>
+            </div></div>`;
+            medsdiResultados.appendChild(div);
+        });
+    });
+
+    medsdiResultados?.addEventListener('click', async event => {
+        const btn = event.target.closest('.medsdi-elegir-lugar');
+        if (!btn) return;
+        medsdiSeleccion = {
+            idProfesional: btn.dataset.idProfesional, nombreProfesional: btn.dataset.nombreProfesional,
+            idEspecialidad: medsdiEspecialidad.value, especialidad: btn.dataset.especialidad,
+            idLugar: btn.dataset.idLugar, lugarNombre: btn.dataset.lugarNombre,
+        };
+        document.getElementById('medsdiUbicacionBuscadorWrap').classList.add('d-none');
+        document.getElementById('medsdiProfesionalElegidoTexto').textContent = `${medsdiSeleccion.nombreProfesional} · ${medsdiSeleccion.especialidad} · ${medsdiSeleccion.lugarNombre}`;
+        medsdiHoras.innerHTML = '';
+        medsdiFormConfirmar.classList.add('d-none');
+        medsdiPasoCotizacion.classList.remove('d-none');
+        medsdiPasoHorario.classList.add('d-none');
+        medsdiCotizacion.className = 'alert alert-info mb-0';
+        medsdiCotizacion.textContent = 'Calculando convenio FONASA...';
+        const respCotizacion = await medsdiPostJson('{{ route('cliente.medsdi.cotizar') }}', {
+            id_profesional: medsdiSeleccion.idProfesional,
+            id_lugar_atencion: medsdiSeleccion.idLugar,
+            id_prestacion: medsdiPrestacion.id,
+            origen_prestacion: medsdiPrestacion.origen,
+        });
+        if (!respCotizacion.ok) {
+            medsdiCotizacion.className = 'alert alert-warning mb-0';
+            medsdiCotizacion.textContent = respCotizacion.mensaje || 'No fue posible cotizar esta prestación.';
+            return;
+        }
+        medsdiCotizacionActual = respCotizacion.cotizacion;
+        const moneda = valor => new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP', maximumFractionDigits:0}).format(valor || 0);
+        medsdiCotizacion.className = 'alert alert-success mb-0';
+        medsdiCotizacion.textContent = `Valor ${moneda(medsdiCotizacionActual.valor)} · Bonificación ${moneda(medsdiCotizacionActual.bonificacion)} · Copago ${moneda(medsdiCotizacionActual.copago)} · Simulación FONASA`;
+        medsdiPasoHorario.classList.remove('d-none');
+        medsdiCargarDiasLaborales().catch(() => {
+            medsdiDiasAtencion.textContent = 'No fue posible consultar los días de atención.';
+            medsdiFecha.disabled = true;
+        });
+        medsdiPasoCotizacion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    document.getElementById('medsdiVerHorasBtn')?.addEventListener('click', async () => {
+        if (!medsdiSeleccion || !medsdiFecha.value) return;
+        medsdiHoras.innerHTML = '<span class="text-muted">Consultando horas disponibles...</span>';
+        const params = new URLSearchParams({
+            id_profesional: medsdiSeleccion.idProfesional, id_lugar: medsdiSeleccion.idLugar,
+            fecha: medsdiFecha.value,
+        });
+        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.horas_disponibles') }}?${params.toString()}`);
+        if (!resp.disponible) { medsdiHoras.innerHTML = ''; medsdiMostrarAviso(resp.mensaje); return; }
+        if (!resp.ok || !(resp.registros || []).length) { medsdiHoras.innerHTML = '<span class="text-muted">Sin horas disponibles para esta fecha.</span>'; return; }
+
+        medsdiHoras.innerHTML = '';
+        resp.registros.forEach(bloque => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-outline-primary btn-sm medsdi-elegir-hora';
+            btn.dataset.fechaHora = bloque.fecha_hora;
+            btn.textContent = bloque.hora;
+            medsdiHoras.appendChild(btn);
+        });
+    });
+
+    medsdiHoras?.addEventListener('click', event => {
+        const btn = event.target.closest('.medsdi-elegir-hora');
+        if (!btn || !medsdiSeleccion) return;
+        document.getElementById('medsdiInputProfesionalId').value = medsdiSeleccion.idProfesional;
+        document.getElementById('medsdiInputEspecialidadId').value = medsdiSeleccion.idEspecialidad;
+        document.getElementById('medsdiInputProfesionalNombre').value = medsdiSeleccion.nombreProfesional;
+        document.getElementById('medsdiInputEspecialidad').value = medsdiSeleccion.especialidad;
+        document.getElementById('medsdiInputLugarId').value = medsdiSeleccion.idLugar;
+        document.getElementById('medsdiInputLugarNombre').value = medsdiSeleccion.lugarNombre;
+        document.getElementById('medsdiInputFechaHora').value = btn.dataset.fechaHora;
+        document.getElementById('medsdiInputPrestacionId').value = medsdiPrestacion.id;
+        document.getElementById('medsdiInputPrestacionOrigen').value = medsdiPrestacion.origen;
+        document.getElementById('medsdiInputPrestacionCodigo').value = medsdiPrestacion.codigo;
+        document.getElementById('medsdiInputPrestacionNombre').value = medsdiPrestacion.nombre;
+        document.getElementById('medsdiResumenReservaTexto').textContent = `${medsdiPrestacion.codigo} · ${medsdiPrestacion.nombre} · ${medsdiSeleccion.nombreProfesional} · ${medsdiSeleccion.lugarNombre} · ${btn.dataset.fechaHora} · Copago ${new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP', maximumFractionDigits:0}).format(medsdiCotizacionActual?.copago || 0)}`;
+        medsdiPasoCotizacion.classList.add('d-none');
+        medsdiPasoHorario.classList.add('d-none');
+        medsdiFormConfirmar.classList.remove('d-none');
+        medsdiFormConfirmar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    document.getElementById('medsdiCambiarProfesional')?.addEventListener('click', () => {
+        medsdiLimpiarSeleccion();
+    });
+
+    document.getElementById('medsdiCambiarHora')?.addEventListener('click', () => {
+        medsdiFormConfirmar.classList.add('d-none');
+        medsdiPasoCotizacion.classList.remove('d-none');
+        medsdiPasoHorario.classList.remove('d-none');
+        medsdiPasoHorario.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
     const errorServidor = @json(session('error'));
     if (errorServidor && typeof swal === 'function') {
         swal({title: 'Validación de usuario', text: errorServidor, icon: 'error', button: 'Aceptar', dangerMode: true});
     }
+    @if(session('abrir_cuenta_bancaria') || $errors->any())
+        abrirCuentaBancaria();
+    @endif
 });
 </script>
 </body>

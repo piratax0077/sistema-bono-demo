@@ -22,7 +22,7 @@ class DemoPortalController extends Controller
 
         Log::info('Ingreso automático demo-bono', ['user_id' => $user->id, 'ip' => $request->ip()]);
 
-        return redirect()->route('cliente.dashboard')
+        return redirect()->route('paciente.home')
             ->with('ok', 'Sesión demo-bono autenticada automáticamente.');
     }
 
@@ -67,6 +67,11 @@ class DemoPortalController extends Controller
         $destino = (string) $request->input('destino', '');
         if ($perfil === 'paciente' && in_array($destino, $destinosPaciente, true)) {
             return redirect()->route($destino)->with('ok', 'Perfil cambiado a Paciente.');
+        }
+
+        $destinosProfesional = ['profesional.escritorio', 'profesional.cobros', 'demo.portal'];
+        if ($perfil === 'profesional' && in_array($destino, $destinosProfesional, true)) {
+            return redirect()->route($destino)->with('ok', 'Perfil cambiado a Profesional.');
         }
 
         if (! empty($perfilConfig['route'])) {

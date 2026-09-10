@@ -195,6 +195,24 @@ public function agenda()
     return $this->hasOne(\App\Models\VoucherAgenda::class, 'voucher_id');
 }
 
+/**
+ * Etapa (1 a 5) del recorrido de atención según el estado local del voucher
+ * y el último id_estado Med-SDI sincronizado. Usado para mostrar el stepper
+ * "Tu recorrido de atención" con el estado real en cualquier vista.
+ */
+public function demoRecorridoStep(): int
+{
+    $idEstadoRemoto = (int) optional($this->agenda)->medichile_estado_id;
+
+    return match (true) {
+        $this->estado === 'pendiente_confirmacion' => 1,
+        $this->estado === 'pendiente_pago' => 2,
+        $idEstadoRemoto === 4 => 4,
+        in_array($idEstadoRemoto, [5, 6], true) => 5,
+        default => 3,
+    };
+}
+
 public function atencion()
 {
     return $this->hasOne(\App\Models\VoucherAtencion::class, 'voucher_id');

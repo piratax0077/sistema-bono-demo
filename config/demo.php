@@ -4,10 +4,10 @@ return [
     'enabled' => env('DEMO_MODE', false),
     'user_switch_enabled' => env('DEMO_USER_SWITCH_ENABLED', false),
     'users' => [
-        'paciente' => ['email' => 'paciente@gmail.com', 'label' => 'Paciente', 'route' => 'cliente.dashboard'],
-        'asistente' => ['email' => 'asistente@gmail.com', 'label' => 'Asistente', 'url' => '/escritorio-asistente'],
-        'profesional' => ['email' => 'profesional@gmail.com', 'label' => 'Profesional', 'url' => '/escritorio-profesional'],
-        'contralor' => ['email' => 'contralor@gmail.com', 'label' => 'Contraloría', 'url' => '/auditoria'],
-        'administrador' => ['email' => 'administrador@gmail.com', 'label' => 'Administración', 'url' => '/escritorio-admin'],
+        'paciente' => ['email' => 'paciente@gmail.com', 'label' => 'Paciente', 'route' => 'paciente.home'],
+        'asistente' => ['email' => 'asistente@gmail.com', 'label' => 'Asistente', 'route' => 'asistente.home'],
+        'profesional' => ['email' => 'profesional@gmail.com', 'label' => 'Profesional', 'route' => 'profesional.home'],
+        'contralor' => ['email' => 'contralor@gmail.com', 'label' => 'Contraloría', 'route' => 'contraloria.home'],
+        'administrador' => ['email' => 'administrador@gmail.com', 'label' => 'Administración', 'route' => 'admin.home'],
     ],
 ];
