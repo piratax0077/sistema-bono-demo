@@ -31,6 +31,7 @@ use App\Models\VoucherDeliveryRequest;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\DemoFlujoBonoController;
 use App\Http\Controllers\AsistenteRecepcionController;
+use App\Http\Controllers\AsistenteVentaBonoController;
 use App\Http\Controllers\DemoPortalController;
 use App\Http\Controllers\ClienteAgendaOnlineController;
 use App\Http\Controllers\ClienteAgendaExternaController;
@@ -715,6 +716,12 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
     Route::post('/profesional/cobros/enviar-seleccionados', [VoucherWebController::class, 'cobrarSeleccionados'])
         ->middleware('throttle:10,1')
         ->name('profesional.cobros.seleccionados');
+    Route::put('/profesional/cobros/programacion', [VoucherWebController::class, 'guardarProgramacionCobro'])
+        ->middleware('throttle:10,1')
+        ->name('profesional.cobros.programacion');
+    Route::put('/profesional/cuenta-bancaria', [\App\Http\Controllers\ProfesionalCuentaBancariaController::class, 'update'])
+        ->middleware('throttle:10,1')
+        ->name('profesional.cuenta_bancaria.actualizar');
 
     Route::get('/profesional/cobros/{id}/qr/generar',
         [VoucherWebController::class, 'generarQrCobro'])
@@ -729,7 +736,7 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
         ->middleware('signed')
         ->name('profesional.cobros.qr');
 
-    Route::get('/profesional/cobros', function () {
+    Route::get('/profesional/cobros', function (\App\Services\MedsdiAgendaApiService $medsdiApi) {
         $profesionalId = auth()->user()->profesional_id;
 
         $bonosClinicos = \App\Models\Voucher::with(['atencion', 'agenda'])
@@ -749,8 +756,10 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
 
         $pendientesRendicion = $cobros->where('estado', 'pendiente_rendicion')->values();
         $pendientesAuditoria = $cobros->where('estado', 'pendiente_auditoria')->values();
+        $programacionCobro = \App\Models\VoucherCobroProgramacion::where('user_id', auth()->id())->first();
+        $cuentaBancariaMedsdi = $medsdiApi->cuentaBancariaProfesional();
 
-        return view('profesional.cobros', compact('bonosClinicos', 'cobros', 'pendientesRendicion', 'pendientesAuditoria'));
+        return view('profesional.cobros', compact('bonosClinicos', 'cobros', 'pendientesRendicion', 'pendientesAuditoria', 'programacionCobro', 'cuentaBancariaMedsdi'));
     })->name('profesional.cobros');
 
 });
@@ -775,6 +784,10 @@ Route::middleware(['auth', 'rol:cliente', 'phone.otp'])->group(function () {
     Route::post('/cliente/comprar-bono/confirmar-autorizacion', [ClienteBonoController::class, 'confirmarCompraAutorizada'])
         ->middleware('throttle:10,1')
         ->name('cliente.bonos.comprar.confirmar');
+
+    Route::post('/cliente/bonos/notificar-android', [ClienteBonoController::class, 'notificarBonoAndroid'])
+        ->middleware('throttle:10,1')
+        ->name('cliente.bonos.notificar_android');
 
     Route::post('/cliente/agenda/solicitar', [ClienteAgendaController::class, 'solicitar'])
         ->middleware('throttle:10,1')
@@ -883,6 +896,19 @@ Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
     Route::post('/asistente/buscar-reserva', [AsistenteRecepcionController::class, 'buscarReserva'])
         ->middleware('throttle:20,1')
         ->name('asistente.recepcion.buscar');
+
+    Route::prefix('asistente/venta-bonos')->name('asistente.venta_bonos.')->group(function () {
+        Route::get('paciente', [AsistenteVentaBonoController::class, 'paciente'])->name('paciente');
+        Route::get('regiones', [ClienteAgendaExternaController::class, 'regiones'])->name('regiones');
+        Route::get('ciudades', [ClienteAgendaExternaController::class, 'ciudades'])->name('ciudades');
+        Route::get('especialidades', [ClienteAgendaExternaController::class, 'especialidades'])->name('especialidades');
+        Route::get('prestaciones', [ClienteAgendaExternaController::class, 'prestaciones'])->name('prestaciones');
+        Route::post('cotizar', [ClienteAgendaExternaController::class, 'cotizar'])->middleware('throttle:30,1')->name('cotizar');
+        Route::get('profesionales', [ClienteAgendaExternaController::class, 'profesionales'])->name('profesionales');
+        Route::get('dias-laborales', [ClienteAgendaExternaController::class, 'diasLaborales'])->name('dias_laborales');
+        Route::get('horas-disponibles', [ClienteAgendaExternaController::class, 'horasDisponibles'])->name('horas_disponibles');
+        Route::post('agendar', [AsistenteVentaBonoController::class, 'agendar'])->middleware('throttle:10,1')->name('agendar');
+    });
 });
 
 Route::get('/asistente/inicio', [RoleHomeController::class, 'asistente'])

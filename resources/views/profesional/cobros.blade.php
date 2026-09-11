@@ -85,14 +85,126 @@
         </form>
     </div>
 
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            @if(optional($programacionCobro)->activo)
+                @php
+                    $frecuenciasCobro = [
+                        'diario' => 'todos los días',
+                        'semanal' => 'cada 1 semana',
+                        'quincenal' => 'cada 2 semanas',
+                        'mensual' => 'una vez al mes',
+                    ];
+                @endphp
+                <div class="alert alert-success d-flex align-items-start gap-2 mb-4" role="status">
+                    <span aria-hidden="true">✓</span>
+                    <div>
+                        <strong>Ya tienes un cobro automático programado.</strong>
+                        Se ejecutará {{ $frecuenciasCobro[$programacionCobro->frecuencia] ?? $programacionCobro->frecuencia }}.
+                        @if($programacionCobro->proxima_ejecucion_at)
+                            La próxima ejecución será el {{ $programacionCobro->proxima_ejecucion_at->format('d-m-Y') }} a las {{ $programacionCobro->proxima_ejecucion_at->format('H:i') }}.
+                        @endif
+                    </div>
+                </div>
+            @endif
+            <form method="POST" action="{{ route('profesional.cobros.programacion') }}" class="row g-3 align-items-end">
+                @csrf @method('PUT')
+                <div class="col-lg-5">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge {{ optional($programacionCobro)->activo ? 'bg-success' : 'bg-secondary' }} px-3 py-2">
+                            {{ optional($programacionCobro)->activo ? 'Activo' : 'Inactivo' }}
+                        </span>
+                        <div>
+                            <div class="fw-bold fs-5">Programar cobro automático</div>
+                            <div class="text-muted">Envía juntos todos los bonos con validación ✓ OK.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-7 col-lg-4">
+                    <label for="frecuenciaCobro" class="form-label fw-semibold">Frecuencia de cobro</label>
+                    <select class="form-select" id="frecuenciaCobro" name="frecuencia">
+                        <option value="diario" @selected(optional($programacionCobro)->frecuencia === 'diario')>Todos los días</option>
+                        <option value="semanal" @selected(! $programacionCobro || $programacionCobro->frecuencia === 'semanal')>Cada 1 semana</option>
+                        <option value="quincenal" @selected(optional($programacionCobro)->frecuencia === 'quincenal')>Cada 2 semanas</option>
+                        <option value="mensual" @selected(optional($programacionCobro)->frecuencia === 'mensual')>Una vez al mes</option>
+                    </select>
+                </div>
+                <div class="col-sm-5 col-lg-3">
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="accion" value="activar" class="btn btn-primary">Guardar y activar</button>
+                        @if(optional($programacionCobro)->activo)
+                            <button type="submit" name="accion" value="desactivar" class="btn btn-outline-secondary">Desactivar cobro automático</button>
+                        @endif
+                    </div>
+                </div>
+                @if(optional($programacionCobro)->activo && $programacionCobro->proxima_ejecucion_at)
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0 py-2">
+                            <strong>Próxima ejecución:</strong> {{ $programacionCobro->proxima_ejecucion_at->format('d-m-Y H:i') }}
+                            @if($programacionCobro->ultima_ejecucion_at)
+                                · Última ejecución: {{ $programacionCobro->ultimo_resultado }}
+                            @endif
+                        </div>
+                    </div>
+                @endif
+            </form>
+        </div>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">Cobros y estado de pago</h4>
+        <h4 class="mb-0">Historial y estados de pagos</h4>
         <form method="POST" action="{{ route('profesional.cobros.generarRendicion') }}">@csrf<button class="btn btn-primary" @if($pendientesRendicion->isEmpty()) disabled @endif>Enviar a rendición</button></form>
     </div>
 
     <div class="card border-0 shadow-sm overflow-hidden">
+        <div class="card-body border-bottom bg-white">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h5 class="mb-0">Filtros</h5>
+                    <small class="text-muted">Busca por bono y combina estados o fechas.</small>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="limpiarFiltrosPagos">Limpiar filtros</button>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6 col-xl-3">
+                    <label for="filtroPagoBono" class="form-label small fw-semibold">Bono</label>
+                    <input type="search" class="form-control" id="filtroPagoBono" placeholder="Código del bono">
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <label for="filtroEstadoCobro" class="form-label small fw-semibold">Estado de cobro</label>
+                    <select class="form-select" id="filtroEstadoCobro">
+                        <option value="">Todos</option>
+                        <option value="pendiente_auditoria">Pendiente de auditoría</option>
+                        <option value="observado_auditoria">Observado por auditoría</option>
+                        <option value="rechazado_auditoria">Rechazado por auditoría</option>
+                        <option value="pendiente_rendicion">Visto bueno aprobado</option>
+                        <option value="rendido">Rendido</option>
+                        <option value="pagado">Pagado</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <label for="filtroEstadoRendicion" class="form-label small fw-semibold">Rendición</label>
+                    <select class="form-select" id="filtroEstadoRendicion"><option value="">Todas</option><option value="pendiente">Pendiente de envío</option><option value="enviada">Con rendición</option></select>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <label for="filtroEstadoPago" class="form-label small fw-semibold">Pago</label>
+                    <select class="form-select" id="filtroEstadoPago"><option value="">Todos</option><option value="pendiente">Pendiente de pago</option><option value="pagado">Pagado</option></select>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <label for="filtroPagoDesde" class="form-label small fw-semibold">Cobrado desde</label>
+                    <input type="date" class="form-control" id="filtroPagoDesde">
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <label for="filtroPagoHasta" class="form-label small fw-semibold">Cobrado hasta</label>
+                    <input type="date" class="form-control" id="filtroPagoHasta">
+                </div>
+                <div class="col-md-12 col-xl-6 d-flex align-items-end">
+                    <div class="alert alert-light border py-2 px-3 mb-0 w-100" id="resumenFiltrosPagos">Mostrando {{ $cobros->count() }} registros</div>
+                </div>
+            </div>
+        </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0" id="tablaHistorialPagos">
                 <thead class="table-light"><tr><th>Bono</th><th>Monto</th><th>Cobro</th><th>Rendición</th><th>Pago</th><th>Comprobante</th></tr></thead>
                 <tbody>
                 @forelse($cobros as $cobro)
@@ -102,7 +214,12 @@
                             : null;
                         $pagado = $liquidacion && $liquidacion->estado === 'pagada';
                     @endphp
-                    <tr>
+                    <tr class="fila-historial-pago"
+                        data-bono="{{ mb_strtolower(optional($cobro->voucher)->codigo ?: '') }}"
+                        data-cobro="{{ $cobro->estado }}"
+                        data-rendicion="{{ $cobro->rendicion ? 'enviada' : 'pendiente' }}"
+                        data-pago="{{ $pagado ? 'pagado' : 'pendiente' }}"
+                        data-fecha="{{ $cobro->cobrado_en ? \Illuminate\Support\Carbon::parse($cobro->cobrado_en)->format('Y-m-d') : '' }}">
                         <td><strong>{{ optional($cobro->voucher)->codigo ?: '-' }}</strong></td>
                         <td>${{ number_format($cobro->monto_cobrado, 0, ',', '.') }}</td>
                         <td>
@@ -126,8 +243,109 @@
                 @empty
                     <tr><td colspan="6" class="text-center text-muted py-4">Aún no existen cobros solicitados.</td></tr>
                 @endforelse
+                    <tr id="sinResultadosFiltrosPagos" class="d-none"><td colspan="6" class="text-center text-muted py-4">No se encontraron pagos con los filtros seleccionados.</td></tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="text-uppercase text-primary fw-bold small">Liquidaciones</div>
+                <h4 class="mb-1">Cuenta bancaria del profesional</h4>
+                <p class="text-muted mb-0">Administra la cuenta donde recibirás los pagos y liquidaciones.</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary fw-bold" onclick="abrirCuentaBancariaProfesional()">🏦 Mis datos bancarios</button>
+        </div>
+    </div>
+</div>
+
+@php
+    $cuentaBancoProfesional = $cuentaBancariaMedsdi['cuenta'] ?? [];
+    $perfilBancoProfesional = $cuentaBancariaMedsdi['profesional'] ?? [];
+    $erroresBancoProfesional = $errors->getBag('cuentaBancariaProfesional');
+@endphp
+<div class="modal fade" id="modalCuentaBancariaProfesional" tabindex="-1" aria-labelledby="modalCuentaBancariaProfesionalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0" style="border-radius:22px">
+            <div class="modal-header text-white" style="background:linear-gradient(120deg,#1848a1,#31bebe);border-radius:22px 22px 0 0">
+                <div>
+                    <div class="small fw-bold text-uppercase opacity-75">Liquidaciones Med-SDI</div>
+                    <h2 class="h4 modal-title text-white mb-0" id="modalCuentaBancariaProfesionalTitulo">Datos de cuenta bancaria</h2>
+                </div>
+                <button type="button" class="btn-close btn-close-white" onclick="cerrarCuentaBancariaProfesional()" aria-label="Cerrar"></button>
+            </div>
+            <form method="POST" action="{{ route('profesional.cuenta_bancaria.actualizar') }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="cuenta_id" id="profesionalCuentaId" value="{{ old('cuenta_id', $cuentaBancoProfesional['id'] ?? '') }}">
+                <div class="modal-body p-4">
+                    @if(! ($cuentaBancariaMedsdi['ok'] ?? false))
+                        <div class="alert alert-warning">{{ $cuentaBancariaMedsdi['mensaje'] ?? 'No fue posible consultar Med-SDI.' }}</div>
+                    @elseif(!$cuentaBancoProfesional)
+                        <div class="alert alert-info">Aún no tienes una cuenta bancaria registrada. Completa los datos para recibir futuras liquidaciones.</div>
+                    @else
+                        <div class="alert alert-success">Cuenta obtenida desde Med-SDI. Puedes actualizarla a continuación.</div>
+                    @endif
+                    @if($erroresBancoProfesional->any())
+                        <div class="alert alert-danger">{{ $erroresBancoProfesional->first() }}</div>
+                    @endif
+
+                    <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                        <div class="flex-grow-1">
+                            <label class="form-label fw-bold">Cuenta registrada</label>
+                            <select class="form-select" id="profesionalCuentaSelector">
+                                @foreach($cuentaBancariaMedsdi['cuentas'] ?? [] as $cuenta)
+                                    <option value="{{ $cuenta['id'] }}" @selected((string) old('cuenta_id', $cuentaBancoProfesional['id'] ?? '') === (string) $cuenta['id'])>{{ $cuenta['banco'] ?: 'Banco' }} · {{ $cuenta['tipo_cuenta'] }} · terminada en {{ substr((string) $cuenta['numero_cuenta'], -4) }}{{ !empty($cuenta['principal']) ? ' · Principal' : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" id="profesionalNuevaCuenta">+ Nueva cuenta</button>
+                    </div>
+                    <div class="row g-3" id="profesionalCuentaCampos">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Titular</label>
+                            <input class="form-control" name="titular" value="{{ old('titular', $cuentaBancoProfesional['titular'] ?? $perfilBancoProfesional['nombre'] ?? '') }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">RUT del titular</label>
+                            <input class="form-control" value="{{ sdi_formatear_rut($cuentaBancoProfesional['rut'] ?? $perfilBancoProfesional['rut'] ?? '') }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Banco</label>
+                            <select class="form-select" name="banco_id" required>
+                                <option value="">Seleccione</option>
+                                @foreach($cuentaBancariaMedsdi['bancos'] ?? [] as $banco)
+                                    <option value="{{ $banco['id'] }}" @selected((string) old('banco_id', $cuentaBancoProfesional['banco_id'] ?? '') === (string) $banco['id'])>{{ $banco['nombre'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Tipo de cuenta</label>
+                            <select class="form-select" name="tipo_cuenta" required>
+                                <option value="">Seleccione</option>
+                                @foreach($cuentaBancariaMedsdi['tipos_cuenta'] ?? [] as $tipo)
+                                    <option value="{{ $tipo['descripcion'] }}" @selected(old('tipo_cuenta', $cuentaBancoProfesional['tipo_cuenta'] ?? '') === $tipo['descripcion'])>{{ $tipo['descripcion'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Número de cuenta</label>
+                            <input class="form-control" name="numero_cuenta" value="{{ old('numero_cuenta', $cuentaBancoProfesional['numero_cuenta'] ?? '') }}" autocomplete="off" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Correo para notificaciones</label>
+                            <input type="email" class="form-control" name="email" value="{{ old('email', $cuentaBancoProfesional['email'] ?? $perfilBancoProfesional['email'] ?? '') }}" required>
+                        </div>
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">Los datos se almacenan cifrados en Med-SDI y se utilizarán exclusivamente para pagos y liquidaciones.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="cerrarCuentaBancariaProfesional()">Cancelar</button>
+                    <button class="btn btn-primary" @disabled(! ($cuentaBancariaMedsdi['ok'] ?? false))>Guardar cambios</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -181,6 +399,57 @@
 
 <script src="{{ asset('js/plugins/sweetalert.min.js') }}"></script>
 <script>
+function abrirCuentaBancariaProfesional() {
+    const modal = document.getElementById('modalCuentaBancariaProfesional');
+    if (!modal) return;
+    modal.style.display = 'block';
+    modal.classList.add('show');
+    modal.removeAttribute('aria-hidden');
+    modal.setAttribute('aria-modal', 'true');
+    document.body.classList.add('modal-open');
+    if (!document.getElementById('fondoCuentaBancariaProfesional')) {
+        const fondo = document.createElement('div');
+        fondo.id = 'fondoCuentaBancariaProfesional';
+        fondo.className = 'modal-backdrop fade show';
+        fondo.addEventListener('click', cerrarCuentaBancariaProfesional);
+        document.body.appendChild(fondo);
+    }
+}
+
+function cerrarCuentaBancariaProfesional() {
+    const modal = document.getElementById('modalCuentaBancariaProfesional');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.removeAttribute('aria-modal');
+    }
+    document.body.classList.remove('modal-open');
+    document.getElementById('fondoCuentaBancariaProfesional')?.remove();
+}
+
+const cuentasBancariasProfesional = @json($cuentaBancariaMedsdi['cuentas'] ?? []);
+const selectorCuentaProfesional = document.getElementById('profesionalCuentaSelector');
+function cargarCuentaBancariaProfesional(cuenta) {
+    const form = document.querySelector('#modalCuentaBancariaProfesional form');
+    if (!form) return;
+    form.querySelector('[name="cuenta_id"]').value = cuenta?.id || '';
+    form.querySelector('[name="titular"]').value = cuenta?.titular || @json($perfilBancoProfesional['nombre'] ?? '');
+    form.querySelector('[name="banco_id"]').value = cuenta?.banco_id || '';
+    form.querySelector('[name="tipo_cuenta"]').value = cuenta?.tipo_cuenta || '';
+    form.querySelector('[name="numero_cuenta"]').value = cuenta?.numero_cuenta || '';
+    form.querySelector('[name="email"]').value = cuenta?.email || @json($perfilBancoProfesional['email'] ?? '');
+}
+selectorCuentaProfesional?.addEventListener('change', () => cargarCuentaBancariaProfesional(cuentasBancariasProfesional.find(cuenta => String(cuenta.id) === selectorCuentaProfesional.value)));
+document.getElementById('profesionalNuevaCuenta')?.addEventListener('click', () => {
+    if (selectorCuentaProfesional) selectorCuentaProfesional.selectedIndex = -1;
+    cargarCuentaBancariaProfesional(null);
+});
+
+@if(session('abrir_cuenta_bancaria_profesional') || $erroresBancoProfesional->any())
+document.addEventListener('DOMContentLoaded', abrirCuentaBancariaProfesional);
+@endif
+
 (() => {
     const form = document.getElementById('formCobrosSeleccionados');
     const todos = document.getElementById('seleccionarTodosCobros');
@@ -245,6 +514,49 @@
     closeButton?.addEventListener('click', () => { modal.hidden = true; });
     modal.addEventListener('click', (event) => { if (event.target === modal) modal.hidden = true; });
     document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !modal.hidden) modal.hidden = true; });
+})();
+
+(() => {
+    const filtros = {
+        bono: document.getElementById('filtroPagoBono'),
+        cobro: document.getElementById('filtroEstadoCobro'),
+        rendicion: document.getElementById('filtroEstadoRendicion'),
+        pago: document.getElementById('filtroEstadoPago'),
+        desde: document.getElementById('filtroPagoDesde'),
+        hasta: document.getElementById('filtroPagoHasta'),
+    };
+    const filas = [...document.querySelectorAll('.fila-historial-pago')];
+    const resumen = document.getElementById('resumenFiltrosPagos');
+    const sinResultados = document.getElementById('sinResultadosFiltrosPagos');
+
+    const aplicarFiltros = () => {
+        const bono = filtros.bono.value.trim().toLocaleLowerCase('es');
+        let visibles = 0;
+
+        filas.forEach(fila => {
+            const coincide = (!bono || fila.dataset.bono.includes(bono))
+                && (!filtros.cobro.value || fila.dataset.cobro === filtros.cobro.value)
+                && (!filtros.rendicion.value || fila.dataset.rendicion === filtros.rendicion.value)
+                && (!filtros.pago.value || fila.dataset.pago === filtros.pago.value)
+                && (!filtros.desde.value || fila.dataset.fecha >= filtros.desde.value)
+                && (!filtros.hasta.value || fila.dataset.fecha <= filtros.hasta.value);
+            fila.classList.toggle('d-none', !coincide);
+            if (coincide) visibles++;
+        });
+
+        resumen.textContent = `Mostrando ${visibles} de ${filas.length} registros`;
+        sinResultados?.classList.toggle('d-none', visibles !== 0 || filas.length === 0);
+    };
+
+    Object.values(filtros).forEach(control => {
+        control?.addEventListener(control.tagName === 'INPUT' && control.type === 'search' ? 'input' : 'change', aplicarFiltros);
+    });
+    document.getElementById('limpiarFiltrosPagos')?.addEventListener('click', () => {
+        Object.values(filtros).forEach(control => { control.value = ''; });
+        aplicarFiltros();
+        filtros.bono.focus();
+    });
+    aplicarFiltros();
 })();
 </script>
 </body>

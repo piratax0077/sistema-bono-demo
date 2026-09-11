@@ -112,6 +112,92 @@ class AgendaExternaCompraService
         });
     }
 
+    public function comprarComoAsistente(User $asistente, array $seleccion, string $rutIngresado, string $ip): Voucher
+    {
+        return DB::transaction(function () use ($asistente, $seleccion, $rutIngresado, $ip) {
+            $rut = $this->normalizarRut($rutIngresado);
+            if (! $this->rutValido($rut)) {
+                throw new RuntimeException('RUT no válido. Revise el número y el dígito verificador.');
+            }
+
+            $perfilRemoto = $this->medsdiApi->pacientePorRutComoAsistente($rut);
+            if (! ($perfilRemoto['ok'] ?? false) || ! is_array($perfilRemoto['paciente'] ?? null)) {
+                throw new RuntimeException($perfilRemoto['mensaje'] ?? 'No fue posible validar al paciente en Med-SDI.');
+            }
+            $pacienteMedsdi = $perfilRemoto['paciente'];
+            $cliente = User::query()
+                ->where('rol', 'cliente')
+                ->whereRaw("UPPER(REPLACE(REPLACE(REPLACE(rut, '.', ''), '-', ''), ' ', '')) = ?", [$rut])
+                ->first();
+            $persona = PersonaBusqueda::porRut($rut)->first();
+            $fechaHora = Carbon::parse($seleccion['fecha_hora']);
+            if ($fechaHora->isPast()) {
+                throw new RuntimeException('La hora seleccionada ya no está disponible. Elija otro horario.');
+            }
+
+            $cotizacionRemota = $this->medsdiApi->cotizar([
+                'id_profesional' => $seleccion['id_profesional'],
+                'id_lugar_atencion' => $seleccion['id_lugar'],
+                'id_prestacion' => $seleccion['id_prestacion'],
+                'origen_prestacion' => $seleccion['origen_prestacion'],
+            ]);
+            if (! ($cotizacionRemota['ok'] ?? false)) {
+                throw new RuntimeException('No fue posible confirmar la cotización: '.$cotizacionRemota['mensaje']);
+            }
+            $cotizacion = $cotizacionRemota['cotizacion'];
+            $reservaReal = $this->medsdiApi->agendarHoraMedicaComoAsistente([
+                'id_profesional' => $seleccion['id_profesional'],
+                'id_lugar' => $seleccion['id_lugar'],
+                'fecha' => $fechaHora->format('Y-m-d'),
+                'hora' => $fechaHora->format('H:i:s'),
+                'tipo_hora_medica' => (int) ($seleccion['id_especialidad'] ?? 0) === 2 ? 'D' : 'C',
+                'tipo_agenda' => 1,
+            ], $rut);
+            if (config('medsdi.booking_enabled') && ! ($reservaReal['ok'] ?? false)) {
+                throw new RuntimeException('Med-SDI rechazó la reserva: '.$reservaReal['mensaje']);
+            }
+
+            $nombrePaciente = $persona->nombre_completo ?? ($pacienteMedsdi['nombre_completo'] ?? trim(($pacienteMedsdi['nombres'] ?? '').' '.($pacienteMedsdi['apellido_uno'] ?? '').' '.($pacienteMedsdi['apellido_dos'] ?? '')));
+            $valor = (float) ($cotizacion['valor'] ?? 0);
+            $copago = (float) ($cotizacion['copago'] ?? 0);
+            $voucher = Voucher::create([
+                'codigo' => 'BONO-EXT-'.now()->format('ymd').'-'.Str::upper(Str::random(7)),
+                'qr_token' => Str::random(80), 'qr_expira' => now()->addDays(30), 'qr_usado' => false,
+                'cliente_id' => $cliente?->id, 'cliente_rut' => Crypt::encryptString($rut), 'cliente_rut_hash' => hash('sha256', $rut),
+                'cliente_nombre' => $nombrePaciente, 'cliente_email' => $pacienteMedsdi['email'] ?? $cliente?->email,
+                'cliente_telefono' => $pacienteMedsdi['telefono_uno'] ?? $cliente?->telefono,
+                'beneficiario_tipo' => 'titular', 'beneficiario_nombre' => $nombrePaciente,
+                'beneficiario_rut' => Crypt::encryptString($rut), 'beneficiario_rut_hash' => hash_hmac('sha256', $rut, (string) config('app.key')),
+                'tipo_servicio' => $seleccion['prestacion_nombre'], 'valor' => $valor, 'valor_total' => $valor,
+                'copago_usuario' => $copago, 'saldo_veterinario' => max($valor - $copago, 0), 'porcentaje_descuento' => 100,
+                'estado' => 'pendiente_confirmacion', 'fecha_vencimiento' => now()->addDays(30), 'cliente_aceptado_en' => now(), 'otp_validado_at' => now(),
+                'prestador_nombre' => $seleccion['nombre_profesional'], 'prestador_especialidad' => $seleccion['especialidad'] ?? null,
+                'prestador_direccion' => trim(($seleccion['lugar_nombre'] ?? '').' · '.($seleccion['direccion'] ?? '')),
+            ]);
+            $voucher->update(['qr_firma' => hash_hmac('sha256', $voucher->id.$voucher->codigo, config('app.key'))]);
+
+            $horaRemotaId = (int) data_get($reservaReal, 'registros.id', 0);
+            if (config('medsdi.booking_enabled') && $horaRemotaId <= 0) {
+                throw new RuntimeException('Med-SDI reservó la hora, pero no devolvió su identificador.');
+            }
+            $agenda = VoucherAgenda::create([
+                'voucher_id' => $voucher->id, 'cliente_id' => $cliente?->id,
+                'fecha_hora_solicitada' => $fechaHora, 'fecha_hora_confirmada' => null, 'estado' => 'hora_reservada',
+                'observacion' => 'Reserva asistida vía API Med-SDI. Operador local #'.$asistente->id.' · Profesional #'.$seleccion['id_profesional'],
+                'medichile_hora_medica_id' => $horaRemotaId ?: null, 'medichile_estado_id' => $horaRemotaId ? 1 : null,
+                'medichile_sincronizado_at' => $horaRemotaId ? now() : null, 'medichile_sync_error' => null,
+            ]);
+            $voucher->update(['agenda_id' => $agenda->id]);
+            VoucherAuditoria::create([
+                'voucher_id' => $voucher->id, 'accion' => 'agenda_externa_asistente_hora_reservada',
+                'usuario_tipo' => 'asistente', 'usuario_id' => $asistente->id,
+                'descripcion' => 'La asistente reservó la hora Med-SDI #'.$horaRemotaId.' para el paciente '.$nombrePaciente.'.', 'ip' => $ip,
+            ]);
+
+            return $voucher->fresh(['agenda', 'pagos']);
+        });
+    }
+
     private function normalizarRut($rut): string { return strtoupper(preg_replace('/[^0-9K]/i', '', (string) $rut)); }
 
     private function rutValido(string $rut): bool

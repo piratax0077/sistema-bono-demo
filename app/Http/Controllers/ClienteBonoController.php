@@ -183,6 +183,14 @@ class ClienteBonoController extends Controller
             ->take(50)
             ->get();
 
+        $bonosRecientesNotificables = Voucher::query()
+            ->where('cliente_id', $user->id)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->whereNotIn('estado', ['anulado', 'rechazado'])
+            ->latest('id')
+            ->take(20)
+            ->get(['id', 'codigo', 'tipo_servicio', 'estado', 'prestador_nombre', 'created_at']);
+
         $agendas = VoucherAgenda::with(['voucher', 'profesional'])
             ->whereIn('voucher_id', $vouchersAgenda->pluck('id'))
             ->orderBy('fecha_hora_solicitada', 'desc')
@@ -205,12 +213,46 @@ class ClienteBonoController extends Controller
             ,'pacienteMedsdi'
             ,'perfilRemotoMedsdi'
             ,'cuentaBancariaMedsdi'
+            ,'bonosRecientesNotificables'
         ));
+    }
+
+    public function notificarBonoAndroid(Request $request, MedsdiAgendaApiService $medsdiApi)
+    {
+        $data = $request->validate(['voucher_id' => ['required', 'integer']]);
+        $user = $request->user();
+        $voucher = Voucher::query()
+            ->whereKey($data['voucher_id'])
+            ->where('cliente_id', $user->id)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->whereNotIn('estado', ['anulado', 'rechazado'])
+            ->first();
+
+        if (! $voucher) {
+            return response()->json(['ok' => false, 'mensaje' => 'El bono seleccionado no existe, no es reciente o no pertenece al paciente.'], 422);
+        }
+
+        $resultado = $medsdiApi->notificarBonoAdquirido([
+            'codigo' => $voucher->codigo,
+            'servicio' => $voucher->tipo_servicio ?: 'Bono médico',
+            'estado_bono' => $voucher->estado,
+            'profesional' => $voucher->prestador_nombre,
+        ]);
+
+        VoucherAuditoria::create([
+            'voucher_id' => $voucher->id,
+            'accion' => ($resultado['ok'] ?? false) ? 'notificacion_android_bono_solicitada' : 'notificacion_android_bono_fallida',
+            'usuario_tipo' => 'cliente', 'usuario_id' => $user->id,
+            'descripcion' => $resultado['mensaje'] ?? 'Solicitud de notificación Android procesada.', 'ip' => $request->ip(),
+        ]);
+
+        return response()->json($resultado, ($resultado['ok'] ?? false) ? 200 : 422);
     }
 
     public function actualizarCuentaBancaria(Request $request, MedsdiAgendaApiService $medsdiApi)
     {
         $data = $request->validate([
+            'cuenta_id' => ['nullable', 'integer'],
             'titular' => ['required', 'string', 'max:150'],
             'banco_id' => ['required', 'integer'],
             'tipo_cuenta' => ['required', 'string', 'max:100'],

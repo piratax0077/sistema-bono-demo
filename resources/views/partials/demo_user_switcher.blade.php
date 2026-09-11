@@ -59,7 +59,7 @@
             </form>
             <form method="POST" action="{{ route('demo.switch-user', 'profesional') }}">@csrf
                 <input type="hidden" name="destino" value="demo.portal">
-                <button type="submit">Vista general</button>
+                <button type="submit">Historial de QR</button>
             </form>
         </div>
     </details>

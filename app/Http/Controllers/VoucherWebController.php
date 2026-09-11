@@ -612,6 +612,36 @@ public function cobrarSeleccionados(Request $request)
         : back()->with('error', 'Ninguno de los bonos seleccionados estaba disponible para cobro.');
 }
 
+public function guardarProgramacionCobro(Request $request)
+{
+    abort_unless(auth()->user()->rol === 'profesional', 403);
+
+    $data = $request->validate([
+        'accion' => ['required', 'in:activar,desactivar'],
+        'frecuencia' => ['required', 'in:diario,semanal,quincenal,mensual'],
+    ]);
+
+    $activo = $data['accion'] === 'activar';
+
+    $programacion = \App\Models\VoucherCobroProgramacion::updateOrCreate(
+        ['user_id' => auth()->id()],
+        [
+            'frecuencia' => $data['frecuencia'],
+            'activo' => $activo,
+            'proxima_ejecucion_at' => $activo
+                ? \App\Models\VoucherCobroProgramacion::siguienteEjecucion($data['frecuencia'])
+                : null,
+        ]
+    );
+
+    return redirect()->route('profesional.cobros')->with(
+        'ok',
+        $programacion->activo
+            ? 'Programación guardada correctamente. El cobro automático quedó activado. Próxima ejecución: '.$programacion->proxima_ejecucion_at->format('d-m-Y H:i').'.'
+            : 'Cobro automático desactivado.'
+    );
+}
+
 public function generarQrCobro($id)
 {
     $voucher = $this->voucherProfesionalHabilitadoParaCobro($id);

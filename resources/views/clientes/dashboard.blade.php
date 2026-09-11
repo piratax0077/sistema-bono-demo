@@ -515,6 +515,7 @@
             <form method="POST" action="{{ route('paciente.cuenta_bancaria.actualizar') }}">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="cuenta_id" id="pacienteCuentaId" value="{{ old('cuenta_id', $cuentaBanco['id'] ?? '') }}">
                 <div class="modal-body p-4">
                     @if(! $cuentaBancariaMedsdi['ok'])
                         <div class="alert alert-warning">{{ $cuentaBancariaMedsdi['mensaje'] }}</div>
@@ -525,6 +526,17 @@
                     @endif
                     @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
+                    <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                        <div class="flex-grow-1">
+                            <label class="form-label fw-bold">Cuenta registrada</label>
+                            <select class="form-select" id="pacienteCuentaSelector">
+                                @foreach($cuentaBancariaMedsdi['cuentas'] ?? [] as $cuenta)
+                                    <option value="{{ $cuenta['id'] }}" @selected((string) old('cuenta_id', $cuentaBanco['id'] ?? '') === (string) $cuenta['id'])>{{ $cuenta['banco'] ?: 'Banco' }} · {{ $cuenta['tipo_cuenta'] }} · terminada en {{ substr((string) $cuenta['numero_cuenta'], -4) }}{{ !empty($cuenta['principal']) ? ' · Principal' : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" id="pacienteNuevaCuenta">+ Nueva cuenta</button>
+                    </div>
                     <div class="row g-3">
                         <div class="col-md-8"><label class="form-label fw-bold">Titular</label><input class="form-control" name="titular" value="{{ old('titular', $cuentaBanco['titular'] ?? $pacienteCuenta['nombre'] ?? $nombrePacienteReal) }}" required></div>
                         <div class="col-md-4"><label class="form-label fw-bold">RUT del titular</label><input class="form-control" value="{{ sdi_formatear_rut($cuentaBanco['rut'] ?? $pacienteCuenta['rut'] ?? $rutPacienteReal) }}" readonly></div>
@@ -569,6 +581,23 @@ function cerrarCuentaBancaria() {
     document.body.classList.remove('modal-open');
     document.getElementById('fondoCuentaBancaria')?.remove();
 }
+const cuentasBancariasPaciente = @json($cuentaBancariaMedsdi['cuentas'] ?? []);
+const selectorCuentaPaciente = document.getElementById('pacienteCuentaSelector');
+function cargarCuentaBancariaPaciente(cuenta) {
+    const form = document.querySelector('#modalCuentaBancaria form');
+    if (!form) return;
+    form.querySelector('[name="cuenta_id"]').value = cuenta?.id || '';
+    form.querySelector('[name="titular"]').value = cuenta?.titular || @json($pacienteCuenta['nombre'] ?? $nombrePacienteReal);
+    form.querySelector('[name="banco_id"]').value = cuenta?.banco_id || '';
+    form.querySelector('[name="tipo_cuenta"]').value = cuenta?.tipo_cuenta || '';
+    form.querySelector('[name="numero_cuenta"]').value = cuenta?.numero_cuenta || '';
+    form.querySelector('[name="email"]').value = cuenta?.email || @json($pacienteCuenta['email'] ?? $pacienteMedsdi['email'] ?? '');
+}
+selectorCuentaPaciente?.addEventListener('change', () => cargarCuentaBancariaPaciente(cuentasBancariasPaciente.find(cuenta => String(cuenta.id) === selectorCuentaPaciente.value)));
+document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => {
+    if (selectorCuentaPaciente) selectorCuentaPaciente.selectedIndex = -1;
+    cargarCuentaBancariaPaciente(null);
+});
 </script>
 
 <div class="share-modal-backdrop" id="shareVoucherModal" hidden>
@@ -719,7 +748,7 @@ function cerrarCuentaBancaria() {
                     <div class="eyebrow mb-2">2 · Prestación FONASA</div>
                     <label class="form-label small" for="medsdiPrestacionBuscar">Busca por nombre o código</label>
                     <div class="input-group">
-                        <input type="search" id="medsdiPrestacionBuscar" class="form-control" autocomplete="off" placeholder="Ej.: consulta médica o 0101301" @disabled(!$pacienteMedsdi)>
+                        <input type="search" id="medsdiPrestacionBuscar" class="form-control" autocomplete="off" placeholder="Ej.: consulta médica o 0101001" @disabled(!$pacienteMedsdi)>
                         <button type="button" id="medsdiPrestacionBuscarBtn" class="btn btn-info text-white" @disabled(!$pacienteMedsdi)>Buscar</button>
                     </div>
                     <div id="medsdiPrestacionResultados" class="list-group mt-2 d-none" style="max-height:260px;overflow-y:auto"></div>
@@ -821,6 +850,29 @@ function cerrarCuentaBancaria() {
             <p class="mb-2"><strong>Paciente:</strong> {{ $nombrePacienteReal }} · {{ sdi_formatear_rut($rutPacienteReal) }}</p>
             <p class="mb-2"><strong>Canal:</strong> WhatsApp registrado o App Medichile</p>
             <p class="text-muted">En producción se usa un token de un solo uso con vencimiento. En esta demo puede aprobar o rechazar manualmente.</p>
+            <div class="border rounded-4 p-3 mb-4 bg-light">
+                <label for="bonoNotificacionAndroid" class="form-label fw-bold">Notificar un bono recién adquirido</label>
+                <select id="bonoNotificacionAndroid" class="form-select mb-2" @disabled($bonosRecientesNotificables->isEmpty())>
+                    <option value="">Seleccione un bono reciente</option>
+                    @foreach($bonosRecientesNotificables as $bonoReciente)
+                        <option value="{{ $bonoReciente->id }}">
+                            {{ $bonoReciente->codigo }} · {{ $bonoReciente->tipo_servicio ?: 'Bono médico' }} · {{ $bonoReciente->created_at->format('d-m-Y H:i') }}
+                        </option>
+                    @endforeach
+                </select>
+                <div class="d-grid">
+                    <button type="button" id="enviarBonoNotificacionAndroid" class="btn btn-outline-primary" @disabled($bonosRecientesNotificables->isEmpty())>
+                        Enviar notificación a la App Android
+                    </button>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    @if($bonosRecientesNotificables->isEmpty())
+                        No hay bonos adquiridos durante los últimos 30 días.
+                    @else
+                        El aviso se guardará en Med-SDI y se enviará a los dispositivos activos del paciente.
+                    @endif
+                </small>
+            </div>
             <div class="authorization-choice"><button type="button" class="auth-reject" id="rechazarAutorizacionDemo">No autorizar</button><button type="button" class="auth-approve" id="aprobarAutorizacionDemo">Aceptar y autorizar</button></div>
         </div>
     </div></div>
@@ -1004,6 +1056,39 @@ function cerrarCuentaBancaria() {
 <script src="{{ asset('js/plugins/sweetalert.min.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('enviarBonoNotificacionAndroid')?.addEventListener('click', async function () {
+        const selector = document.getElementById('bonoNotificacionAndroid');
+        if (!selector?.value) {
+            if (typeof swal === 'function') swal({title:'Seleccione un bono', text:'Debe seleccionar el bono que desea notificar.', icon:'warning', button:'Aceptar'});
+            return;
+        }
+
+        this.disabled = true;
+        const textoOriginal = this.textContent;
+        this.textContent = 'Enviando notificación...';
+        try {
+            const respuesta = await fetch('{{ route('cliente.bonos.notificar_android') }}', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({voucher_id: selector.value}),
+            });
+            const data = await respuesta.json();
+            if (!respuesta.ok || !data.ok) throw new Error(data.mensaje || 'No fue posible enviar la notificación.');
+            if (typeof swal === 'function') {
+                swal({title:'Notificación procesada', text:data.mensaje, icon:data.dispositivos_notificados > 0 ? 'success' : 'info', button:'Aceptar'});
+            }
+        } catch (error) {
+            if (typeof swal === 'function') swal({title:'No se pudo notificar', text:error.message, icon:'error', button:'Aceptar'});
+        } finally {
+            this.disabled = false;
+            this.textContent = textoOriginal;
+        }
+    });
+
     (() => {
         const modal = document.getElementById('shareVoucherModal');
         if (!modal) return;
@@ -1584,13 +1669,53 @@ document.addEventListener('DOMContentLoaded', function () {
     const medsdiFecha = document.getElementById('medsdiFecha');
     const medsdiDiasAtencion = document.getElementById('medsdiDiasAtencion');
 
-    medsdiFormConfirmar?.addEventListener('submit', event => {
-        if (compraAutorizada) return;
+    medsdiFormConfirmar?.addEventListener('submit', async event => {
         event.preventDefault();
-        compraEsperandoAutorizacion = true;
-        formularioPendienteAutorizacion = medsdiFormConfirmar;
-        ocultarModalDemo(document.getElementById('modalReservaMedsdi'));
-        setTimeout(() => mostrarModalDemo(modalAutorizacion), 120);
+        const boton = medsdiFormConfirmar.querySelector('button[type="submit"]');
+        boton.disabled = true;
+        const textoOriginal = boton.textContent;
+        boton.textContent = 'Confirmando disponibilidad en Med-SDI...';
+
+        try {
+            const response = await fetch(medsdiFormConfirmar.action, {
+                method: 'POST',
+                headers: {'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest'},
+                body: new FormData(medsdiFormConfirmar),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok) throw new Error(data.mensaje || 'Med-SDI no pudo reservar la hora seleccionada.');
+
+            compraEsperandoAutorizacion = true;
+            formularioPendienteAutorizacion = null;
+            const selectorBono = document.getElementById('bonoNotificacionAndroid');
+            if (selectorBono && data.voucher) {
+                const option = new Option(`${data.voucher.codigo} · ${data.voucher.servicio || 'Bono médico'} · recién adquirido`, data.voucher.id, true, true);
+                selectorBono.add(option, 1);
+                selectorBono.disabled = false;
+                document.getElementById('enviarBonoNotificacionAndroid').disabled = false;
+            }
+
+            ocultarModalDemo(document.getElementById('modalReservaMedsdi'));
+            const continuar = () => setTimeout(() => mostrarModalDemo(modalAutorizacion), 120);
+            if (typeof swal === 'function') {
+                swal({
+                    title:'Hora reservada correctamente',
+                    text:`Med-SDI confirmó la hora #${data.voucher?.hora_medsdi_id || ''}. Ahora puede solicitar la autorización o enviar el aviso del bono.`,
+                    icon:'success',
+                    button:'Continuar',
+                }).then(continuar);
+            } else {
+                alert(data.mensaje);
+                continuar();
+            }
+        } catch (error) {
+            if (typeof swal === 'function') {
+                swal({title:'No se pudo tomar la hora', text:error.message, icon:'error', button:'Revisar disponibilidad', dangerMode:true});
+            } else alert(error.message);
+        } finally {
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+        }
     });
 
     function medsdiMostrarAviso(mensaje) {

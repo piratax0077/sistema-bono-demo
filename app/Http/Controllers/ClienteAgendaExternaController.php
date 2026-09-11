@@ -44,7 +44,7 @@ class ClienteAgendaExternaController extends Controller
             'id_profesional' => ['required', 'integer'],
             'id_lugar_atencion' => ['required', 'integer'],
             'id_prestacion' => ['required', 'integer'],
-            'origen_prestacion' => ['required', 'in:codigo_fonasa,examen_medico'],
+            'origen_prestacion' => ['required', 'in:prestacion_fonasa_bono'],
         ]);
 
         return response()->json($api->cotizar($data));
@@ -115,7 +115,7 @@ class ClienteAgendaExternaController extends Controller
             'fecha_hora' => ['required', 'date'],
             'rut' => ['required', 'string', 'max:30'],
             'id_prestacion' => ['required', 'integer'],
-            'origen_prestacion' => ['required', 'in:codigo_fonasa,examen_medico'],
+            'origen_prestacion' => ['required', 'in:prestacion_fonasa_bono'],
             'prestacion_codigo' => ['required', 'string', 'max:40'],
             'prestacion_nombre' => ['required', 'string', 'max:255'],
         ]);
@@ -123,10 +123,28 @@ class ClienteAgendaExternaController extends Controller
         try {
             $voucher = $service->comprar($request->user(), $data, $data['rut'], $request->ip());
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => true,
+                    'mensaje' => 'Med-SDI confirmó que la hora fue reservada correctamente.',
+                    'voucher' => [
+                        'id' => $voucher->id,
+                        'codigo' => $voucher->codigo,
+                        'servicio' => $voucher->tipo_servicio,
+                        'estado' => $voucher->estado,
+                        'hora_medsdi_id' => optional($voucher->agenda)->medichile_hora_medica_id,
+                    ],
+                ]);
+            }
+
             return redirect()->route('cliente.dashboard')
                 ->with('ok', 'Hora reservada en Med-SDI. Ahora debe confirmarla y luego simular el pago.')
                 ->with('agenda_online_voucher_id', $voucher->id);
         } catch (Throwable $exception) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'mensaje' => $exception->getMessage()], 422);
+            }
+
             return redirect()->route('cliente.dashboard')->withInput()->with('error', $exception->getMessage());
         }
     }

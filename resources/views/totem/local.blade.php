@@ -37,12 +37,12 @@
         @php($tab = $soloCompra ? request('tab', 'reserva') : request('tab', 'comprar'))
         <div class="intro">
             <h2>{{ $soloCompra ? 'Paciente Tótem' : 'Autoatención Medichile' }}</h2>
-            <p>{{ $soloCompra ? 'Reserva tu hora o ingresa a la autoatención.' : 'Compra tu bono o avisa tu llegada sin pasar por recepción.' }}</p>
+            <p>{{ $soloCompra ? 'Reserva tu hora o registra tu aviso de llegada.' : 'Compra tu bono o avisa tu llegada sin pasar por recepción.' }}</p>
         </div>
         @if($soloCompra)
             <nav class="tabs" aria-label="Opciones del paciente tótem">
                 <a class="tab {{ $tab === 'reserva' ? 'active' : '' }}" href="{{ route('paciente.totem', ['tab' => 'reserva']) }}">Reserva de hora</a>
-                <a class="tab {{ $tab === 'autoatencion' ? 'active' : '' }}" href="{{ route('paciente.totem', ['tab' => 'autoatencion']) }}">Autoatención</a>
+                <a class="tab {{ $tab === 'autoatencion' ? 'active' : '' }}" href="{{ route('paciente.totem', ['tab' => 'autoatencion']) }}">Aviso de llegada</a>
             </nav>
         @else
             <nav class="tabs" aria-label="Opciones del tótem">
@@ -158,7 +158,7 @@ body.demo-modal-open{overflow:hidden}
                     <div class="eyebrow mb-2">2 · Prestación FONASA</div>
                     <label class="form-label small" for="medsdiPrestacionBuscar">Busca por nombre o código</label>
                     <div class="input-group">
-                        <input type="search" id="medsdiPrestacionBuscar" class="form-control" autocomplete="off" placeholder="Ej.: consulta médica o 0101301" @disabled(!$pacienteMedsdi)>
+                        <input type="search" id="medsdiPrestacionBuscar" class="form-control" autocomplete="off" placeholder="Ej.: consulta médica o 0101001" @disabled(!$pacienteMedsdi)>
                         <button type="button" id="medsdiPrestacionBuscarBtn" class="btn btn-info text-white" @disabled(!$pacienteMedsdi)>Buscar</button>
                     </div>
                     <div id="medsdiPrestacionResultados" class="list-group mt-2 d-none" style="max-height:260px;overflow-y:auto"></div>

@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('security:prune')->everyFiveMinutes()->withoutOverlapping();
+        $schedule->command('cobros:procesar-programados')->hourly()->withoutOverlapping();
     }
 
     /**
