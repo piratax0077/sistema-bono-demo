@@ -267,6 +267,14 @@ class ClienteBonoController extends Controller
             ->with($resultado['ok'] ? 'ok' : 'error', $resultado['mensaje']);
     }
 
+    public function notificarCuentaBancaria(Request $request, MedsdiAgendaApiService $medsdiApi)
+    {
+        $data = $request->validate(['cuenta_id' => ['required', 'integer']]);
+        $resultado = $medsdiApi->notificarCuentaBancariaPaciente((int) $data['cuenta_id']);
+
+        return response()->json($resultado, ($resultado['ok'] ?? false) ? 200 : 422);
+    }
+
     public function agenda()
     {
         abort_unless(config('demo.enabled'), 404);

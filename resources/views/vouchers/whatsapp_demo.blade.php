@@ -26,7 +26,7 @@
                 <a href="{{ route('demo.portal') }}" style="margin-left:18px">Volver al escritorio demo</a>
             @endif
         </div>
-        <span class="demo-badge">SIMULACIÓN · NO ENVÍA MENSAJES REALES</span>
+        <span class="demo-badge">{{ $whatsappCloudEnabled ? 'PRUEBA REAL · WHATSAPP CLOUD API' : 'SIMULACIÓN · NO ENVÍA MENSAJES REALES' }}</span>
     </div>
     <div class="layout">
         <aside class="contacts">
@@ -46,7 +46,7 @@
                 <span aria-label="Seguridad">🔒</span>
             </header>
             <section class="chat-body">
-                <div class="encryption"><span>🔒 Vista protegida de demostración. El mensaje no será enviado.</span></div>
+                <div class="encryption"><span>🔒 {{ $whatsappCloudEnabled ? 'Modo de prueba real: solo puede enviarse al destinatario autorizado.' : 'Vista protegida de demostración. El mensaje no será enviado.' }}</span></div>
                 @if(session('whatsapp_demo_ok'))<div class="flash ok">✓ {{ session('whatsapp_demo_ok') }}</div>@endif
                 @if(session('whatsapp_demo_error'))<div class="flash error">{{ session('whatsapp_demo_error') }}</div>@endif
                 <article class="bubble">
@@ -69,11 +69,11 @@
                     </div>
                     <div class="bubble-footer">{{ now()->format('H:i') }} <span class="checks">✓✓</span></div>
                 </article>
-                <div class="system-note"><strong>Entrega simulada:</strong> la imagen QR está lista para adjuntarse a WhatsApp. Esta pantalla no contacta a ninguna persona.</div>
+                <div class="system-note"><strong>{{ $whatsappCloudEnabled ? 'WhatsApp Cloud API:' : 'Entrega simulada:' }}</strong> {{ $whatsappCloudEnabled ? 'se cargará y enviará la imagen QR al número de prueba autorizado.' : 'la imagen QR está lista para adjuntarse a WhatsApp. Esta pantalla no contacta a ninguna persona.' }}</div>
                 <form class="send-panel" method="POST" action="{{ route('vouchers.qr.whatsappDemo.enviar', $voucher->qr_token) }}">
                     @csrf
                     <input type="hidden" name="destino" value="{{ $destino }}">
-                    <button type="submit" @disabled(!$telefonoDisponible)>Enviar bono por WhatsApp (simulado)</button>
+                    <button type="submit" @disabled(!$telefonoDisponible)>{{ $whatsappCloudEnabled ? 'Enviar por WhatsApp Cloud API' : 'Enviar bono por WhatsApp (simulado)' }}</button>
                     @if(!$telefonoDisponible)<div class="missing">Dato faltante: teléfono WhatsApp de {{ $contacto['nombre'] }}.</div>@endif
                 </form>
             </section>

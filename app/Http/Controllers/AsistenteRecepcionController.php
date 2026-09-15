@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\VoucherAgenda;
 use App\Models\VoucherAuditoria;
 use App\Models\VoucherDeliveryRequest;
+use App\Models\VoucherPago;
 use App\Services\MedichileAgendaService;
 use App\Services\MedsdiAgendaApiService;
 use App\Models\Voucher;
@@ -15,6 +16,65 @@ use Throwable;
 
 class AsistenteRecepcionController extends Controller
 {
+    private function autorizarVoucherBuscado(Request $request, Voucher $voucher): void
+    {
+        $ids = collect($request->session()->get('asistente_recepcion_voucher_ids', []))->map(fn ($id) => (int) $id);
+        abort_unless($ids->contains((int) $voucher->id), 403);
+    }
+
+    public function sincronizarHora(Request $request, Voucher $voucher, MedsdiAgendaApiService $api)
+    {
+        $this->autorizarVoucherBuscado($request, $voucher);
+        $agenda = $voucher->agenda;
+        if (!$agenda?->medichile_hora_medica_id) return back()->with('abrir_recepcion_modal', true)->with('error', 'El bono no tiene una hora Med-SDI vinculada.');
+        $resultado = $api->estadoHoraMedicaComoAsistente((int) $agenda->medichile_hora_medica_id);
+        if (!($resultado['ok'] ?? false)) return back()->with('abrir_recepcion_modal', true)->with('error', $resultado['mensaje'] ?? 'No fue posible consultar la hora.');
+        $idEstado = (int) data_get($resultado, 'registros.id_estado', 0);
+        $estadoAgenda = [1=>'hora_reservada',2=>'hora_confirmada',3=>'hora_rechazada',4=>'paciente_en_espera',5=>'hora_confirmada',6=>'atencion_realizada',7=>'no_asiste'][$idEstado] ?? $agenda->estado;
+        $agenda->update(['estado'=>$estadoAgenda,'medichile_estado_id'=>$idEstado,'medichile_sincronizado_at'=>now(),'medichile_sync_error'=>null]);
+        if ($idEstado === 2 && $voucher->estado === 'pendiente_confirmacion') $voucher->update(['estado'=>'pendiente_pago']);
+        return back()->with('abrir_recepcion_modal', true)->with('ok', 'Estado actualizado desde Med-SDI: '.data_get($resultado, 'registros.texto_estado', $estadoAgenda));
+    }
+
+    public function pagarBono(Request $request, Voucher $voucher)
+    {
+        abort_unless(config('demo.enabled') && config('payments.allow_demo'), 404);
+        $this->autorizarVoucherBuscado($request, $voucher);
+        $data = $request->validate(['metodo_pago'=>['required','in:tarjeta_credito,tarjeta_debito,transferencia,efectivo']]);
+        try {
+            DB::transaction(function () use ($request, $voucher, $data) {
+                $voucher = Voucher::whereKey($voucher->id)->lockForUpdate()->firstOrFail();
+                if ($voucher->estado !== 'pendiente_pago' || !$voucher->agenda || $voucher->agenda->estado !== 'hora_confirmada') throw new \RuntimeException('La hora debe estar confirmada antes de pagar.');
+                if ($voucher->pagos()->where('estado_pago','pagado')->exists()) throw new \RuntimeException('Este bono ya se encuentra pagado.');
+                VoucherPago::create(['voucher_id'=>$voucher->id,'monto_pagado_usuario'=>$voucher->copago_usuario,'metodo_pago'=>$data['metodo_pago'],'estado_pago'=>'pagado','comprobante'=>'PAGO-ASISTENTE-'.now()->format('YmdHis').'-'.$voucher->id]);
+                $voucher->update(['estado'=>'activo']);
+                VoucherAuditoria::create(['voucher_id'=>$voucher->id,'accion'=>'agenda_externa_pago_asistente','usuario_tipo'=>'asistente','usuario_id'=>$request->user()->id,'descripcion'=>'Copago registrado por asistente; bono y QR activados.','ip'=>$request->ip()]);
+            });
+        } catch (\RuntimeException $exception) {
+            return back()->with('abrir_recepcion_modal', true)->with('error', $exception->getMessage());
+        }
+        return back()->with('abrir_recepcion_modal', true)->with('ok', 'Pago aprobado. El bono y su QR están activos.');
+    }
+
+    public function confirmarHora(Request $request, Voucher $voucher, MedsdiAgendaApiService $medsdiApi)
+    {
+        $this->autorizarVoucherBuscado($request, $voucher);
+        $agenda = $voucher->agenda;
+        if (!$agenda?->medichile_hora_medica_id) return back()->with('abrir_recepcion_modal', true)->with('error', 'El bono no tiene una hora Med-SDI vinculada.');
+        if ($voucher->estado !== 'pendiente_confirmacion' || $agenda->estado !== 'hora_reservada') return back()->with('abrir_recepcion_modal', true)->with('error', 'La hora no se encuentra pendiente de confirmación.');
+
+        $resultado = $medsdiApi->confirmarHoraMedicaComoAsistente((int) $agenda->medichile_hora_medica_id);
+        if (!($resultado['ok'] ?? false)) return back()->with('abrir_recepcion_modal', true)->with('error', $resultado['mensaje'] ?? 'Med-SDI no pudo confirmar la hora.');
+
+        DB::transaction(function () use ($request, $voucher, $agenda, $resultado) {
+            $agenda->update(['estado' => 'hora_confirmada','fecha_hora_confirmada' => $agenda->fecha_hora_solicitada,'medichile_estado_id' => (int) data_get($resultado, 'registros.id_estado', 2),'medichile_sincronizado_at' => now(),'medichile_sync_error' => null]);
+            $voucher->update(['estado' => 'pendiente_pago']);
+            VoucherAuditoria::create(['voucher_id'=>$voucher->id,'accion'=>'agenda_externa_hora_confirmada_asistente','usuario_tipo'=>'asistente','usuario_id'=>$request->user()->id,'descripcion'=>'Hora confirmada por asistente desde recepción.','ip'=>$request->ip()]);
+        });
+
+        return back()->with('abrir_recepcion_modal', true)->with('ok', 'Hora confirmada. El bono quedó pendiente de pago.');
+    }
+
     public function buscarReserva(Request $request, MedsdiAgendaApiService $medsdiApi)
     {
         $data = $request->validate([

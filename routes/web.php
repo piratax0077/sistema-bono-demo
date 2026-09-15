@@ -41,6 +41,7 @@ use App\Services\MedsdiAgendaApiService;
 use App\Models\AuditorNotificacion;
 use App\Models\LoginAuditoria;
 use App\Models\IpAutorizada;
+use App\Models\ClienteAutorizacion;
 
 Route::get('/demo/flujo-bono', [DemoFlujoBonoController::class, 'index'])
     ->middleware(['auth', 'rol:admin,auditor,profesional,asistente,cliente'])
@@ -722,6 +723,8 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
     Route::put('/profesional/cuenta-bancaria', [\App\Http\Controllers\ProfesionalCuentaBancariaController::class, 'update'])
         ->middleware('throttle:10,1')
         ->name('profesional.cuenta_bancaria.actualizar');
+    Route::post('/profesional/cuenta-bancaria/notificar', [\App\Http\Controllers\ProfesionalCuentaBancariaController::class, 'notify'])
+        ->middleware('throttle:10,1')->name('profesional.cuenta_bancaria.notificar');
 
     Route::get('/profesional/cobros/{id}/qr/generar',
         [VoucherWebController::class, 'generarQrCobro'])
@@ -774,6 +777,8 @@ Route::middleware(['auth', 'rol:cliente', 'phone.otp'])->group(function () {
         ->name('paciente.escritorio');
     Route::put('/paciente/cuenta-bancaria', [ClienteBonoController::class, 'actualizarCuentaBancaria'])
         ->middleware('throttle:10,1')->name('paciente.cuenta_bancaria.actualizar');
+    Route::post('/paciente/cuenta-bancaria/notificar', [ClienteBonoController::class, 'notificarCuentaBancaria'])
+        ->middleware('throttle:10,1')->name('paciente.cuenta_bancaria.notificar');
     Route::get('/paciente/agenda', [ClienteBonoController::class, 'agenda'])
         ->name('paciente.agenda');
 
@@ -805,10 +810,10 @@ Route::middleware(['auth', 'rol:cliente', 'phone.otp'])->group(function () {
         Route::get('regiones', [ClienteAgendaExternaController::class, 'regiones'])->name('regiones');
         Route::get('ciudades', [ClienteAgendaExternaController::class, 'ciudades'])->name('ciudades');
         Route::get('especialidades', [ClienteAgendaExternaController::class, 'especialidades'])->name('especialidades');
-        Route::get('prestaciones', [ClienteAgendaExternaController::class, 'prestaciones'])->name('prestaciones');
-        Route::post('cotizar', [ClienteAgendaExternaController::class, 'cotizar'])->middleware('throttle:30,1')->name('cotizar');
         Route::get('tipo-especialidades', [ClienteAgendaExternaController::class, 'tipoEspecialidades'])->name('tipo_especialidades');
         Route::get('sub-tipo-especialidades', [ClienteAgendaExternaController::class, 'subTipoEspecialidades'])->name('sub_tipo_especialidades');
+        Route::get('prestaciones', [ClienteAgendaExternaController::class, 'prestaciones'])->name('prestaciones');
+        Route::post('cotizar', [ClienteAgendaExternaController::class, 'cotizar'])->middleware('throttle:30,1')->name('cotizar');
         Route::get('profesionales', [ClienteAgendaExternaController::class, 'profesionales'])->name('profesionales');
         Route::get('dias-laborales', [ClienteAgendaExternaController::class, 'diasLaborales'])->name('dias_laborales');
         Route::get('horas-disponibles', [ClienteAgendaExternaController::class, 'horasDisponibles'])->name('horas_disponibles');
@@ -843,6 +848,18 @@ Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
             ->orderByDesc('atencion_cerrada_at')
             ->get();
         $validacionesPendientes = $atencionesCerradas->count();
+        ClienteAutorizacion::query()
+            ->whereIn('tipo_accion', ['compra_bono_beneficiario', 'compra_bono_asistente'])
+            ->where('estado', 'pendiente')
+            ->whereNotNull('expira_at')
+            ->where('expira_at', '<=', now())
+            ->update(['estado' => 'expirada']);
+        $autorizacionesPaciente = ClienteAutorizacion::query()
+            ->whereIn('tipo_accion', ['compra_bono_beneficiario', 'compra_bono_asistente'])
+            ->latest('id')
+            ->limit(50)
+            ->get();
+        $autorizacionesPendientes = $autorizacionesPaciente->where('estado', 'pendiente')->count();
 
         return view('escritorios.asistente', compact(
             'pendientesRecepcion',
@@ -852,9 +869,56 @@ Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
             'bonosRecepcion',
             'recepcionesPorVoucher',
             'pacientesEnEsperaDetalle',
-            'atencionesCerradas'
+            'atencionesCerradas',
+            'autorizacionesPaciente',
+            'autorizacionesPendientes'
         ));
     })->name('asistente.escritorio');
+
+    Route::post('/asistente/autorizaciones/{autorizacion}/responder', function (Request $request, ClienteAutorizacion $autorizacion) {
+        abort_unless(config('demo.enabled'), 404);
+
+        $data = $request->validate([
+            'respuesta' => ['required', 'in:aprobar,rechazar'],
+        ]);
+
+        abort_unless(
+            in_array($autorizacion->tipo_accion, ['compra_bono_beneficiario', 'compra_bono_asistente'], true),
+            404
+        );
+
+        if ($autorizacion->estado !== 'pendiente') {
+            return back()->with('abrir_autorizaciones_modal', true)
+                ->with('error', 'Esta solicitud ya fue respondida o expiró.');
+        }
+
+        if ($autorizacion->expira_at && now()->gte($autorizacion->expira_at)) {
+            $autorizacion->update(['estado' => 'expirada']);
+
+            return back()->with('abrir_autorizaciones_modal', true)
+                ->with('error', 'La autorización venció. Debe solicitarse nuevamente.');
+        }
+
+        $aprobada = $data['respuesta'] === 'aprobar';
+        $autorizacion->update([
+            'estado' => $aprobada ? 'aprobada' : 'rechazada',
+            'aprobada_at' => $aprobada ? now() : null,
+            'rechazada_at' => $aprobada ? null : now(),
+        ]);
+        \App\Helpers\SecurityLogger::log(
+            'autorizacion_compra_simulada_'.$autorizacion->fresh()->estado,
+            'ClienteAutorizacion',
+            $autorizacion->id,
+            $autorizacion->fresh()->estado,
+            'Respuesta simulada desde el escritorio del asistente',
+            $autorizacion->cliente_id
+        );
+
+        return back()->with('abrir_autorizaciones_modal', true)
+            ->with('ok', $aprobada
+                ? 'Compra autorizada. El flujo que originó la solicitud ya puede continuar.'
+                : 'La compra fue rechazada por el paciente.');
+    })->middleware('throttle:20,1')->name('asistente.autorizaciones.responder');
 
     Route::get('/personas-rapidas/prueba', [PersonaRapidaController::class, 'index'])
         ->name('personas-rapidas.prueba');
@@ -896,12 +960,20 @@ Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
     Route::post('/asistente/buscar-reserva', [AsistenteRecepcionController::class, 'buscarReserva'])
         ->middleware('throttle:20,1')
         ->name('asistente.recepcion.buscar');
+    Route::post('/asistente/bonos/{voucher}/confirmar-hora', [AsistenteRecepcionController::class, 'confirmarHora'])
+        ->middleware('throttle:10,1')->name('asistente.recepcion.confirmar_hora');
+    Route::post('/asistente/bonos/{voucher}/sincronizar-hora', [AsistenteRecepcionController::class, 'sincronizarHora'])
+        ->middleware('throttle:20,1')->name('asistente.recepcion.sincronizar_hora');
+    Route::post('/asistente/bonos/{voucher}/pagar', [AsistenteRecepcionController::class, 'pagarBono'])
+        ->middleware('throttle:10,1')->name('asistente.recepcion.pagar');
 
     Route::prefix('asistente/venta-bonos')->name('asistente.venta_bonos.')->group(function () {
         Route::get('paciente', [AsistenteVentaBonoController::class, 'paciente'])->name('paciente');
         Route::get('regiones', [ClienteAgendaExternaController::class, 'regiones'])->name('regiones');
         Route::get('ciudades', [ClienteAgendaExternaController::class, 'ciudades'])->name('ciudades');
         Route::get('especialidades', [ClienteAgendaExternaController::class, 'especialidades'])->name('especialidades');
+        Route::get('tipo-especialidades', [ClienteAgendaExternaController::class, 'tipoEspecialidades'])->name('tipo_especialidades');
+        Route::get('sub-tipo-especialidades', [ClienteAgendaExternaController::class, 'subTipoEspecialidades'])->name('sub_tipo_especialidades');
         Route::get('prestaciones', [ClienteAgendaExternaController::class, 'prestaciones'])->name('prestaciones');
         Route::post('cotizar', [ClienteAgendaExternaController::class, 'cotizar'])->middleware('throttle:30,1')->name('cotizar');
         Route::get('profesionales', [ClienteAgendaExternaController::class, 'profesionales'])->name('profesionales');
@@ -947,6 +1019,8 @@ Route::get('/voucher/qr/{token}', [VoucherWebController::class, 'qr'])
 Route::get('/voucher/qr/{token}/compartir-datos', [VoucherWebController::class, 'compartirDatos'])
     ->middleware(['auth', 'rol:admin,asistente,vendedor,profesional,cliente', '2fa'])
     ->name('vouchers.compartirDatos');
+Route::post('/voucher/qr/{token}/enviar-email', [VoucherWebController::class, 'enviarEmailQr'])
+    ->middleware(['auth', 'throttle:10,1'])->name('vouchers.qr.enviarEmail');
 
 Route::get('/voucher/qr/{token}/lector-demo', [VoucherWebController::class, 'simularLectorQr'])
     ->middleware(['auth', 'rol:admin,asistente,vendedor,profesional,cliente', '2fa'])

@@ -37,6 +37,7 @@
         .share-result-item:last-child { border-bottom:0; }
         .share-muted { color:#5f7470; font-size:.88rem; }
         .section-title { color:#00796b; font-size:.8rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+        .bank-account-modal .modal-dialog{max-width:980px;margin:1rem auto}.bank-account-modal .modal-content{max-height:calc(100vh - 2rem);overflow:hidden}.bank-account-modal form{display:flex;flex-direction:column;min-height:0;overflow:hidden}.bank-account-modal .modal-body{overflow-y:auto}.bank-account-modal .modal-footer{background:#fff;flex-shrink:0}.bank-account-table{border:1px solid #d9e4f3;border-radius:14px;overflow:hidden}.bank-account-table .table{margin:0}.bank-account-table th{background:#f3f7fd;color:#52647b;font-size:.73rem;letter-spacing:.06em;text-transform:uppercase}.bank-account-table td{font-size:.9rem}.bank-account-number{align-items:center;background:#eaf1ff;border-radius:9px;color:#1848a1;display:inline-flex;font-weight:800;height:30px;justify-content:center;width:30px}@media(max-width:767px){.bank-account-modal .modal-dialog{margin:.5rem}.bank-account-modal .modal-content{max-height:calc(100vh - 1rem)}.bank-account-modal .modal-body{padding:1rem!important}}
         .patient-hero{position:relative;overflow:hidden;padding:34px;border-radius:28px;background:linear-gradient(125deg,#153d8d,#1e69ad 55%,#31bebe);color:#fff;box-shadow:0 24px 58px rgba(24,72,161,.22)}.patient-hero:after{content:"";position:absolute;width:280px;height:280px;border-radius:50%;right:-80px;top:-120px;background:#ffffff18}.patient-hero .eyebrow,.patient-hero h1{color:#fff}.patient-hero p{color:#ddf5ff;max-width:720px}.patient-profile{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.patient-chip{padding:8px 12px;border:1px solid #ffffff44;border-radius:999px;background:#ffffff16;font-size:.85rem;font-weight:700}.journey-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 28px}.journey-action{display:flex;flex-direction:column;min-height:210px;padding:18px;border:1px solid #d2dff1;border-radius:20px;background:#fff;text-decoration:none;color:#263b57;box-shadow:0 12px 30px rgba(24,72,161,.08);transition:.18s}.journey-action:hover{transform:translateY(-3px);border-color:#31bebe;color:#263b57}.journey-action button{border:0;background:transparent;text-align:left;padding:0;color:inherit}.journey-number{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#1848a1;color:#fff;font-weight:900}.journey-icon{font-size:28px;margin:14px 0 8px}.journey-action strong{font-size:1rem}.journey-action small{color:#6d7d91;line-height:1.4;margin-top:7px}.journey-go{margin-top:auto;padding-top:13px;color:#1848a1;font-weight:900;font-size:.82rem}.journey-action form{margin-top:auto}.journey-subactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:10px}.journey-subactions a,.journey-subactions button{padding:7px 9px;border-radius:9px;background:#edf4ff;color:#1848a1;font-size:.72rem;font-weight:850;text-decoration:none}.authorization-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px}.authorization-choice button{padding:16px;border:0;border-radius:14px;font-weight:900}.auth-approve{background:#31bebe;color:#fff}.auth-reject{background:#fff0f1;color:#a8333e}@media(max-width:1050px){.journey-actions{grid-template-columns:repeat(2,1fr)}.journey-action:last-child{grid-column:1/-1}}@media(max-width:620px){.patient-hero{padding:24px}.journey-actions{grid-template-columns:1fr}.journey-action:last-child{grid-column:auto}}
     </style>
 </head>
@@ -505,8 +506,8 @@
     $cuentaBanco = $cuentaBancariaMedsdi['cuenta'] ?? [];
     $pacienteCuenta = $cuentaBancariaMedsdi['paciente'] ?? [];
 @endphp
-<div class="modal fade" id="modalCuentaBancaria" tabindex="-1" aria-labelledby="modalCuentaBancariaTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal fade bank-account-modal" id="modalCuentaBancaria" tabindex="-1" aria-labelledby="modalCuentaBancariaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0" style="border-radius:22px">
             <div class="modal-header text-white" style="background:linear-gradient(120deg,#1848a1,#31bebe);border-radius:22px 22px 0 0">
                 <div><div class="small fw-bold text-uppercase opacity-75">Devoluciones Med-SDI</div><h2 class="h4 modal-title text-white mb-0" id="modalCuentaBancariaTitulo">Datos de cuenta bancaria</h2></div>
@@ -519,6 +520,8 @@
                 <div class="modal-body p-4">
                     @if(! $cuentaBancariaMedsdi['ok'])
                         <div class="alert alert-warning">{{ $cuentaBancariaMedsdi['mensaje'] }}</div>
+                    @elseif(collect($cuentaBancariaMedsdi['cuentas'] ?? [])->contains(fn ($cuenta) => blank($cuenta['banco'] ?? null) || blank($cuenta['numero_cuenta'] ?? null)))
+                        <div class="alert alert-warning">Hay cuentas históricas cuyos datos protegidos no pudieron recuperarse. Revisa la clave de cifrado histórica de Med-SDI antes de editarlas.</div>
                     @elseif(!$cuentaBanco)
                         <div class="alert alert-info">Aún no tienes una cuenta bancaria registrada. Completa los datos para futuras devoluciones.</div>
                     @else
@@ -526,16 +529,27 @@
                     @endif
                     @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
-                    <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
-                        <div class="flex-grow-1">
-                            <label class="form-label fw-bold">Cuenta registrada</label>
-                            <select class="form-select" id="pacienteCuentaSelector">
-                                @foreach($cuentaBancariaMedsdi['cuentas'] ?? [] as $cuenta)
-                                    <option value="{{ $cuenta['id'] }}" @selected((string) old('cuenta_id', $cuentaBanco['id'] ?? '') === (string) $cuenta['id'])>{{ $cuenta['banco'] ?: 'Banco' }} · {{ $cuenta['tipo_cuenta'] }} · terminada en {{ substr((string) $cuenta['numero_cuenta'], -4) }}{{ !empty($cuenta['principal']) ? ' · Principal' : '' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <button type="button" class="btn btn-outline-primary" id="pacienteNuevaCuenta">+ Nueva cuenta</button>
+                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                        <div><strong>Cuentas registradas</strong><span class="badge bg-light text-dark border ms-2">{{ count($cuentaBancariaMedsdi['cuentas'] ?? []) }}</span></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="pacienteNuevaCuenta">+ Nueva cuenta</button>
+                    </div>
+                    <div class="bank-account-table table-responsive mb-4">
+                        <table class="table table-hover align-middle">
+                            <thead><tr><th>#</th><th>Banco y cuenta</th><th>Tipo</th><th>Estado</th><th class="text-end">Acción</th></tr></thead>
+                            <tbody>
+                            @forelse($cuentaBancariaMedsdi['cuentas'] ?? [] as $indice => $cuenta)
+                                <tr>
+                                    <td><span class="bank-account-number">{{ $cuenta['numero'] ?? $indice + 1 }}</span></td>
+                                    <td><strong>{{ $cuenta['banco'] ?: 'Banco no disponible' }}</strong><div class="small text-muted">{{ filled($cuenta['numero_cuenta'] ?? null) ? 'Terminada en '.substr((string) $cuenta['numero_cuenta'], -4) : 'Número no disponible' }}</div></td>
+                                    <td>{{ $cuenta['tipo_cuenta'] ?: 'No disponible' }}</td>
+                                    <td>@if(!empty($cuenta['principal']))<span class="badge bg-success">Principal</span>@else<span class="badge bg-secondary">Secundaria</span>@endif</td>
+                                    <td class="text-end"><div class="d-inline-flex gap-1"><button type="button" class="btn btn-sm btn-outline-info paciente-notificar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Notificar</button><button type="button" class="btn btn-sm btn-outline-primary paciente-editar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Editar</button></div></td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="text-center text-muted py-3">No hay cuentas bancarias registradas.</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-8"><label class="form-label fw-bold">Titular</label><input class="form-control" name="titular" value="{{ old('titular', $cuentaBanco['titular'] ?? $pacienteCuenta['nombre'] ?? $nombrePacienteReal) }}" required></div>
@@ -545,7 +559,7 @@
                         <div class="col-md-6"><label class="form-label fw-bold">Número de cuenta</label><input class="form-control" name="numero_cuenta" value="{{ old('numero_cuenta', $cuentaBanco['numero_cuenta'] ?? '') }}" autocomplete="off" required></div>
                         <div class="col-md-6"><label class="form-label fw-bold">Correo para notificaciones</label><input type="email" class="form-control" name="email" value="{{ old('email', $cuentaBanco['email'] ?? $pacienteCuenta['email'] ?? $pacienteMedsdi['email'] ?? '') }}" required></div>
                     </div>
-                    <p class="small text-muted mt-3 mb-0">Estos datos se almacenan cifrados en Med-SDI y se utilizarán exclusivamente para gestionar devoluciones.</p>
+                    <p class="small text-muted mt-3 mb-0">Estos datos se almacenan cifrados en Med-SDI. Al guardar una cuenta, quedará como principal y las demás pasarán a secundarias.</p>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" onclick="cerrarCuentaBancaria()">Cancelar</button><button class="btn btn-primary" @disabled(! $cuentaBancariaMedsdi['ok'])>Guardar cambios</button></div>
             </form>
@@ -582,7 +596,6 @@ function cerrarCuentaBancaria() {
     document.getElementById('fondoCuentaBancaria')?.remove();
 }
 const cuentasBancariasPaciente = @json($cuentaBancariaMedsdi['cuentas'] ?? []);
-const selectorCuentaPaciente = document.getElementById('pacienteCuentaSelector');
 function cargarCuentaBancariaPaciente(cuenta) {
     const form = document.querySelector('#modalCuentaBancaria form');
     if (!form) return;
@@ -593,9 +606,23 @@ function cargarCuentaBancariaPaciente(cuenta) {
     form.querySelector('[name="numero_cuenta"]').value = cuenta?.numero_cuenta || '';
     form.querySelector('[name="email"]').value = cuenta?.email || @json($pacienteCuenta['email'] ?? $pacienteMedsdi['email'] ?? '');
 }
-selectorCuentaPaciente?.addEventListener('change', () => cargarCuentaBancariaPaciente(cuentasBancariasPaciente.find(cuenta => String(cuenta.id) === selectorCuentaPaciente.value)));
+document.querySelectorAll('.paciente-editar-cuenta').forEach(button => button.addEventListener('click', () => cargarCuentaBancariaPaciente(cuentasBancariasPaciente.find(cuenta => String(cuenta.id) === button.dataset.cuentaId))));
+document.querySelectorAll('.paciente-notificar-cuenta').forEach(button => button.addEventListener('click', async () => {
+    const confirmado = typeof swal === 'function' ? await swal({title:'¿Notificar al paciente?',text:'Se enviará un aviso sobre sus datos bancarios a la App Android.',icon:'warning',buttons:['Cancelar','Notificar']}) : confirm('¿Enviar notificación Android?');
+    if (!confirmado) return;
+    button.disabled = true;
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('#modalCuentaBancaria input[name="_token"]')?.value;
+        if (!csrf) throw new Error('No se encontró el token de seguridad. Recarga la página e inténtalo nuevamente.');
+        const response = await fetch('{{ route('paciente.cuenta_bancaria.notificar') }}', {method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({cuenta_id:button.dataset.cuentaId})});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || 'No fue posible enviar la notificación.');
+        if (typeof swal === 'function') await swal({title:'Notificación procesada',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
+    } catch (error) {
+        if (typeof swal === 'function') await swal({title:'No se pudo notificar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
+    } finally { button.disabled = false; }
+}));
 document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => {
-    if (selectorCuentaPaciente) selectorCuentaPaciente.selectedIndex = -1;
     cargarCuentaBancariaPaciente(null);
 });
 </script>
@@ -836,7 +863,7 @@ document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => 
                         <div class="text-danger small mt-1">{{ data_get($perfilRemotoMedsdi, 'mensaje', 'No fue posible obtener el paciente autenticado.') }}</div>
                     @endif
                 </div>
-                <button class="btn btn-success w-100" @disabled(!$pacienteMedsdi)>Confirmar reserva y generar bono</button>
+                <button type="submit" class="btn btn-success w-100" @disabled(!$pacienteMedsdi)>Confirmar reserva y generar bono</button>
             </form>
         </div>
     </div></div>
@@ -1163,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         };
 
-        const createActionItem = ({ title, detail, url, buttonText, copyImage, disabled }) => {
+        const createActionItem = ({ title, detail, url, buttonText, copyImage, disabled, onClick }) => {
             const item = document.createElement('div');
             item.className = 'share-result-item';
             const text = document.createElement('div');
@@ -1175,6 +1202,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 badge.className = 'badge text-bg-warning';
                 badge.textContent = 'Dato faltante';
                 item.appendChild(badge);
+                return item;
+            }
+
+            if (onClick) {
+                const action = document.createElement('button');
+                action.type = 'button';
+                action.className = 'btn btn-sm btn-success';
+                action.textContent = buttonText;
+                action.addEventListener('click', () => onClick(action));
+                item.appendChild(action);
                 return item;
             }
 
@@ -1196,6 +1233,27 @@ document.addEventListener('DOMContentLoaded', function () {
             copyButton.addEventListener('click', () => (copyImage ? copyQrImageToClipboard() : copyTextToClipboard(detail)));
             item.appendChild(copyButton);
             return item;
+        };
+
+        const sendEmail = async (recipient, message, button) => {
+            const original = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Enviando...';
+            try {
+                const response = await fetch(currentData.email_send_url, {
+                    method: 'POST',
+                    headers: {'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},
+                    body: JSON.stringify({email:recipient.email, subject:currentData.subject, message}),
+                });
+                const data = await response.json();
+                if (!response.ok || !data.ok) throw new Error(data.mensaje || 'No fue posible enviar el email.');
+                if (typeof swal === 'function') await swal({title:'Email enviado',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
+            } catch (error) {
+                if (typeof swal === 'function') await swal({title:'No se pudo enviar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = original;
+            }
         };
 
         const prepareShares = () => {
@@ -1247,8 +1305,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         resultsList.appendChild(createActionItem({
                             title: `${recipient.label} · Email`,
                             detail: `Enviar a ${recipient.email}`,
-                            url: `mailto:${recipient.email}?subject=${encodeURIComponent(currentData.subject)}&body=${encodeURIComponent(message)}`,
-                            buttonText: 'Abrir email',
+                            onClick: button => sendEmail(recipient, message, button),
+                            buttonText: 'Enviar email',
                         }));
                     }
                 });
@@ -1672,6 +1730,7 @@ document.addEventListener('DOMContentLoaded', function () {
     medsdiFormConfirmar?.addEventListener('submit', async event => {
         event.preventDefault();
         const boton = medsdiFormConfirmar.querySelector('button[type="submit"]');
+        if (!boton) return;
         boton.disabled = true;
         const textoOriginal = boton.textContent;
         boton.textContent = 'Confirmando disponibilidad en Med-SDI...';

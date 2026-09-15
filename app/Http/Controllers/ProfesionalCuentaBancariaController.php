@@ -24,4 +24,12 @@ class ProfesionalCuentaBancariaController extends Controller
             ->with('abrir_cuenta_bancaria_profesional', true)
             ->with($resultado['ok'] ? 'ok' : 'error', $resultado['mensaje']);
     }
+
+    public function notify(Request $request, MedsdiAgendaApiService $medsdiApi)
+    {
+        $data = $request->validate(['cuenta_id' => ['required', 'integer']]);
+        $resultado = $medsdiApi->notificarCuentaBancariaProfesional((int) $data['cuenta_id']);
+
+        return response()->json($resultado, ($resultado['ok'] ?? false) ? 200 : 422);
+    }
 }

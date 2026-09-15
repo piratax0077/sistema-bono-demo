@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cobros Profesional</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -14,6 +15,7 @@
         .cobro-modal .data-value { font-weight:650; margin-bottom:1rem; }
         .cobro-modal .security-box { background:#e8f8f2; border:1px solid #b8e3d3; border-radius:14px; }
         .qr-action{display:inline-grid!important;place-items:center;width:46px;height:46px;padding:8px!important}.qr-action svg{width:25px;height:25px}
+        .bank-account-modal .modal-dialog{max-width:980px;margin:1rem auto}.bank-account-modal .modal-content{max-height:calc(100vh - 2rem);overflow:hidden}.bank-account-modal form{display:flex;flex-direction:column;min-height:0;overflow:hidden}.bank-account-modal .modal-body{overflow-y:auto}.bank-account-modal .modal-footer{background:#fff;flex-shrink:0}.bank-account-table{border:1px solid #d9e4f3;border-radius:14px;overflow:hidden}.bank-account-table .table{margin:0}.bank-account-table th{background:#f3f7fd;color:#52647b;font-size:.73rem;letter-spacing:.06em;text-transform:uppercase}.bank-account-table td{font-size:.9rem}.bank-account-number{align-items:center;background:#eaf1ff;border-radius:9px;color:#1848a1;display:inline-flex;font-weight:800;height:30px;justify-content:center;width:30px}@media(max-width:767px){.bank-account-modal .modal-dialog{margin:.5rem}.bank-account-modal .modal-content{max-height:calc(100vh - 1rem)}.bank-account-modal .modal-body{padding:1rem!important}}
     </style>
 </head>
 <body style="background:#f4f7fb;">
@@ -266,8 +268,8 @@
     $perfilBancoProfesional = $cuentaBancariaMedsdi['profesional'] ?? [];
     $erroresBancoProfesional = $errors->getBag('cuentaBancariaProfesional');
 @endphp
-<div class="modal fade" id="modalCuentaBancariaProfesional" tabindex="-1" aria-labelledby="modalCuentaBancariaProfesionalTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal fade bank-account-modal" id="modalCuentaBancariaProfesional" tabindex="-1" aria-labelledby="modalCuentaBancariaProfesionalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0" style="border-radius:22px">
             <div class="modal-header text-white" style="background:linear-gradient(120deg,#1848a1,#31bebe);border-radius:22px 22px 0 0">
                 <div>
@@ -283,6 +285,8 @@
                 <div class="modal-body p-4">
                     @if(! ($cuentaBancariaMedsdi['ok'] ?? false))
                         <div class="alert alert-warning">{{ $cuentaBancariaMedsdi['mensaje'] ?? 'No fue posible consultar Med-SDI.' }}</div>
+                    @elseif(collect($cuentaBancariaMedsdi['cuentas'] ?? [])->contains(fn ($cuenta) => blank($cuenta['banco'] ?? null) || blank($cuenta['numero_cuenta'] ?? null)))
+                        <div class="alert alert-warning">Hay cuentas históricas cuyos datos protegidos no pudieron recuperarse. Revisa la clave de cifrado histórica de Med-SDI antes de editarlas.</div>
                     @elseif(!$cuentaBancoProfesional)
                         <div class="alert alert-info">Aún no tienes una cuenta bancaria registrada. Completa los datos para recibir futuras liquidaciones.</div>
                     @else
@@ -292,16 +296,27 @@
                         <div class="alert alert-danger">{{ $erroresBancoProfesional->first() }}</div>
                     @endif
 
-                    <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
-                        <div class="flex-grow-1">
-                            <label class="form-label fw-bold">Cuenta registrada</label>
-                            <select class="form-select" id="profesionalCuentaSelector">
-                                @foreach($cuentaBancariaMedsdi['cuentas'] ?? [] as $cuenta)
-                                    <option value="{{ $cuenta['id'] }}" @selected((string) old('cuenta_id', $cuentaBancoProfesional['id'] ?? '') === (string) $cuenta['id'])>{{ $cuenta['banco'] ?: 'Banco' }} · {{ $cuenta['tipo_cuenta'] }} · terminada en {{ substr((string) $cuenta['numero_cuenta'], -4) }}{{ !empty($cuenta['principal']) ? ' · Principal' : '' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <button type="button" class="btn btn-outline-primary" id="profesionalNuevaCuenta">+ Nueva cuenta</button>
+                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                        <div><strong>Cuentas registradas</strong><span class="badge bg-light text-dark border ms-2">{{ count($cuentaBancariaMedsdi['cuentas'] ?? []) }}</span></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="profesionalNuevaCuenta">+ Nueva cuenta</button>
+                    </div>
+                    <div class="bank-account-table table-responsive mb-4">
+                        <table class="table table-hover align-middle">
+                            <thead><tr><th>#</th><th>Banco y cuenta</th><th>Tipo</th><th>Estado</th><th class="text-end">Acción</th></tr></thead>
+                            <tbody>
+                            @forelse($cuentaBancariaMedsdi['cuentas'] ?? [] as $indice => $cuenta)
+                                <tr>
+                                    <td><span class="bank-account-number">{{ $cuenta['numero'] ?? $indice + 1 }}</span></td>
+                                    <td><strong>{{ $cuenta['banco'] ?: 'Banco no disponible' }}</strong><div class="small text-muted">{{ filled($cuenta['numero_cuenta'] ?? null) ? 'Terminada en '.substr((string) $cuenta['numero_cuenta'], -4) : 'Número no disponible' }}</div></td>
+                                    <td>{{ $cuenta['tipo_cuenta'] ?: 'No disponible' }}</td>
+                                    <td>@if(!empty($cuenta['principal']))<span class="badge bg-success">Principal</span>@else<span class="badge bg-secondary">Secundaria</span>@endif</td>
+                                    <td class="text-end"><div class="d-inline-flex gap-1"><button type="button" class="btn btn-sm btn-outline-info profesional-notificar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Notificar</button><button type="button" class="btn btn-sm btn-outline-primary profesional-editar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Editar</button></div></td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="text-center text-muted py-3">No hay cuentas bancarias registradas.</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
                     </div>
                     <div class="row g-3" id="profesionalCuentaCampos">
                         <div class="col-md-8">
@@ -339,7 +354,7 @@
                             <input type="email" class="form-control" name="email" value="{{ old('email', $cuentaBancoProfesional['email'] ?? $perfilBancoProfesional['email'] ?? '') }}" required>
                         </div>
                     </div>
-                    <p class="small text-muted mt-3 mb-0">Los datos se almacenan cifrados en Med-SDI y se utilizarán exclusivamente para pagos y liquidaciones.</p>
+                    <p class="small text-muted mt-3 mb-0">Los datos se almacenan cifrados en Med-SDI. Al guardar una cuenta, quedará como principal y las demás pasarán a secundarias.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" onclick="cerrarCuentaBancariaProfesional()">Cancelar</button>
@@ -429,7 +444,6 @@ function cerrarCuentaBancariaProfesional() {
 }
 
 const cuentasBancariasProfesional = @json($cuentaBancariaMedsdi['cuentas'] ?? []);
-const selectorCuentaProfesional = document.getElementById('profesionalCuentaSelector');
 function cargarCuentaBancariaProfesional(cuenta) {
     const form = document.querySelector('#modalCuentaBancariaProfesional form');
     if (!form) return;
@@ -440,9 +454,23 @@ function cargarCuentaBancariaProfesional(cuenta) {
     form.querySelector('[name="numero_cuenta"]').value = cuenta?.numero_cuenta || '';
     form.querySelector('[name="email"]').value = cuenta?.email || @json($perfilBancoProfesional['email'] ?? '');
 }
-selectorCuentaProfesional?.addEventListener('change', () => cargarCuentaBancariaProfesional(cuentasBancariasProfesional.find(cuenta => String(cuenta.id) === selectorCuentaProfesional.value)));
+document.querySelectorAll('.profesional-editar-cuenta').forEach(button => button.addEventListener('click', () => cargarCuentaBancariaProfesional(cuentasBancariasProfesional.find(cuenta => String(cuenta.id) === button.dataset.cuentaId))));
+document.querySelectorAll('.profesional-notificar-cuenta').forEach(button => button.addEventListener('click', async () => {
+    const confirmado = typeof swal === 'function' ? await swal({title:'¿Notificar al profesional?',text:'Se enviará un aviso sobre sus datos bancarios a la App Android.',icon:'warning',buttons:['Cancelar','Notificar']}) : confirm('¿Enviar notificación Android?');
+    if (!confirmado) return;
+    button.disabled = true;
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('#modalCuentaBancariaProfesional input[name="_token"]')?.value;
+        if (!csrf) throw new Error('No se encontró el token de seguridad. Recarga la página e inténtalo nuevamente.');
+        const response = await fetch('{{ route('profesional.cuenta_bancaria.notificar') }}', {method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({cuenta_id:button.dataset.cuentaId})});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || 'No fue posible enviar la notificación.');
+        if (typeof swal === 'function') await swal({title:'Notificación procesada',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
+    } catch (error) {
+        if (typeof swal === 'function') await swal({title:'No se pudo notificar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
+    } finally { button.disabled = false; }
+}));
 document.getElementById('profesionalNuevaCuenta')?.addEventListener('click', () => {
-    if (selectorCuentaProfesional) selectorCuentaProfesional.selectedIndex = -1;
     cargarCuentaBancariaProfesional(null);
 });
 

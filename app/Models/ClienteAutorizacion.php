@@ -31,5 +31,8 @@ class ClienteAutorizacion extends Model
 
     protected $casts = [
         'metadata' => 'array',
+        'expira_at' => 'datetime',
+        'aprobada_at' => 'datetime',
+        'rechazada_at' => 'datetime',
     ];
 }

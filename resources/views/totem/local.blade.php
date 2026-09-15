@@ -246,7 +246,7 @@ body.demo-modal-open{overflow:hidden}
                         <div class="text-danger small mt-1">{{ data_get($perfilRemotoMedsdi, 'mensaje', 'No fue posible obtener el paciente autenticado.') }}</div>
                     @endif
                 </div>
-                <button class="btn btn-success w-100" @disabled(!$pacienteMedsdi)>Confirmar reserva y generar bono</button>
+                <button type="submit" class="btn btn-success w-100" @disabled(!$pacienteMedsdi)>Confirmar reserva y generar bono</button>
             </form>
         </div>
     </div></div>

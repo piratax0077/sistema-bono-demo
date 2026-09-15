@@ -888,10 +888,26 @@ private function voucherProfesionalHabilitadoParaCobro($id): Voucher
             'qr_image_download_name' => 'qr-medichile-'.$voucher->codigo.'.png',
             'whatsapp_demo_url' => route('vouchers.qr.whatsappDemo', $voucher->qr_token),
             'qr_page_url' => $qrUrl,
+            'email_send_url' => route('vouchers.qr.enviarEmail', $voucher->qr_token),
         ]);
     }
 
-    public function whatsappDemo(Request $request, $token, VoucherQrPayloadService $qrPayloadService, MedichileQrImageService $qrImageService)
+    public function enviarEmailQr(Request $request, $token, MedichileQrImageService $qrImageService, \App\Services\MedsdiAgendaApiService $medsdiApi)
+    {
+        $data = $request->validate(['email'=>['required','email','max:190'],'subject'=>['required','string','max:190'],'message'=>['required','string','max:3000']]);
+        $voucher = Voucher::where('qr_token', $token)->firstOrFail();
+        if ($request->user()->rol === 'cliente') abort_unless((int)$voucher->cliente_id === (int)$request->user()->id, 403);
+        abort_unless($voucher->estado === 'activo', 404);
+        $qr = $qrImageService->ensureForVoucher($voucher, route('vouchers.qr', $voucher->qr_token));
+        $resultado = $medsdiApi->enviarQrPorEmail(['email'=>$data['email'],'subject'=>$data['subject'],'message'=>$data['message'],'voucher_code'=>$voucher->codigo], $qr['path']);
+        if (!($resultado['ok'] ?? false)) return response()->json($resultado, 422);
+
+        VoucherDeliveryRequest::create(['voucher_id'=>$voucher->id,'cliente_user_id'=>$voucher->cliente_id,'canal'=>'email_backend_medsdi','destino_tipo'=>'Email QR','destino'=>$data['email'],'estado'=>'sent','mensaje'=>'QR enviado por el backend Med-SDI.','action_url'=>route('vouchers.qr',$voucher->qr_token),'enviado_en'=>now(),'metadata'=>['backend'=>'medsdi-laravel13']]);
+        VoucherAuditoria::create(['voucher_id'=>$voucher->id,'accion'=>'qr_email_backend_enviado','usuario_tipo'=>$request->user()->rol,'usuario_id'=>$request->user()->id,'descripcion'=>'QR enviado por email a '.$data['email'].' mediante Med-SDI.','ip'=>$request->ip()]);
+        return response()->json($resultado);
+    }
+
+    public function whatsappDemo(Request $request, $token, VoucherQrPayloadService $qrPayloadService, MedichileQrImageService $qrImageService, \App\Services\WhatsAppCloudApiService $whatsapp)
     {
         $voucher = Voucher::where('qr_token', $token)->firstOrFail();
         $user = $request->user();
@@ -925,10 +941,11 @@ private function voucherProfesionalHabilitadoParaCobro($id): Voucher
         ];
         $contacto = $contactos[$destino];
 
-        return view('vouchers.whatsapp_demo', compact('voucher', 'qrPayload', 'qrImage', 'destino', 'contactos', 'contacto'));
+        $whatsappCloudEnabled = $whatsapp->enabled();
+        return view('vouchers.whatsapp_demo', compact('voucher', 'qrPayload', 'qrImage', 'destino', 'contactos', 'contacto', 'whatsappCloudEnabled'));
     }
 
-    public function enviarWhatsappDemo(Request $request, $token, VoucherQrPayloadService $qrPayloadService)
+    public function enviarWhatsappDemo(Request $request, $token, VoucherQrPayloadService $qrPayloadService, MedichileQrImageService $qrImageService, \App\Services\WhatsAppCloudApiService $whatsapp)
     {
         $data = $request->validate(['destino' => 'required|in:titular,profesional,centro-medico']);
         $voucher = Voucher::where('qr_token', $token)->firstOrFail();
@@ -951,29 +968,36 @@ private function voucherProfesionalHabilitadoParaCobro($id): Voucher
             return back()->with('whatsapp_demo_error', 'Falta teléfono WhatsApp del '.$destinatario['nombre'].'.');
         }
 
+        $envio = ['ok'=>true,'mensaje'=>'Envío simulado registrado.'];
+        if ($whatsapp->enabled()) {
+            $qrImage = $qrImageService->ensureForVoucher($voucher, route('vouchers.qr', $voucher->qr_token));
+            $envio = $whatsapp->sendImage($telefono, $qrImage['path'], 'Medichile · Bono '.$voucher->codigo."\n".($voucher->tipo_servicio ?: 'Bono médico').' · Presente este QR en recepción.');
+            if (!$envio['ok']) return back()->withInput()->with('whatsapp_demo_error', $envio['mensaje']);
+        }
+
         VoucherDeliveryRequest::create([
             'voucher_id' => $voucher->id,
             'cliente_user_id' => $voucher->cliente_id,
             'canal' => 'whatsapp_demo',
             'destino_tipo' => $destinatario['nombre'],
             'destino' => '+'.$telefono,
-            'estado' => 'sent_demo',
-            'mensaje' => 'Simulación de envío WhatsApp del bono '.$voucher->codigo.' con imagen QR.',
+            'estado' => $whatsapp->enabled() ? 'sent' : 'sent_demo',
+            'mensaje' => $whatsapp->enabled() ? 'Envío WhatsApp Cloud API del bono '.$voucher->codigo.' con imagen QR.' : 'Simulación de envío WhatsApp del bono '.$voucher->codigo.' con imagen QR.',
             'action_url' => route('vouchers.qr', $voucher->qr_token),
             'enviado_en' => now(),
-            'metadata' => ['simulacion' => true, 'destino' => $data['destino'], 'no_envio_real' => true],
+            'metadata' => ['simulacion' => !$whatsapp->enabled(), 'destino' => $data['destino'], 'no_envio_real' => !$whatsapp->enabled(), 'message_id' => $envio['message_id'] ?? null, 'media_id' => $envio['media_id'] ?? null],
         ]);
         VoucherAuditoria::create([
             'voucher_id' => $voucher->id,
-            'accion' => 'whatsapp_demo_enviado',
+            'accion' => $whatsapp->enabled() ? 'whatsapp_cloud_enviado' : 'whatsapp_demo_enviado',
             'usuario_tipo' => $user->rol,
             'usuario_id' => $user->id,
-            'descripcion' => 'Entrega WhatsApp simulada a '.$destinatario['nombre'].' (+'.$telefono.'). No se contactó un servicio externo.',
+            'descripcion' => $whatsapp->enabled() ? 'Entrega WhatsApp Cloud API a '.$destinatario['nombre'].' (+'.$telefono.'). ID '.($envio['message_id'] ?? 'sin ID').'.' : 'Entrega WhatsApp simulada a '.$destinatario['nombre'].' (+'.$telefono.'). No se contactó un servicio externo.',
             'ip' => $request->ip(),
         ]);
 
         return redirect()->route('vouchers.qr.whatsappDemo', ['token' => $voucher->qr_token, 'destino' => $data['destino']])
-            ->with('whatsapp_demo_ok', 'Envío simulado registrado para '.$destinatario['nombre'].' al +'.$telefono.'.');
+            ->with('whatsapp_demo_ok', ($whatsapp->enabled() ? 'Mensaje enviado mediante WhatsApp Cloud API a ' : 'Envío simulado registrado para ').$destinatario['nombre'].' al +'.$telefono.'.');
     }
 
     public function simularLectorQr($token, VoucherQrPayloadService $qrPayloadService)

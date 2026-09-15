@@ -2,6 +2,8 @@
 
 @section('ocultar-navegacion-app', true)
 
+@vite('resources/js/flatpickr.js')
+
 @section('content')
 <div class="container py-5" style="max-width:1320px;margin-inline:auto">
     <div class="mb-4">
@@ -29,7 +31,7 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-xl-4">
             <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirModalAsistente('modalRecepcionAsistente')">
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body p-4">
@@ -37,14 +39,26 @@
                             <div class="fs-2">📲</div>
                             <span class="badge bg-primary rounded-pill">{{ $pendientesRecepcion }}</span>
                         </div>
-                        <h4 class="mt-3 text-dark">Recepción de bonos</h4>
+                        <h4 class="mt-3 text-dark">Recepción de pacientes</h4>
                         <p class="text-muted mb-0">Leer QR, reconocer al paciente y enviarlo a espera.</p>
                     </div>
                 </div>
             </button>
         </div>
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-xl-4">
+            <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirModalAsistente('modalVentaBonoAsistente')">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="fs-2">🎫</div>
+                        <h4 class="mt-3 text-dark">Venta de bonos</h4>
+                        <p class="text-muted mb-0">Buscar al paciente por RUT, elegir prestación y reservar su hora en Med-SDI.</p>
+                    </div>
+                </div>
+            </button>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
             <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirModalAsistente('modalSalaEsperaAsistente')">
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body p-4">
@@ -59,7 +73,7 @@
             </button>
         </div>
 
-        <div class="col-md-6 col-xl-3">
+        <!-- <div class="col-md-6 col-xl-3">
             <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirModalAsistente('modalValidacionesAsistente')">
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body p-4">
@@ -74,21 +88,84 @@
             </button>
         </div>
 
+        
+
         <div class="col-md-6 col-xl-3">
-            <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirModalAsistente('modalVentaBonoAsistente')">
+            <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirModalAsistente('modalAutorizacionesPaciente')">
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body p-4">
-                        <div class="fs-2">🎫</div>
-                        <h4 class="mt-3 text-dark">Venta de bonos</h4>
-                        <p class="text-muted mb-0">Buscar al paciente por RUT, elegir prestación y reservar su hora en Med-SDI.</p>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="fs-2">🔔</div>
+                            <span class="badge bg-danger rounded-pill">{{ $autorizacionesPendientes }}</span>
+                        </div>
+                        <h4 class="mt-3 text-dark">Notificaciones al paciente</h4>
+                        <p class="text-muted mb-0">Revisar solicitudes de compra y simular la autorización del bono.</p>
                     </div>
                 </div>
             </button>
-        </div>
+        </div> -->
     </div>
 
-    <div class="mt-4">
-        <a href="{{ route('personas-rapidas.prueba') }}" class="btn btn-outline-primary">Buscar o registrar paciente</a>
+</div>
+
+<div class="modal fade" id="modalAutorizacionesPaciente" tabindex="-1" aria-labelledby="modalAutorizacionesPacienteTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white" style="background:linear-gradient(120deg,#1848a1,#31bebe)">
+                <div>
+                    <div class="small fw-bold text-uppercase">App autorizadora</div>
+                    <h4 class="modal-title fw-bold" id="modalAutorizacionesPacienteTitulo">Notificaciones de compra de bonos</h4>
+                    <small>Solicitudes enviadas al paciente para aprobar o rechazar el copago.</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" onclick="cerrarModalAsistente('modalAutorizacionesPaciente')" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                @if(session('abrir_autorizaciones_modal') && session('ok'))<div class="alert alert-success">{{ session('ok') }}</div>@endif
+                @if(session('abrir_autorizaciones_modal') && session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
+                <div class="alert alert-info">
+                    En producción responde el paciente desde su dispositivo autorizado. Estos botones simulan esa respuesta para probar el flujo completo.
+                </div>
+                <div class="table-responsive border rounded-3">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Paciente</th><th>Prestación</th><th>Profesional</th><th>Copago</th><th>Solicitud</th><th>Estado</th><th class="text-end">Acción</th></tr>
+                        </thead>
+                        <tbody>
+                        @forelse($autorizacionesPaciente as $autorizacion)
+                            @php($datos = $autorizacion->metadata ?: [])
+                            <tr>
+                                <td><strong>{{ $datos['beneficiario'] ?? 'Paciente #'.$autorizacion->cliente_id }}</strong><small class="d-block text-muted">{{ isset($datos['rut']) ? sdi_formatear_rut($datos['rut']) : 'RUT no informado' }}</small></td>
+                                <td>{{ $datos['servicio_nombre'] ?? 'Compra de bono' }}</td>
+                                <td>{{ $datos['profesional_nombre'] ?? 'Por definir' }}</td>
+                                <td>${{ number_format((float) ($datos['copago'] ?? 0), 0, ',', '.') }}</td>
+                                <td><span class="d-block">{{ $autorizacion->created_at?->format('d-m-Y H:i') }}</span><small class="text-muted">Vence {{ $autorizacion->expira_at?->format('d-m-Y H:i') ?: 'sin fecha' }}</small></td>
+                                <td>
+                                    @switch($autorizacion->estado)
+                                        @case('aprobada') <span class="badge bg-success">Autorizada</span> @break
+                                        @case('rechazada') <span class="badge bg-danger">Rechazada</span> @break
+                                        @case('expirada') <span class="badge bg-secondary">Expirada</span> @break
+                                        @default <span class="badge bg-warning text-dark">Pendiente</span>
+                                    @endswitch
+                                </td>
+                                <td class="text-end">
+                                    @if($autorizacion->estado === 'pendiente' && config('demo.enabled'))
+                                        <div class="d-inline-flex gap-2">
+                                            <form method="POST" action="{{ route('asistente.autorizaciones.responder', $autorizacion) }}" class="form-responder-autorizacion" data-respuesta="rechazar">@csrf<input type="hidden" name="respuesta" value="rechazar"><button class="btn btn-outline-danger btn-sm">Rechazar</button></form>
+                                            <form method="POST" action="{{ route('asistente.autorizaciones.responder', $autorizacion) }}" class="form-responder-autorizacion" data-respuesta="aprobar">@csrf<input type="hidden" name="respuesta" value="aprobar"><button class="btn btn-success btn-sm">Autorizar</button></form>
+                                        </div>
+                                    @else
+                                        <span class="text-muted small">Respondida</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="7" class="text-center text-muted py-5">No existen notificaciones de compra de bonos.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -219,19 +296,67 @@
                                 <div><strong>Paciente:</strong> {{ $bono->beneficiario_nombre ?: $bono->cliente_nombre }}</div>
                                 <div><strong>Profesional:</strong> {{ $bono->prestador_nombre ?: optional($bono->profesional)->nombre }}</div>
                                 <div><strong>Hora:</strong> {{ optional($bono->agenda?->fecha_hora_confirmada ?: $bono->agenda?->fecha_hora_solicitada)?->format('d-m-Y H:i') }}</div>
+                                <div class="mt-2"><strong>Estado:</strong> @include('partials.voucher_estado_celda', ['voucher' => $bono])</div>
                             </div>
-                            @if($recepcion)
-                                <form method="POST" action="{{ route('asistente.recepcion.espera', $recepcion) }}" class="align-self-md-center">
-                                    @csrf
-                                    <button class="btn btn-success text-nowrap">Confirmar llegada</button>
-                                </form>
-                            @else
-                                <span class="badge text-bg-warning align-self-md-center">Sin recepción asociada</span>
-                            @endif
+                            <div class="d-flex flex-column gap-2 align-self-md-center">
+                                @if(optional($bono->agenda)->medichile_hora_medica_id)
+                                    <form method="POST" action="{{ route('asistente.recepcion.sincronizar_hora', $bono) }}">
+                                        @csrf
+                                        <button class="btn btn-outline-primary text-nowrap" title="Consultar estado actual en Med-SDI">↻ Actualizar estado</button>
+                                    </form>
+                                @endif
+                                @if($bono->estado === 'pendiente_confirmacion' && optional($bono->agenda)->estado === 'hora_reservada' && optional($bono->agenda)->medichile_hora_medica_id)
+                                    <form method="POST" action="{{ route('asistente.recepcion.confirmar_hora', $bono) }}" class="asistente-confirmar-hora">
+                                        @csrf
+                                        <button class="btn btn-primary text-nowrap">✓ Confirmar hora</button>
+                                    </form>
+                                @endif
+                                @if($bono->estado === 'pendiente_pago' && optional($bono->agenda)->estado === 'hora_confirmada')
+                                    <button type="button" class="btn btn-warning text-nowrap asistente-abrir-pago"
+                                        data-action="{{ route('asistente.recepcion.pagar', $bono) }}"
+                                        data-codigo="{{ $bono->codigo }}" data-paciente="{{ $bono->beneficiario_nombre ?: $bono->cliente_nombre }}"
+                                        data-profesional="{{ $bono->prestador_nombre ?: optional($bono->profesional)->nombre }}"
+                                        data-valor="{{ $bono->valor }}" data-copago="{{ $bono->copago_usuario }}" data-bonificacion="{{ max($bono->valor - $bono->copago_usuario, 0) }}">💳 Pagar bono</button>
+                                @endif
+                                @if($recepcion)
+                                    <form method="POST" action="{{ route('asistente.recepcion.espera', $recepcion) }}">
+                                        @csrf
+                                        <button class="btn btn-success text-nowrap">Confirmar llegada</button>
+                                    </form>
+                                @else
+                                    <span class="badge text-bg-warning">Sin recepción asociada</span>
+                                @endif
+                            </div>
                         </div></div>
                     @endforeach
                 @endif
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPagoBonoAsistente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius:20px;overflow:hidden">
+            <div class="modal-header text-white" style="background:linear-gradient(120deg,#087f6f,#31bebe)">
+                <div><div class="small text-uppercase opacity-75 fw-bold">Recepción de pago</div><h4 class="modal-title">Pagar copago del bono</h4></div>
+                <button type="button" class="btn-close btn-close-white" onclick="cerrarModalAsistente('modalPagoBonoAsistente')"></button>
+            </div>
+            <form method="POST" id="formPagoBonoAsistente">@csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning">Valide paciente, profesional, hora y monto antes de registrar el pago.</div>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Paciente</label><input id="pagoAsistentePaciente" class="form-control" readonly></div>
+                        <div class="col-md-6"><label class="form-label">Profesional</label><input id="pagoAsistenteProfesional" class="form-control" readonly></div>
+                        <div class="col-md-6"><label class="form-label">Bono</label><input id="pagoAsistenteCodigo" class="form-control" readonly></div>
+                        <div class="col-md-6"><label class="form-label">Método de pago</label><select name="metodo_pago" class="form-select" required><option value="tarjeta_credito">Tarjeta de crédito</option><option value="tarjeta_debito">Tarjeta de débito</option><option value="transferencia">Transferencia bancaria</option><option value="efectivo">Efectivo</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Valor prestación</label><input id="pagoAsistenteValor" class="form-control" readonly></div>
+                        <div class="col-md-4"><label class="form-label">Bonificación</label><input id="pagoAsistenteBonificacion" class="form-control" readonly></div>
+                        <div class="col-md-4"><label class="form-label">Copago</label><input id="pagoAsistenteCopago" class="form-control fw-bold" readonly></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" onclick="cerrarModalAsistente('modalPagoBonoAsistente')">Cancelar</button><button class="btn btn-success">Confirmar pago</button></div>
+            </form>
         </div>
     </div>
 </div>
@@ -257,20 +382,26 @@
 
                 <section id="ventaAsistentePasoPrestacion" class="border rounded-3 p-3 mb-3 d-none">
                     <div class="small text-primary fw-bold mb-2">2 · PRESTACIÓN FONASA</div>
-                    <div class="input-group">
-                        <input id="ventaAsistentePrestacionBuscar" class="form-control" placeholder="Consulta médica o código 0101001">
-                        <button id="ventaAsistentePrestacionBtn" type="button" class="btn btn-info text-white">Buscar</button>
-                    </div>
-                    <div id="ventaAsistentePrestaciones" class="list-group mt-2" style="max-height:220px;overflow:auto"></div>
+                    <label class="form-label" for="ventaAsistentePrestacionBuscar">Busca por nombre o código</label>
+                    <input type="search" id="ventaAsistentePrestacionBuscar" class="form-control" autocomplete="off" placeholder="Ej.: consulta médica o 0101001" aria-controls="ventaAsistentePrestaciones">
+                    <div id="ventaAsistentePrestaciones" class="list-group mt-2 d-none" style="max-height:260px;overflow-y:auto"></div>
                     <div id="ventaAsistentePrestacionElegida" class="alert alert-info mt-3 mb-0 d-none"></div>
                 </section>
 
                 <section id="ventaAsistentePasoProfesional" class="border rounded-3 p-3 mb-3 d-none">
                     <div class="small text-primary fw-bold mb-2">3 · PROFESIONAL Y LUGAR</div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6"><label class="form-label small">Región</label><select id="ventaAsistenteRegion" class="form-select"><option value="">Todas las regiones</option></select></div>
+                        <div class="col-md-6"><label class="form-label small">Ciudad</label><select id="ventaAsistenteCiudad" class="form-select" disabled><option value="">Primero seleccione una región</option></select></div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4"><label class="form-label small">Profesión</label><select id="ventaAsistenteEspecialidad" class="form-select"><option value="">Todas</option></select></div>
+                        <div class="col-md-4"><label class="form-label small">Especialidad</label><select id="ventaAsistenteTipoEspecialidad" class="form-select" disabled><option value="">Todas</option></select></div>
+                        <div class="col-md-4"><label class="form-label small">Subespecialidad</label><select id="ventaAsistenteSubTipoEspecialidad" class="form-select" disabled><option value="">Todas</option></select></div>
+                    </div>
                     <div class="row g-2">
-                        <div class="col-md-5"><select id="ventaAsistenteEspecialidad" class="form-select"><option value="">Todas las especialidades</option></select></div>
-                        <div class="col-md-5"><input id="ventaAsistenteProfesionalBuscar" class="form-control" placeholder="Nombre del profesional"></div>
-                        <div class="col-md-2 d-grid"><button id="ventaAsistenteProfesionalBtn" type="button" class="btn btn-primary">Buscar</button></div>
+                        <div class="col-md-9"><label class="form-label small">Nombre del profesional (opcional)</label><input id="ventaAsistenteProfesionalBuscar" class="form-control" autocomplete="off" placeholder="Ej.: Jaime Kriman"></div>
+                        <div class="col-md-3 d-grid"><label class="form-label small">&nbsp;</label><button id="ventaAsistenteProfesionalBtn" type="button" class="btn btn-primary">Buscar profesionales</button></div>
                     </div>
                     <div id="ventaAsistenteProfesionales" class="row g-2 mt-1"></div>
                     <div id="ventaAsistenteProfesionalElegido" class="alert alert-info mt-3 mb-0 d-none"></div>
@@ -279,8 +410,9 @@
                 <section id="ventaAsistentePasoHora" class="border rounded-3 p-3 d-none">
                     <div class="small text-primary fw-bold mb-2">4 · FECHA Y HORA</div>
                     <div id="ventaAsistenteCotizacion" class="alert alert-success"></div>
+                    <div id="ventaAsistenteDiasAtencion" class="small fw-semibold text-primary mb-2">Consultando días de atención...</div>
                     <div class="row g-2 align-items-end">
-                        <div class="col-md-8"><label class="form-label">Fecha</label><input id="ventaAsistenteFecha" type="date" min="{{ now()->format('Y-m-d') }}" class="form-control"></div>
+                        <div class="col-md-8"><label class="form-label">Fecha</label><input id="ventaAsistenteFecha" type="text" class="form-control" placeholder="Seleccione un día disponible" disabled></div>
                         <div class="col-md-4 d-grid"><button id="ventaAsistenteHorasBtn" type="button" class="btn btn-outline-primary">Ver horas disponibles</button></div>
                     </div>
                     <div id="ventaAsistenteHoras" class="d-flex flex-wrap gap-2 mt-3"></div>
@@ -291,11 +423,11 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('js/plugins/sweetalert.min.js') }}"></script>
 <script>
 function mostrarRevisionEnConstruccion() {
-    if (window.Swal) {
-        Swal.fire({icon:'info', title:'En construcción', text:'La revisión detallada de la atención estará disponible próximamente.', confirmButtonText:'Entendido', confirmButtonColor:'#1848a1'});
+    if (typeof swal === 'function') {
+        swal({icon:'info', title:'En construcción', text:'La revisión detallada de la atención estará disponible próximamente.', button:'Entendido'});
         return;
     }
     alert('En construcción: la revisión detallada estará disponible próximamente.');
@@ -325,6 +457,49 @@ function cerrarModalAsistente(id) {
     document.querySelectorAll('[data-modal-asistente-backdrop="' + id + '"]').forEach(function (fondo) { fondo.remove(); });
 }
 document.addEventListener('DOMContentLoaded', function () {
+    const monedaAsistente = valor => new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(Number(valor) || 0);
+    document.querySelectorAll('.form-responder-autorizacion').forEach(form => form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const aprobar = form.dataset.respuesta === 'aprobar';
+        const confirmado = typeof swal === 'function'
+            ? await swal({
+                title: aprobar ? '¿Autorizar compra?' : '¿Rechazar compra?',
+                text: aprobar
+                    ? 'Se registrará la aprobación del paciente y la compra podrá continuar usando su token vigente.'
+                    : 'La solicitud quedará rechazada y no podrá utilizarse para generar el bono.',
+                icon: aprobar ? 'warning' : 'error',
+                buttons: ['Cancelar', aprobar ? 'Autorizar' : 'Rechazar'],
+                dangerMode: !aprobar,
+            })
+            : confirm(aprobar ? '¿Autorizar esta compra?' : '¿Rechazar esta compra?');
+        if (confirmado) HTMLFormElement.prototype.submit.call(form);
+    }));
+    document.querySelectorAll('.asistente-abrir-pago').forEach(button => button.addEventListener('click', () => {
+        const form = document.getElementById('formPagoBonoAsistente');
+        form.action = button.dataset.action;
+        document.getElementById('pagoAsistentePaciente').value = button.dataset.paciente;
+        document.getElementById('pagoAsistenteProfesional').value = button.dataset.profesional;
+        document.getElementById('pagoAsistenteCodigo').value = button.dataset.codigo;
+        document.getElementById('pagoAsistenteValor').value = monedaAsistente(button.dataset.valor);
+        document.getElementById('pagoAsistenteBonificacion').value = monedaAsistente(button.dataset.bonificacion);
+        document.getElementById('pagoAsistenteCopago').value = monedaAsistente(button.dataset.copago);
+        abrirModalAsistente('modalPagoBonoAsistente');
+    }));
+    document.getElementById('formPagoBonoAsistente')?.addEventListener('submit', async event => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const confirmado = typeof swal === 'function'
+            ? await swal({title:'¿Confirmar pago?',text:'Se registrará el copago y el bono quedará activo con su QR disponible.',icon:'warning',buttons:['Cancelar','Confirmar pago']})
+            : confirm('¿Confirmar el pago del bono?');
+        if (confirmado) HTMLFormElement.prototype.submit.call(form);
+    });
+    document.querySelectorAll('.asistente-confirmar-hora').forEach(form => form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const confirmado = typeof swal === 'function'
+            ? await swal({title:'¿Confirmar hora médica?',text:'La hora será confirmada en Med-SDI y el bono quedará pendiente de pago.',icon:'warning',buttons:['Cancelar','Confirmar hora']})
+            : confirm('¿Confirmar esta hora médica?');
+        if (confirmado) form.submit();
+    }));
     document.querySelectorAll('#modalRecepcionAsistente [data-bs-toggle="pill"]').forEach(function (boton) {
         boton.addEventListener('click', function (evento) {
             evento.preventDefault();
@@ -337,6 +512,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     const venta = { paciente: null, prestacion: null, seleccion: null, cotizacion: null };
+    let ventaCalendario = null;
+    let ventaPrestacionTimer = null;
+    let ventaPrestacionConsulta = 0;
+    const ventaProfesion = document.getElementById('ventaAsistenteEspecialidad');
+    const ventaEspecialidad = document.getElementById('ventaAsistenteTipoEspecialidad');
+    const ventaSubespecialidad = document.getElementById('ventaAsistenteSubTipoEspecialidad');
+    const ventaRegion = document.getElementById('ventaAsistenteRegion');
+    const ventaCiudad = document.getElementById('ventaAsistenteCiudad');
+    const llenarSelectVenta = (select, registros, placeholder = 'Todas') => {
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        registros.forEach(registro => select.add(new Option(registro.nombre, registro.id)));
+        select.disabled = registros.length === 0;
+    };
     const ventaAviso = (texto, tipo = 'danger') => {
         const el = document.getElementById('ventaAsistenteAviso');
         el.className = `alert alert-${tipo}`;
@@ -347,6 +535,54 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = await respuesta.json();
         if (!respuesta.ok && !data.mensaje) data.mensaje = Object.values(data.errors || {}).flat()[0] || 'No fue posible procesar la solicitud.';
         return data;
+    };
+    const ventaNombresDias = ['', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO'];
+    const reiniciarHorarioVenta = () => {
+        ventaCalendario?.destroy();
+        ventaCalendario = null;
+        const fecha = document.getElementById('ventaAsistenteFecha');
+        fecha.value = '';
+        fecha.disabled = true;
+        document.getElementById('ventaAsistenteHoras').innerHTML = '';
+        document.getElementById('ventaAsistentePasoHora').classList.add('d-none');
+    };
+    const cargarDiasLaboralesVenta = async () => {
+        const fecha = document.getElementById('ventaAsistenteFecha');
+        const estado = document.getElementById('ventaAsistenteDiasAtencion');
+        estado.textContent = 'Consultando días de atención...';
+        const params = new URLSearchParams({
+            id_profesional: venta.seleccion.idProfesional,
+            id_lugar: venta.seleccion.idLugar,
+        });
+        const data = await ventaJson(`{{ route('asistente.venta_bonos.dias_laborales') }}?${params}`);
+        const dias = String(data.registros?.horario_agenda_laboral || '')
+            .split(',').map(Number).filter(dia => dia >= 1 && dia <= 7);
+        if (!data.ok || !dias.length) {
+            estado.textContent = 'El profesional no tiene días de atención informados para este lugar.';
+            fecha.disabled = true;
+            return;
+        }
+        estado.textContent = `Atiende los días: ${dias.map(dia => ventaNombresDias[dia]).join(' · ')}`;
+        fecha.disabled = false;
+        ventaCalendario = flatpickr(fecha, {
+            disableMobile: true,
+            minDate: 'today',
+            maxDate: new Date().fp_incr(60),
+            dateFormat: 'Y-m-d',
+            disable: [date => !dias.includes(date.getDay() === 0 ? 7 : date.getDay())],
+            locale: {
+                firstDayOfWeek: 1,
+                weekdays: {
+                    shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                    longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                },
+                months: {
+                    shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                    longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                },
+            },
+            onChange: () => document.getElementById('ventaAsistenteHorasBtn').click(),
+        });
     };
 
     document.getElementById('ventaAsistenteValidar')?.addEventListener('click', async () => {
@@ -360,50 +596,125 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('ventaAsistentePaciente').classList.remove('d-none');
         document.getElementById('ventaAsistentePasoPrestacion').classList.remove('d-none');
         document.getElementById('ventaAsistenteAviso').classList.add('d-none');
+        document.getElementById('ventaAsistentePrestacionBuscar').focus();
     });
 
     const buscarPrestaciones = async () => {
         const buscar = document.getElementById('ventaAsistentePrestacionBuscar').value.trim();
-        if (buscar.length < 2) return ventaAviso('Escriba al menos 2 caracteres para buscar una prestación.');
         const contenedor = document.getElementById('ventaAsistentePrestaciones');
-        contenedor.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
-        const data = await ventaJson(`{{ route('asistente.venta_bonos.prestaciones') }}?buscar=${encodeURIComponent(buscar)}`);
-        contenedor.innerHTML = '';
-        (data.registros || []).forEach(item => {
-            const boton = document.createElement('button'); boton.type = 'button'; boton.className = 'list-group-item list-group-item-action';
-            boton.textContent = `${item.codigo} · ${item.nombre}`; boton.onclick = () => seleccionarPrestacion(item); contenedor.appendChild(boton);
-        });
-        if (!contenedor.children.length) contenedor.innerHTML = `<div class="list-group-item text-muted">${data.mensaje || 'Sin resultados.'}</div>`;
+        if (buscar.length < 2) {
+            contenedor.innerHTML = '';
+            contenedor.classList.add('d-none');
+            return;
+        }
+        const consultaActual = ++ventaPrestacionConsulta;
+        contenedor.innerHTML = '<div class="list-group-item text-muted">Buscando prestaciones...</div>';
+        contenedor.classList.remove('d-none');
+        try {
+            const data = await ventaJson(`{{ route('asistente.venta_bonos.prestaciones') }}?buscar=${encodeURIComponent(buscar)}`);
+            if (consultaActual !== ventaPrestacionConsulta) return;
+            contenedor.innerHTML = '';
+            (data.registros || []).forEach(item => {
+                const boton = document.createElement('button');
+                boton.type = 'button';
+                boton.className = 'list-group-item list-group-item-action text-start';
+                const codigo = document.createElement('strong'); codigo.textContent = item.codigo || 'Sin código';
+                const nombre = document.createElement('span'); nombre.textContent = ` · ${item.nombre}`;
+                boton.append(codigo, nombre);
+                boton.onclick = () => seleccionarPrestacion(item);
+                contenedor.appendChild(boton);
+            });
+            if (!contenedor.children.length) contenedor.innerHTML = `<div class="list-group-item text-muted">${data.mensaje || 'No se encontraron prestaciones.'}</div>`;
+        } catch (error) {
+            if (consultaActual !== ventaPrestacionConsulta) return;
+            contenedor.innerHTML = '<div class="list-group-item text-danger">No fue posible consultar las prestaciones.</div>';
+        }
     };
-    document.getElementById('ventaAsistentePrestacionBtn')?.addEventListener('click', buscarPrestaciones);
+    document.getElementById('ventaAsistentePrestacionBuscar')?.addEventListener('input', () => {
+        clearTimeout(ventaPrestacionTimer);
+        ventaPrestacionTimer = setTimeout(buscarPrestaciones, 300);
+    });
     const seleccionarPrestacion = async item => {
         venta.prestacion = item;
-        document.getElementById('ventaAsistentePrestaciones').innerHTML = '';
+        const resultados = document.getElementById('ventaAsistentePrestaciones'); resultados.innerHTML = ''; resultados.classList.add('d-none');
         const elegida = document.getElementById('ventaAsistentePrestacionElegida'); elegida.textContent = `${item.codigo} · ${item.nombre}`; elegida.classList.remove('d-none');
         document.getElementById('ventaAsistentePasoProfesional').classList.remove('d-none');
         const data = await ventaJson('{{ route('asistente.venta_bonos.especialidades') }}');
-        const select = document.getElementById('ventaAsistenteEspecialidad'); select.innerHTML = '<option value="">Todas las especialidades</option>';
-        (data.registros || []).forEach(e => select.add(new Option(e.nombre, e.id)));
+        llenarSelectVenta(ventaProfesion, data.registros || [], 'Todas las profesiones');
+        ventaProfesion.disabled = !data.ok;
+        const regiones = await ventaJson('{{ route('asistente.venta_bonos.regiones') }}');
+        llenarSelectVenta(ventaRegion, regiones.registros || [], 'Todas las regiones');
+        ventaRegion.disabled = !regiones.ok;
     };
 
+    ventaRegion?.addEventListener('change', async () => {
+        venta.seleccion = null;
+        reiniciarHorarioVenta();
+        document.getElementById('ventaAsistenteProfesionales').innerHTML = '';
+        llenarSelectVenta(ventaCiudad, [], ventaRegion.value ? 'Todas las ciudades' : 'Primero seleccione una región');
+        if (!ventaRegion.value) return;
+        const data = await ventaJson(`{{ route('asistente.venta_bonos.ciudades') }}?id_region=${ventaRegion.value}`);
+        llenarSelectVenta(ventaCiudad, data.registros || [], 'Todas las ciudades');
+    });
+
+    ventaCiudad?.addEventListener('change', () => {
+        venta.seleccion = null;
+        reiniciarHorarioVenta();
+        document.getElementById('ventaAsistenteProfesionales').innerHTML = '';
+    });
+
+    ventaProfesion?.addEventListener('change', async () => {
+        venta.seleccion = null;
+        reiniciarHorarioVenta();
+        document.getElementById('ventaAsistenteProfesionales').innerHTML = '';
+        llenarSelectVenta(ventaEspecialidad, [], ventaProfesion.value ? 'Todas las especialidades' : 'Primero seleccione una profesión');
+        llenarSelectVenta(ventaSubespecialidad, [], 'Primero seleccione una especialidad');
+        if (!ventaProfesion.value) return;
+        const data = await ventaJson(`{{ route('asistente.venta_bonos.tipo_especialidades') }}?id_especialidad=${ventaProfesion.value}`);
+        llenarSelectVenta(ventaEspecialidad, data.registros || [], 'Todas las especialidades');
+    });
+
+    ventaEspecialidad?.addEventListener('change', async () => {
+        venta.seleccion = null;
+        reiniciarHorarioVenta();
+        document.getElementById('ventaAsistenteProfesionales').innerHTML = '';
+        llenarSelectVenta(ventaSubespecialidad, [], ventaEspecialidad.value ? 'Todas las subespecialidades' : 'Primero seleccione una especialidad');
+        if (!ventaEspecialidad.value) return;
+        const data = await ventaJson(`{{ route('asistente.venta_bonos.sub_tipo_especialidades') }}?id_tipo_especialidad=${ventaEspecialidad.value}`);
+        llenarSelectVenta(ventaSubespecialidad, data.registros || [], 'Todas las subespecialidades');
+    });
+
+    ventaSubespecialidad?.addEventListener('change', () => {
+        venta.seleccion = null;
+        reiniciarHorarioVenta();
+        document.getElementById('ventaAsistenteProfesionales').innerHTML = '';
+    });
+
     document.getElementById('ventaAsistenteProfesionalBtn')?.addEventListener('click', async () => {
-        const params = new URLSearchParams();
-        const especialidad = document.getElementById('ventaAsistenteEspecialidad');
+        const params = new URLSearchParams({incluir_todos_lugares: '1'});
         const nombre = document.getElementById('ventaAsistenteProfesionalBuscar').value.trim();
-        if (especialidad.value) params.set('id_especialidad', especialidad.value); if (nombre) params.set('nombre_profesional', nombre);
+        if (ventaRegion.value) params.set('id_region', ventaRegion.value);
+        if (ventaCiudad.value) params.set('id_ciudad', ventaCiudad.value);
+        if (ventaProfesion.value) params.set('id_especialidad', ventaProfesion.value);
+        if (ventaEspecialidad.value) params.set('id_tipo_especialidad', ventaEspecialidad.value);
+        if (ventaSubespecialidad.value) params.set('id_sub_tipo_especialidad', ventaSubespecialidad.value);
+        if (nombre) params.set('nombre_profesional', nombre);
         const contenedor = document.getElementById('ventaAsistenteProfesionales'); contenedor.innerHTML = '<div class="text-muted">Buscando profesionales...</div>';
         const data = await ventaJson(`{{ route('asistente.venta_bonos.profesionales') }}?${params}`); contenedor.innerHTML = '';
         (data.registros || []).forEach(prof => {
             const nombreCompleto = `${prof.nombre} ${prof.apellido_uno || ''} ${prof.apellido_dos || ''}`.trim();
-            const esp = prof.nombre_especialidad || especialidad.options[especialidad.selectedIndex]?.text || '';
+            const esp = prof.nombre_sub_tipo_especialidad || prof.nombre_tipo_especialidad || prof.nombre_especialidad || ventaSubespecialidad.options[ventaSubespecialidad.selectedIndex]?.text || ventaEspecialidad.options[ventaEspecialidad.selectedIndex]?.text || ventaProfesion.options[ventaProfesion.selectedIndex]?.text || '';
             const col = document.createElement('div'); col.className = 'col-md-6';
-            col.innerHTML = `<div class="card h-100"><div class="card-body"><strong>${nombreCompleto}</strong><div class="small text-muted mb-2">${esp}</div><div class="venta-lugares"></div></div></div>`;
-            (prof.lugares_atencion || []).forEach(lugar => { const b=document.createElement('button'); b.type='button'; b.className='btn btn-outline-success btn-sm me-1'; b.textContent=lugar.nombre; b.onclick=()=>elegirProfesional({idProfesional:prof.id,nombreProfesional:nombreCompleto,idEspecialidad:especialidad.value,especialidad:esp,idLugar:lugar.id,lugarNombre:lugar.nombre}); col.querySelector('.venta-lugares').appendChild(b); });
+            col.innerHTML = `<div class="card h-100"><div class="card-body"><strong>${nombreCompleto}</strong><div class="small text-muted mb-2">${esp}</div><div class="small fw-semibold mb-2">Seleccione un lugar de atención:</div><div class="venta-lugares"></div></div></div>`;
+            const lugares = prof.lugares_atencion || [];
+            lugares.forEach(lugar => { const b=document.createElement('button'); b.type='button'; b.className='btn btn-outline-success btn-sm me-1 mb-1'; b.textContent=lugar.nombre; b.onclick=()=>elegirProfesional({idProfesional:prof.id,nombreProfesional:nombreCompleto,idEspecialidad:ventaProfesion.value,especialidad:esp,idLugar:lugar.id,lugarNombre:lugar.nombre}); col.querySelector('.venta-lugares').appendChild(b); });
+            if (!lugares.length) col.querySelector('.venta-lugares').innerHTML = '<span class="small text-muted">Sin lugares de atención disponibles.</span>';
             contenedor.appendChild(col);
         });
         if (!contenedor.children.length) contenedor.innerHTML = `<div class="alert alert-warning">${data.mensaje || 'No se encontraron profesionales.'}</div>`;
     });
     const elegirProfesional = async seleccion => {
+        reiniciarHorarioVenta();
         venta.seleccion = seleccion;
         const elegido = document.getElementById('ventaAsistenteProfesionalElegido'); elegido.textContent = `${seleccion.nombreProfesional} · ${seleccion.especialidad} · ${seleccion.lugarNombre}`; elegido.classList.remove('d-none');
         const data = await ventaJson('{{ route('asistente.venta_bonos.cotizar') }}', {method:'POST', body:JSON.stringify({id_profesional:seleccion.idProfesional,id_lugar_atencion:seleccion.idLugar,id_prestacion:venta.prestacion.id,origen_prestacion:venta.prestacion.origen})});
@@ -411,6 +722,10 @@ document.addEventListener('DOMContentLoaded', function () {
         venta.cotizacion = data.cotizacion; const moneda = v => new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(v || 0);
         document.getElementById('ventaAsistenteCotizacion').textContent = `Valor ${moneda(data.cotizacion.valor)} · Bonificación ${moneda(data.cotizacion.bonificacion)} · Copago ${moneda(data.cotizacion.copago)}`;
         document.getElementById('ventaAsistentePasoHora').classList.remove('d-none');
+        cargarDiasLaboralesVenta().catch(() => {
+            document.getElementById('ventaAsistenteDiasAtencion').textContent = 'No fue posible consultar los días de atención.';
+            document.getElementById('ventaAsistenteFecha').disabled = true;
+        });
     };
 
     document.getElementById('ventaAsistenteHorasBtn')?.addEventListener('click', async () => {
@@ -421,17 +736,34 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!contenedor.children.length) contenedor.innerHTML='<span class="text-muted">No hay horas disponibles para esta fecha.</span>';
     });
     const confirmarVenta = async fechaHora => {
-        const confirmacion = window.Swal ? await Swal.fire({icon:'question',title:'¿Confirmar reserva?',text:`La hora quedará asociada a ${venta.paciente.nombre_completo}.`,showCancelButton:true,confirmButtonText:'Sí, reservar',cancelButtonText:'Cancelar',confirmButtonColor:'#1848a1'}) : {isConfirmed:confirm('¿Confirmar reserva para este paciente?')};
-        if (!confirmacion.isConfirmed) return;
+        const fechaLegible = new Intl.DateTimeFormat('es-CL', {dateStyle:'long', timeStyle:'short'}).format(new Date(fechaHora));
+        const confirmado = typeof swal === 'function'
+            ? await swal({
+                icon: 'warning',
+                title: '¿Confirmar hora médica?',
+                text: `${venta.paciente.nombre_completo} · ${venta.seleccion.nombreProfesional} · ${venta.seleccion.lugarNombre} · ${fechaLegible}`,
+                buttons: ['Cancelar', 'Confirmar hora'],
+                dangerMode: false,
+                closeOnClickOutside: false,
+            })
+            : confirm('¿Confirmar reserva para este paciente?');
+        if (!confirmado) return;
         const s=venta.seleccion,p=venta.prestacion;
         const data=await ventaJson('{{ route('asistente.venta_bonos.agendar') }}',{method:'POST',body:JSON.stringify({rut:venta.paciente.rut,id_profesional:s.idProfesional,nombre_profesional:s.nombreProfesional,id_especialidad:s.idEspecialidad||null,especialidad:s.especialidad,id_lugar:s.idLugar,lugar_nombre:s.lugarNombre,direccion:'',fecha_hora:fechaHora,id_prestacion:p.id,origen_prestacion:p.origen,prestacion_codigo:p.codigo,prestacion_nombre:p.nombre})});
-        if (!data.ok) return ventaAviso(data.mensaje || 'No fue posible reservar la hora.');
-        if (window.Swal) await Swal.fire({icon:'success',title:'Reserva realizada',text:`${data.mensaje} Bono ${data.voucher}.`,confirmButtonColor:'#1848a1'}); else alert(data.mensaje);
+        if (!data.ok) {
+            if (typeof swal === 'function') await swal({icon:'error',title:'No fue posible reservar',text:data.mensaje || 'No fue posible reservar la hora.',button:'Aceptar'});
+            else ventaAviso(data.mensaje || 'No fue posible reservar la hora.');
+            return;
+        }
+        if (typeof swal === 'function') await swal({icon:'success',title:'Reserva realizada',text:`${data.mensaje} Bono ${data.voucher}.`,button:'Aceptar'}); else alert(data.mensaje);
         window.location.reload();
     };
 });
 </script>
 @if(session('abrir_recepcion_modal') || $errors->any())
 <script>document.addEventListener('DOMContentLoaded', function () { abrirModalAsistente('modalRecepcionAsistente'); });</script>
+@endif
+@if(session('abrir_autorizaciones_modal'))
+<script>document.addEventListener('DOMContentLoaded', function () { abrirModalAsistente('modalAutorizacionesPaciente'); });</script>
 @endif
 @endsection

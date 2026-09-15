@@ -74,6 +74,7 @@ class ClienteAgendaExternaController extends Controller
             'id_tipo_especialidad' => ['nullable', 'integer'],
             'id_sub_tipo_especialidad' => ['nullable', 'integer'],
             'nombre_profesional' => ['nullable', 'string', 'max:150'],
+            'incluir_todos_lugares' => ['nullable', 'boolean'],
         ]);
 
         return response()->json($api->buscarProfesionales(array_filter($data, fn ($v) => $v !== null && $v !== '')));

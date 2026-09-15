@@ -87,6 +87,21 @@ class MedsdiAgendaApiService
         }
     }
 
+    public function enviarQrPorEmail(array $datos, string $imagenPath): array
+    {
+        $token = $this->tokenActivo();
+        if (! $token) return $this->noDisponible('No fue posible autenticar al paciente en Med-SDI.');
+        try {
+            $response = $this->request()->withToken($token)->withHeaders(['X-Auth-Token'=>$token])
+                ->attach('qr_image', fopen($imagenPath, 'r'), basename($imagenPath), ['Content-Type'=>'image/png'])
+                ->post(rtrim((string) config('medsdi.base_url'), '/').'/api/integraciones/qr-email/enviar', $datos);
+            $payload = $response->json() ?: [];
+            return ['ok'=>$response->successful() && (int)($payload['estado'] ?? 0) === 1,'disponible'=>true,'mensaje'=>$payload['mensaje'] ?? 'Med-SDI no pudo enviar el email.'];
+        } catch (ConnectionException) {
+            return $this->noDisponible('No fue posible conectar con Med-SDI para enviar el email.');
+        }
+    }
+
     public function cuentaBancariaPaciente(): array
     {
         $token = $this->tokenActivo();
@@ -105,6 +120,7 @@ class MedsdiAgendaApiService
                     'disponible' => true,
                     'cuenta' => $payload['cuenta'] ?? null,
                     'cuentas' => $payload['cuentas'] ?? [],
+                    'total_cuentas' => (int) ($payload['total_cuentas'] ?? count($payload['cuentas'] ?? [])),
                     'bancos' => $payload['bancos'] ?? [],
                     'tipos_cuenta' => $payload['tipos_cuenta'] ?? [],
                     'paciente' => $payload['paciente'] ?? [],
@@ -141,6 +157,11 @@ class MedsdiAgendaApiService
         }
     }
 
+    public function notificarCuentaBancariaPaciente(int $cuentaId): array
+    {
+        return $this->notificarCuentaBancaria('/api/paciente/cuenta-bancaria/notificar', $this->tokenActivo(), $cuentaId);
+    }
+
     public function cuentaBancariaProfesional(): array
     {
         $token = $this->tokenActivoProfesional();
@@ -159,6 +180,7 @@ class MedsdiAgendaApiService
                     'disponible' => true,
                     'cuenta' => $payload['cuenta'] ?? null,
                     'cuentas' => $payload['cuentas'] ?? [],
+                    'total_cuentas' => (int) ($payload['total_cuentas'] ?? count($payload['cuentas'] ?? [])),
                     'bancos' => $payload['bancos'] ?? [],
                     'tipos_cuenta' => $payload['tipos_cuenta'] ?? [],
                     'profesional' => $payload['profesional'] ?? [],
@@ -203,6 +225,33 @@ class MedsdiAgendaApiService
             ];
         } catch (ConnectionException) {
             return $this->noDisponible('No fue posible conectar con Med-SDI para actualizar los datos bancarios del profesional.');
+        }
+    }
+
+    public function notificarCuentaBancariaProfesional(int $cuentaId): array
+    {
+        return $this->notificarCuentaBancaria('/api/profesional/cuenta-bancaria/notificar', $this->tokenActivoProfesional(), $cuentaId);
+    }
+
+    private function notificarCuentaBancaria(string $endpoint, ?string $token, int $cuentaId): array
+    {
+        if (! $token) {
+            return $this->noDisponible('No fue posible autenticar al usuario en Med-SDI.');
+        }
+
+        try {
+            $response = $this->request()->withToken($token)->withHeaders(['X-Auth-Token' => $token])
+                ->post(rtrim((string) config('medsdi.base_url'), '/').$endpoint, ['cuenta_id' => $cuentaId]);
+            $payload = $response->json() ?: [];
+
+            return [
+                'ok' => $response->successful() && (int) ($payload['estado'] ?? 0) === 1,
+                'disponible' => true,
+                'dispositivos_notificados' => (int) ($payload['dispositivos_notificados'] ?? 0),
+                'mensaje' => $payload['mensaje'] ?? 'Med-SDI no pudo procesar la notificación.',
+            ];
+        } catch (ConnectionException) {
+            return $this->noDisponible('No fue posible conectar con Med-SDI para enviar la notificación Android.');
         }
     }
 
@@ -318,8 +367,9 @@ class MedsdiAgendaApiService
         if (! $token) {
             return $this->noDisponible('No fue posible autenticar con Med-SDI para buscar profesionales (revise MEDSDI_API_TOKEN o MEDSDI_API_LOGIN_USER/PASS).');
         }
+        $incluirTodosLugares = filter_var($filtros['incluir_todos_lugares'] ?? false, FILTER_VALIDATE_BOOL);
         $usaUbicacionExplicita = ! empty($filtros['id_region']) || ! empty($filtros['id_ciudad']);
-        if (! $usaUbicacionExplicita && empty($filtros['id_lugar_atencion']) && config('medsdi.default_lugar_id')) {
+        if (! $incluirTodosLugares && ! $usaUbicacionExplicita && empty($filtros['id_lugar_atencion']) && config('medsdi.default_lugar_id')) {
             $filtros['id_lugar_atencion'] = (int) config('medsdi.default_lugar_id');
         }
 
@@ -480,6 +530,34 @@ class MedsdiAgendaApiService
             return $this->interpretar($response, 'hora');
         } catch (ConnectionException $e) {
             return $this->noDisponible('No fue posible conectar con Med-SDI para confirmar la hora.');
+        }
+    }
+
+    public function confirmarHoraMedicaComoAsistente(int $idHora): array
+    {
+        $token = $this->tokenActivoAsistente();
+        if (! $token) return $this->noDisponible('No fue posible autenticar al asistente en Med-SDI.');
+
+        try {
+            $response = $this->request()->withToken($token)->withHeaders(['X-Auth-Token' => $token])
+                ->post(rtrim((string) config('medsdi.base_url'), '/').'/api/asistente/confirmar-hora-medica', ['id_hora' => $idHora]);
+
+            return $this->interpretar($response, 'hora');
+        } catch (ConnectionException) {
+            return $this->noDisponible('No fue posible conectar con Med-SDI para confirmar la hora.');
+        }
+    }
+
+    public function estadoHoraMedicaComoAsistente(int $idHora): array
+    {
+        $token = $this->tokenActivoAsistente();
+        if (! $token) return $this->noDisponible('No fue posible autenticar al asistente en Med-SDI.');
+        try {
+            $response = $this->request()->withToken($token)->withHeaders(['X-Auth-Token' => $token])
+                ->get(rtrim((string) config('medsdi.base_url'), '/').'/api/asistente/estado-hora-medica', ['id_hora' => $idHora]);
+            return $this->interpretar($response, 'hora');
+        } catch (ConnectionException) {
+            return $this->noDisponible('No fue posible conectar con Med-SDI para consultar la hora.');
         }
     }
 
