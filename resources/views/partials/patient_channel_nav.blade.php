@@ -1,6 +1,6 @@
 <nav class="patient-channel-nav" aria-label="Canales de atención del paciente">
     <span class="patient-channel-nav__label">Acceso paciente</span>
-    <a class="{{ request()->routeIs('paciente.home') ? 'active' : '' }}" href="{{ route('paciente.home') }}">Inicio</a>
+    <a class="{{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Inicio</a>
     <a class="{{ request()->routeIs('paciente.totem', 'totem.local') ? 'active' : '' }}" href="{{ route('paciente.totem', ['tab' => 'comprar']) }}">Paciente Tótem</a>
     <a class="{{ request()->routeIs('paciente.escritorio', 'cliente.dashboard') ? 'active' : '' }}" href="{{ route('paciente.escritorio') }}">Página propia · Escritorio paciente</a>
     <a class="{{ request()->routeIs('paciente.agenda') ? 'active' : '' }}" href="{{ route('paciente.agenda') }}">Paciente desde Agenda</a>

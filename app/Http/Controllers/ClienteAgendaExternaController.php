@@ -301,12 +301,39 @@ class ClienteAgendaExternaController extends Controller
         // el monto local para evitar que el cliente pueda influir en el precio cobrado.
         if (config('medsdi.pago_enabled')) {
             $agenda = $voucher->agenda;
+            $sessionKey = 'medsdi_pago_autorizacion_'.$voucher->id;
             $resultadoPago = $api->pagarBono([
                 'id_hora_medica' => $agenda?->medichile_hora_medica_id,
+                'authorization_token' => $request->session()->get($sessionKey),
             ]);
-            if (! $resultadoPago['ok']) {
-                return back()->with('error', 'Med-SDI: '.($resultadoPago['mensaje'] ?? 'no fue posible procesar el pago.'));
+            if ($resultadoPago['pendiente_autorizacion'] ?? false) {
+                if (! empty($resultadoPago['authorization_token'])) {
+                    $request->session()->put($sessionKey, $resultadoPago['authorization_token']);
+                }
+
+                return response()->json([
+                    'ok' => true,
+                    'pendiente_autorizacion' => true,
+                    'mensaje' => $resultadoPago['mensaje'] ?? 'Esperando respuesta desde la app.',
+                    'authorization_id' => $resultadoPago['authorization_id'] ?? null,
+                ], 202);
             }
+            if (! $resultadoPago['ok']) {
+                if (($resultadoPago['autorizacion_rechazada'] ?? false) || ($resultadoPago['autorizacion_expirada'] ?? false)) {
+                    $request->session()->forget($sessionKey);
+                }
+
+                $mensajePago = 'Med-SDI: '.($resultadoPago['mensaje'] ?? 'no fue posible procesar el pago.');
+                return $request->expectsJson()
+                    ? response()->json([
+                        'ok' => false,
+                        'mensaje' => $mensajePago,
+                        'autorizacion_rechazada' => $resultadoPago['autorizacion_rechazada'] ?? false,
+                        'autorizacion_expirada' => $resultadoPago['autorizacion_expirada'] ?? false,
+                    ], 422)
+                    : back()->with('error', $mensajePago);
+            }
+            $request->session()->forget($sessionKey);
         }
 
         try {
@@ -351,9 +378,14 @@ class ClienteAgendaExternaController extends Controller
                 ]);
             });
         } catch (\RuntimeException $exception) {
-            return back()->with('error', $exception->getMessage());
+            return $request->expectsJson()
+                ? response()->json(['ok' => false, 'mensaje' => $exception->getMessage()], 422)
+                : back()->with('error', $exception->getMessage());
         }
 
-        return back()->with('ok', 'Pago simulado aprobado. El bono y su QR están activos.');
+        $mensaje = 'Pago autorizado desde la app. El bono y su QR están activos.';
+        return $request->expectsJson()
+            ? response()->json(['ok' => true, 'mensaje' => $mensaje])
+            : back()->with('ok', $mensaje);
     }
 }

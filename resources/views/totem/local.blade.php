@@ -29,7 +29,7 @@
 </div>
 <main class="shell" style="margin:24px auto">
     <header class="head">
-        <div class="brand"><small>Medichile · SDI Salud Digital Integrada</small><h1>Tótem de atención</h1></div>
+        <div class="brand"><small>Medichile · SDI Salud Digital Integrada</small><h1 style="color: #fff;">Tótem de atención</h1></div>
         <div class="status">● {{ $totem ? 'ACTIVO' : 'SIN EQUIPO ACTIVO' }}</div>
     </header>
     <section class="body">
@@ -144,13 +144,16 @@ body.demo-modal-open{overflow:hidden}
 
             <div class="border rounded-4 p-3 mb-3 bg-light">
                 <div class="eyebrow mb-2">1 · Beneficiario</div>
-                @if($pacienteMedsdi)
-                    <strong>{{ trim(data_get($pacienteMedsdi, 'nombres').' '.data_get($pacienteMedsdi, 'apellido_uno').' '.data_get($pacienteMedsdi, 'apellido_dos')) }}</strong>
-                    <div class="small text-muted">RUT {{ sdi_formatear_rut(data_get($pacienteMedsdi, 'rut')) }} · Validación simulada FONASA</div>
-                    <div class="small text-success fw-semibold mt-2">✓ Beneficiario autenticado en Med-SDI</div>
-                @else
-                    <div class="text-danger">{{ data_get($perfilRemotoMedsdi, 'mensaje', 'No fue posible obtener el beneficiario.') }}</div>
-                @endif
+                <label class="form-label fw-bold" for="medsdiRutBuscar">RUT del paciente</label>
+                <div class="input-group">
+                    <input type="text" id="medsdiRutBuscar" class="form-control" autocomplete="off" placeholder="Ej.: 17.174.188-2" data-rut-input>
+                    <button type="button" id="medsdiValidarPaciente" class="btn btn-primary">Validar paciente</button>
+                </div>
+                <div id="medsdiPacienteResultado" class="small mt-2 d-none"></div>
+                <div id="medsdiResponsableWrap" class="mt-3 d-none">
+                    <label for="medsdiResponsable" class="form-label small fw-bold">Titular responsable</label>
+                    <select id="medsdiResponsable" class="form-select"></select>
+                </div>
             </div>
 
             <div class="border rounded-4 p-3 mb-3">
@@ -158,8 +161,8 @@ body.demo-modal-open{overflow:hidden}
                     <div class="eyebrow mb-2">2 · Prestación FONASA</div>
                     <label class="form-label small" for="medsdiPrestacionBuscar">Busca por nombre o código</label>
                     <div class="input-group">
-                        <input type="search" id="medsdiPrestacionBuscar" class="form-control" autocomplete="off" placeholder="Ej.: consulta médica o 0101001" @disabled(!$pacienteMedsdi)>
-                        <button type="button" id="medsdiPrestacionBuscarBtn" class="btn btn-info text-white" @disabled(!$pacienteMedsdi)>Buscar</button>
+                        <input type="search" id="medsdiPrestacionBuscar" class="form-control" autocomplete="off" placeholder="Ej.: consulta médica o 0101001" disabled>
+                        <button type="button" id="medsdiPrestacionBuscarBtn" class="btn btn-info text-white" disabled>Buscar</button>
                     </div>
                     <div id="medsdiPrestacionResultados" class="list-group mt-2 d-none" style="max-height:260px;overflow-y:auto"></div>
                 </div>
@@ -218,7 +221,7 @@ body.demo-modal-open{overflow:hidden}
                 <div id="medsdiHoras" class="d-flex flex-wrap gap-2"></div>
             </div>
 
-            <form id="medsdiFormConfirmar" method="POST" action="{{ route('cliente.medsdi.agendar') }}" class="d-none mt-4 pt-3 border-top">
+            <form id="medsdiFormConfirmar" method="POST" action="{{ route('totem.reserva.agendar') }}" class="d-none mt-4 pt-3 border-top">
                 @csrf
                 <input type="hidden" name="id_profesional" id="medsdiInputProfesionalId">
                 <input type="hidden" name="id_especialidad" id="medsdiInputEspecialidadId">
@@ -238,15 +241,12 @@ body.demo-modal-open{overflow:hidden}
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="medsdiCambiarHora">Cambiar hora</button>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">RUT del paciente autenticado en Med-SDI</label>
-                    <input type="text" name="rut" id="medsdiRutPaciente" class="form-control" value="{{ data_get($pacienteMedsdi, 'rut', '') }}" readonly>
-                    @if($pacienteMedsdi)
-                        <div class="form-text">{{ trim(data_get($pacienteMedsdi, 'nombres').' '.data_get($pacienteMedsdi, 'apellido_uno').' '.data_get($pacienteMedsdi, 'apellido_dos')) }}</div>
-                    @else
-                        <div class="text-danger small mt-1">{{ data_get($perfilRemotoMedsdi, 'mensaje', 'No fue posible obtener el paciente autenticado.') }}</div>
-                    @endif
+                    <label class="form-label">Paciente validado</label>
+                    <input type="text" name="rut" id="medsdiRutPaciente" class="form-control" value="" readonly>
+                    <input type="hidden" name="titular_rut" id="medsdiRutTitular">
+                    <div class="form-text" id="medsdiPacienteConfirmacion"></div>
                 </div>
-                <button type="submit" class="btn btn-success w-100" @disabled(!$pacienteMedsdi)>Confirmar reserva y generar bono</button>
+                <button type="submit" class="btn btn-success w-100">Confirmar reserva y generar bono</button>
             </form>
         </div>
     </div></div>
@@ -285,7 +285,12 @@ document.addEventListener('DOMContentLoaded', function () {
     let medsdiCotizacionActual = null;
     let medsdiPrestacionTimer = null;
     let medsdiCalendario = null;
+    let medsdiPaciente = null;
     const medsdiEstado = document.getElementById('medsdiEstadoServicio');
+    const medsdiRutBuscar = document.getElementById('medsdiRutBuscar');
+    const medsdiPacienteResultado = document.getElementById('medsdiPacienteResultado');
+    const medsdiResponsableWrap = document.getElementById('medsdiResponsableWrap');
+    const medsdiResponsable = document.getElementById('medsdiResponsable');
     const medsdiRegion = document.getElementById('medsdiRegion');
     const medsdiCiudad = document.getElementById('medsdiCiudad');
     const medsdiEspecialidad = document.getElementById('medsdiEspecialidad');
@@ -308,6 +313,93 @@ document.addEventListener('DOMContentLoaded', function () {
         medsdiEstado.textContent = mensaje;
         medsdiEstado.classList.remove('d-none');
     }
+
+    function medsdiBloquearFlujoPaciente() {
+        medsdiPaciente = null;
+        medsdiPrestacion = null;
+        medsdiPrestacionBuscar.value = '';
+        medsdiPrestacionBuscar.disabled = true;
+        document.getElementById('medsdiPrestacionBuscarBtn').disabled = true;
+        document.getElementById('medsdiPrestacionResultados').classList.add('d-none');
+        document.getElementById('medsdiPrestacionSeleccionada').classList.add('d-none');
+        document.getElementById('medsdiPasoBusqueda').classList.add('d-none');
+        medsdiLimpiarSeleccion();
+    }
+
+    document.getElementById('medsdiValidarPaciente')?.addEventListener('click', async () => {
+        const rut = medsdiRutBuscar.value.trim();
+        medsdiBloquearFlujoPaciente();
+        medsdiResponsableWrap.classList.add('d-none');
+        medsdiPacienteResultado.className = 'small mt-2 text-muted';
+        medsdiPacienteResultado.textContent = 'Validando paciente en Med-SDI...';
+        if (!rut) {
+            medsdiPacienteResultado.className = 'small mt-2 text-danger';
+            medsdiPacienteResultado.textContent = 'Ingrese el RUT del paciente.';
+            return;
+        }
+
+        const data = await medsdiFetchJson(`{{ route('totem.reserva.paciente') }}?rut=${encodeURIComponent(rut)}`);
+        if (!data.ok || !data.paciente) {
+            medsdiPacienteResultado.className = 'small mt-2 text-danger';
+            medsdiPacienteResultado.textContent = data.mensaje || data.message || 'Paciente no encontrado.';
+            return;
+        }
+
+        const paciente = data.paciente;
+        const esDependiente = paciente.tipo === 'dependiente' || Boolean(paciente.es_dependiente);
+        const responsables = Array.isArray(paciente.responsables) ? paciente.responsables : [];
+        const titularInicial = esDependiente
+            ? (responsables.length === 1 ? responsables[0] : null)
+            : (paciente.titular || null);
+        if (esDependiente && responsables.length === 0) {
+            medsdiPacienteResultado.className = 'small mt-2 text-danger';
+            medsdiPacienteResultado.textContent = 'El paciente figura como dependiente, pero no tiene un titular responsable vigente.';
+            return;
+        }
+
+        medsdiPaciente = {...paciente, titular: titularInicial};
+        medsdiRutBuscar.value = paciente.rut || rut;
+        medsdiRutBuscar.dispatchEvent(new Event('input', {bubbles: true}));
+        document.getElementById('medsdiRutPaciente').value = paciente.rut || rut;
+        document.getElementById('medsdiRutTitular').value = titularInicial?.rut || (esDependiente ? '' : (paciente.rut || rut));
+        const detalle = esDependiente
+            ? `Dependiente (${paciente.parentesco || 'Carga'}) · Responsable: ${titularInicial?.nombre_completo || 'identificado'}`
+            : 'Titular';
+        medsdiPacienteResultado.className = 'small mt-2 text-success fw-semibold';
+        medsdiPacienteResultado.textContent = `✓ ${paciente.nombre_completo} · RUT ${paciente.rut} · ${detalle}`;
+        document.getElementById('medsdiPacienteConfirmacion').textContent = `${paciente.nombre_completo} · ${detalle}`;
+
+        if (esDependiente && responsables.length > 1) {
+            medsdiResponsable.innerHTML = '<option value="">Seleccione al titular responsable</option>';
+            responsables.forEach(responsable => medsdiResponsable.add(new Option(
+                `${responsable.nombre_completo || 'Titular'} · ${responsable.rut}`,
+                responsable.rut
+            )));
+            medsdiResponsableWrap.classList.remove('d-none');
+        }
+        const pacienteListo = !esDependiente || Boolean(titularInicial);
+        medsdiPrestacionBuscar.disabled = !pacienteListo;
+        document.getElementById('medsdiPrestacionBuscarBtn').disabled = !pacienteListo;
+        if (pacienteListo) medsdiPrestacionBuscar.focus();
+    });
+
+    medsdiResponsable?.addEventListener('change', () => {
+        const responsable = (medsdiPaciente?.responsables || []).find(item => item.rut === medsdiResponsable.value);
+        if (!responsable) return;
+        medsdiPaciente.titular = responsable;
+        document.getElementById('medsdiRutTitular').value = responsable.rut;
+        document.getElementById('medsdiPacienteConfirmacion').textContent = `${medsdiPaciente.nombre_completo} · Dependiente · Responsable: ${responsable.nombre_completo}`;
+        medsdiPrestacionBuscar.disabled = false;
+        document.getElementById('medsdiPrestacionBuscarBtn').disabled = false;
+        medsdiPrestacionBuscar.focus();
+    });
+
+    medsdiRutBuscar?.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            document.getElementById('medsdiValidarPaciente').click();
+        }
+    });
 
     function medsdiLimpiarSeleccion() {
         medsdiSeleccion = null;
@@ -332,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function () {
             id_profesional: medsdiSeleccion.idProfesional,
             id_lugar: medsdiSeleccion.idLugar,
         });
-        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.dias_laborales') }}?${params.toString()}`);
+        const resp = await medsdiFetchJson(`{{ route('totem.reserva.dias_laborales') }}?${params.toString()}`);
         const dias = String(resp.registros?.horario_agenda_laboral || '')
             .split(',').map(Number).filter(dia => dia >= 1 && dia <= 7);
 
@@ -394,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
         medsdiPrestacionResultados.innerHTML = '<div class="list-group-item text-muted">Buscando prestaciones...</div>';
         medsdiPrestacionResultados.classList.remove('d-none');
         const params = new URLSearchParams({buscar});
-        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.prestaciones') }}?${params.toString()}`);
+        const resp = await medsdiFetchJson(`{{ route('totem.reserva.prestaciones') }}?${params.toString()}`);
         medsdiPrestacionResultados.innerHTML = '';
         if (!resp.ok || !(resp.registros || []).length) {
             const vacio = document.createElement('div');
@@ -454,8 +546,8 @@ document.addEventListener('DOMContentLoaded', function () {
         medsdiInicializado = true;
 
         const [regiones, especialidades] = await Promise.all([
-            medsdiFetchJson('{{ route('cliente.medsdi.regiones') }}'),
-            medsdiFetchJson('{{ route('cliente.medsdi.especialidades') }}'),
+            medsdiFetchJson('{{ route('totem.reserva.regiones') }}'),
+            medsdiFetchJson('{{ route('totem.reserva.especialidades') }}'),
         ]);
         if (regiones.ok) {
             medsdiLlenarSelect(medsdiRegion, regiones.registros || [], 'id', 'nombre', 'Centro INSI (predeterminado)');
@@ -476,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function () {
         medsdiLlenarSelect(medsdiCiudad, [], 'id', 'nombre', medsdiRegion.value ? 'Todas las ciudades' : 'Primero seleccione una región');
         if (!medsdiRegion.value) return;
 
-        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.ciudades') }}?id_region=${medsdiRegion.value}`);
+        const resp = await medsdiFetchJson(`{{ route('totem.reserva.ciudades') }}?id_region=${medsdiRegion.value}`);
         medsdiLlenarSelect(medsdiCiudad, resp.registros || [], 'id', 'nombre', 'Todas las ciudades');
         medsdiCiudad.disabled = !resp.ok;
         if (!resp.ok) medsdiMostrarAviso(resp.mensaje || 'No fue posible cargar las ciudades de la región.');
@@ -493,7 +585,7 @@ document.addEventListener('DOMContentLoaded', function () {
         medsdiLlenarSelect(medsdiTipoEspecialidad, [], 'id', 'nombre', 'Todos');
         medsdiLlenarSelect(medsdiSubTipoEspecialidad, [], 'id', 'nombre', 'Todos');
         if (!medsdiEspecialidad.value) return;
-        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.tipo_especialidades') }}?id_especialidad=${medsdiEspecialidad.value}`);
+        const resp = await medsdiFetchJson(`{{ route('totem.reserva.tipo_especialidades') }}?id_especialidad=${medsdiEspecialidad.value}`);
         medsdiLlenarSelect(medsdiTipoEspecialidad, resp.registros || [], 'id', 'nombre', 'Todos');
     });
 
@@ -502,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function () {
         medsdiResultados.innerHTML = '';
         medsdiLlenarSelect(medsdiSubTipoEspecialidad, [], 'id', 'nombre', 'Todos');
         if (!medsdiTipoEspecialidad.value) return;
-        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.sub_tipo_especialidades') }}?id_tipo_especialidad=${medsdiTipoEspecialidad.value}`);
+        const resp = await medsdiFetchJson(`{{ route('totem.reserva.sub_tipo_especialidades') }}?id_tipo_especialidad=${medsdiTipoEspecialidad.value}`);
         medsdiLlenarSelect(medsdiSubTipoEspecialidad, resp.registros || [], 'id', 'nombre', 'Todos');
     });
 
@@ -518,7 +610,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (medsdiSubTipoEspecialidad.value) params.set('id_sub_tipo_especialidad', medsdiSubTipoEspecialidad.value);
         if (document.getElementById('medsdiNombreProfesional').value.trim()) params.set('nombre_profesional', document.getElementById('medsdiNombreProfesional').value.trim());
 
-        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.profesionales') }}?${params.toString()}`);
+        const resp = await medsdiFetchJson(`{{ route('totem.reserva.profesionales') }}?${params.toString()}`);
         if (!resp.disponible) { medsdiResultados.innerHTML = ''; medsdiMostrarAviso(resp.mensaje); return; }
         if (!resp.ok || !(resp.registros || []).length) { medsdiResultados.innerHTML = `<div class="col-12 alert alert-warning mb-0">${resp.mensaje || 'No se encontraron profesionales para los filtros indicados.'}</div>`; return; }
 
@@ -558,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function () {
         medsdiPasoHorario.classList.add('d-none');
         medsdiCotizacion.className = 'alert alert-info mb-0';
         medsdiCotizacion.textContent = 'Calculando convenio FONASA...';
-        const respCotizacion = await medsdiPostJson('{{ route('cliente.medsdi.cotizar') }}', {
+        const respCotizacion = await medsdiPostJson('{{ route('totem.reserva.cotizar') }}', {
             id_profesional: medsdiSeleccion.idProfesional,
             id_lugar_atencion: medsdiSeleccion.idLugar,
             id_prestacion: medsdiPrestacion.id,
@@ -588,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function () {
             id_profesional: medsdiSeleccion.idProfesional, id_lugar: medsdiSeleccion.idLugar,
             fecha: medsdiFecha.value,
         });
-        const resp = await medsdiFetchJson(`{{ route('cliente.medsdi.horas_disponibles') }}?${params.toString()}`);
+        const resp = await medsdiFetchJson(`{{ route('totem.reserva.horas_disponibles') }}?${params.toString()}`);
         if (!resp.disponible) { medsdiHoras.innerHTML = ''; medsdiMostrarAviso(resp.mensaje); return; }
         if (!resp.ok || !(resp.registros || []).length) { medsdiHoras.innerHTML = '<span class="text-muted">Sin horas disponibles para esta fecha.</span>'; return; }
 
@@ -634,6 +726,22 @@ document.addEventListener('DOMContentLoaded', function () {
         medsdiPasoHorario.classList.remove('d-none');
         medsdiPasoHorario.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
+
+    medsdiFormConfirmar?.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!medsdiPaciente) return medsdiMostrarAviso('Vuelva a validar el RUT del paciente.');
+        const boton = medsdiFormConfirmar.querySelector('button[type="submit"]');
+        boton.disabled = true;
+        const payload = Object.fromEntries(new FormData(medsdiFormConfirmar).entries());
+        const data = await medsdiPostJson(medsdiFormConfirmar.action, payload);
+        if (!data.ok) {
+            boton.disabled = false;
+            medsdiMostrarAviso(data.mensaje || 'No fue posible reservar la hora.');
+            medsdiEstado.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+            return;
+        }
+        window.location.assign(data.redirect);
+    });
 });
 </script>
 @endif
@@ -651,5 +759,6 @@ window.addEventListener('pageshow', function () {
 });
 </script>
 @endif
+@include('partials.rut_input_script')
 </body>
 </html>

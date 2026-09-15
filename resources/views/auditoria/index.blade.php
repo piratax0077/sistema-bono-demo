@@ -36,18 +36,6 @@
             </h2>
         </div>
 
-        <div class="d-flex gap-2">
-            <a href="/escritorio-admin" class="btn btn-outline-secondary">
-                Volver al escritorio
-            </a>
-
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button class="btn btn-danger">
-                    Cerrar sesion
-                </button>
-            </form>
-        </div>
     </div>
 
     @if(session('ok'))
@@ -224,9 +212,7 @@
             </div>
             <div class="text-end">
                 <div class="display-6 fw-bold">{{ $notificacionesPendientes }}</div>
-                <a href="{{ route('auditoria.notificaciones') }}" class="btn btn-outline-danger btn-sm">
-                    Revisar notificaciones
-                </a>
+                <div class="small-muted">notificaciones pendientes</div>
             </div>
         </div>
 
@@ -271,14 +257,6 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2">
-                <a href="{{ route('auditoria.notificaciones') }}" class="btn btn-outline-danger">
-                    Ver notificaciones
-                </a>
-                <a href="{{ route('auditoria.logins') }}" class="btn btn-outline-dark">
-                    Auditoria login
-                </a>
-            </div>
         </div>
 
         <div class="table-responsive">

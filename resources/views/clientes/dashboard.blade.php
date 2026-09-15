@@ -430,7 +430,13 @@
                                             <span class="visually-hidden">Pagar bono</span>
                                         </button>
                                     @elseif($voucher->estado === 'activo' && $voucher->qr_token)
-                                        <a href="{{ route('vouchers.qr', $voucher->qr_token) }}" class="btn btn-sm btn-outline-success" title="Ver QR">
+                                        <a href="{{ route('vouchers.qr', $voucher->qr_token) }}" class="btn btn-sm btn-outline-success qr-resumen-modal-trigger" title="Ver QR"
+                                           data-qr-datos-url="{{ route('vouchers.compartirDatos', $voucher->qr_token) }}"
+                                           data-bono-codigo="{{ $voucher->codigo }}"
+                                           data-bono-estado="{{ $voucher->estado }}"
+                                           data-servicio="{{ $voucher->tipo_servicio ?: 'Atención médica' }}"
+                                           data-profesional="{{ $voucher->prestador_nombre ?: 'Sin profesional asignado' }}"
+                                           data-vencimiento="{{ optional($voucher->fecha_vencimiento)->format('d-m-Y') ?: 'Sin vencimiento' }}">
                                             <span aria-hidden="true">🔳</span>
                                             <span class="visually-hidden">Ver QR</span>
                                         </a>
@@ -439,7 +445,15 @@
                                             <span aria-hidden="true">📤</span>
                                             <span class="visually-hidden">Compartir</span>
                                         </button>
-                                        <a href="{{ route('vouchers.qr.lectorDemo', $voucher->qr_token) }}" class="btn btn-sm btn-success" title="Lector simulado">
+                                        <a href="{{ route('vouchers.qr.lectorDemo', $voucher->qr_token) }}" class="btn btn-sm btn-success lector-simulado-modal-trigger" title="Lector simulado"
+                                           data-bono-codigo="{{ $voucher->codigo }}"
+                                           data-bono-estado="{{ $voucher->estado }}"
+                                           data-paciente="{{ $voucher->beneficiario_nombre ?: $voucher->cliente_nombre }}"
+                                           data-servicio="{{ $voucher->tipo_servicio ?: 'Atención médica' }}"
+                                           data-profesional="{{ $voucher->prestador_nombre ?: 'Sin profesional asignado' }}"
+                                           data-fecha-hora="{{ optional($voucher->agenda?->fecha_hora_confirmada ?: $voucher->agenda?->fecha_hora_solicitada)->format('d-m-Y H:i') ?: 'Pendiente' }}"
+                                           data-hora-medsdi="{{ $voucher->agenda?->medichile_hora_medica_id ? '#'.$voucher->agenda->medichile_hora_medica_id : 'Sin sincronizar' }}"
+                                           data-valor="${{ number_format($voucher->valor_total ?: $voucher->valor, 0, ',', '.') }}">
                                             <span aria-hidden="true">📷</span>
                                             <span class="visually-hidden">Lector simulado</span>
                                         </a>
@@ -502,6 +516,48 @@
     </section>
 </main>
 
+<div id="modalLectorSimulado" class="lector-modal" hidden>
+    <div class="lector-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalLectorSimuladoTitulo">
+        <header class="lector-modal__header">
+            <div><div class="small text-uppercase opacity-75 fw-bold">Validación segura del bono</div><h2 id="modalLectorSimuladoTitulo" class="h5 text-white mb-0">Lector QR simulado</h2><small id="modalLectorSimuladoCodigo" class="opacity-75"></small></div>
+            <button type="button" class="btn-close btn-close-white" id="cerrarModalLectorSimulado" aria-label="Cerrar"></button>
+        </header>
+        <div class="lector-modal__body">
+            <div class="lector-validation"><span class="lector-validation__icon">✓</span><div><strong>Lectura correcta y firma válida</strong><small>La integridad del bono fue verificada mediante su firma digital.</small></div></div>
+            <p class="lector-privacy">Vista resumida para demostración. No expone RUT, dirección, cuenta bancaria ni datos clínicos.</p>
+            <div class="lector-summary-grid">
+                <section class="lector-summary-card"><div class="lector-summary-card__title dark">Identificación del bono</div><dl><dt>Código</dt><dd id="lectorDatoCodigo"></dd><dt>Estado</dt><dd><span class="lector-status" id="lectorDatoEstado"></span></dd><dt>Prestación</dt><dd id="lectorDatoServicio"></dd></dl></section>
+                <section class="lector-summary-card"><div class="lector-summary-card__title blue">Paciente / beneficiario</div><dl><dt>Nombre</dt><dd id="lectorDatoPaciente"></dd><dt>Identidad</dt><dd><span class="lector-verified">✓ Validada</span></dd><dt>Autorización</dt><dd>Vinculada al bono</dd></dl></section>
+                <section class="lector-summary-card"><div class="lector-summary-card__title green">Profesional asignado</div><dl><dt>Nombre</dt><dd id="lectorDatoProfesional"></dd><dt>Relación</dt><dd>Asociado a la atención</dd></dl></section>
+                <section class="lector-summary-card"><div class="lector-summary-card__title cyan">Hora médica</div><dl><dt>Fecha y hora</dt><dd id="lectorDatoFecha"></dd><dt>Hora Med-SDI</dt><dd id="lectorDatoHoraMedsdi"></dd><dt>Valor</dt><dd><strong id="lectorDatoValor"></strong></dd></dl></section>
+            </div>
+            <div class="lector-trace"><span>1 · Bono emitido</span><span>2 · Identidad validada</span><span>3 · Hora vinculada</span><span>4 · Lectura verificada</span></div>
+        </div>
+    </div>
+</div>
+<style>
+.lector-modal{position:fixed;inset:0;z-index:10050;display:grid;place-items:center;padding:18px;background:rgba(10,31,61,.66);backdrop-filter:blur(4px)}.lector-modal[hidden]{display:none}.lector-modal__dialog{display:flex;width:min(1100px,96vw);max-height:94vh;flex-direction:column;overflow:hidden;border-radius:22px;background:#f4f7fb;box-shadow:0 28px 90px rgba(5,22,52,.38)}.lector-modal__header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:15px 20px;background:linear-gradient(110deg,#1848a1,#31bebe);color:#fff}.lector-modal__body{padding:22px;overflow-y:auto}.lector-validation{display:flex;gap:13px;align-items:center;padding:16px 18px;border-radius:15px;background:#d9f1e8;color:#07543e}.lector-validation__icon{display:grid;place-items:center;flex:0 0 38px;height:38px;border-radius:50%;background:#098764;color:#fff;font-size:21px;font-weight:900}.lector-validation strong,.lector-validation small{display:block}.lector-validation small{margin-top:3px;color:#357060}.lector-privacy{margin:12px 0 18px;color:#69798b;font-size:13px}.lector-summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}.lector-summary-card{overflow:hidden;border:1px solid #d5e1ef;border-radius:17px;background:#fff}.lector-summary-card__title{padding:12px 16px;color:#fff;font-weight:900}.lector-summary-card__title.dark{background:#20262d}.lector-summary-card__title.blue{background:#176cf2}.lector-summary-card__title.green{background:#31bebe}.lector-summary-card__title.cyan{background:#16bede}.lector-summary-card dl{display:grid;grid-template-columns:minmax(115px,.75fr) 1.25fr;gap:8px 12px;margin:0;padding:17px}.lector-summary-card dt{font-weight:800}.lector-summary-card dd{min-width:0;margin:0;overflow-wrap:anywhere}.lector-status,.lector-verified{display:inline-block;border-radius:7px;padding:3px 8px;background:#24bdc9;color:#072f39;font-size:12px;font-weight:900;text-transform:uppercase}.lector-verified{background:#dff5ed;color:#087555}.lector-trace{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}.lector-trace span{padding:11px;border-radius:10px;background:#e8f0fc;color:#1848a1;text-align:center;font-size:12px;font-weight:800}@media(max-width:700px){.lector-modal{padding:0}.lector-modal__dialog{width:100vw;max-height:none;height:100vh;border-radius:0}.lector-modal__header{padding:13px 15px}.lector-modal__body{padding:15px}.lector-summary-grid{grid-template-columns:1fr}.lector-trace{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<div id="modalQrPaciente" class="qr-paciente-modal" hidden>
+    <div class="qr-paciente-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalQrPacienteTitulo">
+        <header class="qr-paciente-modal__header"><div><div class="small text-uppercase opacity-75 fw-bold">Bono digital Medichile</div><h2 id="modalQrPacienteTitulo" class="h5 text-white mb-0">Mi código QR</h2></div><button type="button" class="btn-close btn-close-white" id="cerrarModalQrPaciente" aria-label="Cerrar"></button></header>
+        <div class="qr-paciente-modal__body">
+            <div class="qr-paciente-modal__visual"><div id="qrPacienteCargando" class="qr-paciente-modal__loading">Generando QR seguro…</div><img id="qrPacienteImagen" alt="Código QR del bono" hidden></div>
+            <div class="qr-paciente-modal__info">
+                <span class="qr-paciente-modal__badge">✓ Bono digital vigente</span>
+                <h3 id="qrPacienteCodigo"></h3>
+                <p class="text-muted">Presenta este código en recepción para identificar tu bono de manera rápida y segura.</p>
+                <dl><dt>Prestación</dt><dd id="qrPacienteServicio"></dd><dt>Profesional</dt><dd id="qrPacienteProfesional"></dd><dt>Estado</dt><dd id="qrPacienteEstado"></dd><dt>Vigencia</dt><dd id="qrPacienteVencimiento"></dd></dl>
+                <div class="qr-paciente-modal__security">🔒 El código contiene una referencia segura. Tus datos bancarios y clínicos no están visibles.</div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+.qr-paciente-modal{position:fixed;inset:0;z-index:10051;display:grid;place-items:center;padding:18px;background:rgba(10,31,61,.66);backdrop-filter:blur(4px)}.qr-paciente-modal[hidden]{display:none}.qr-paciente-modal__dialog{width:min(850px,95vw);overflow:hidden;border-radius:22px;background:#fff;box-shadow:0 28px 90px rgba(5,22,52,.38)}.qr-paciente-modal__header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(110deg,#1848a1,#31bebe);color:#fff}.qr-paciente-modal__body{display:grid;grid-template-columns:minmax(270px,.8fr) 1.2fr;gap:28px;align-items:center;padding:28px}.qr-paciente-modal__visual{display:grid;min-height:290px;place-items:center;padding:16px;border:1px solid #d8e3f0;border-radius:18px;background:#f7fbff}.qr-paciente-modal__visual img{width:min(280px,100%);height:auto}.qr-paciente-modal__loading{color:#607184;font-weight:800;text-align:center}.qr-paciente-modal__badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#dff5ed;color:#087555;font-size:12px;font-weight:900}.qr-paciente-modal__info h3{margin:12px 0 8px;color:#1848a1;font-size:22px;overflow-wrap:anywhere}.qr-paciente-modal__info dl{display:grid;grid-template-columns:105px 1fr;gap:9px 12px;margin:20px 0}.qr-paciente-modal__info dt{font-weight:850}.qr-paciente-modal__info dd{margin:0}.qr-paciente-modal__security{padding:12px;border-radius:12px;background:#edf4ff;color:#31557d;font-size:13px}@media(max-width:700px){.qr-paciente-modal{padding:0}.qr-paciente-modal__dialog{width:100vw;height:100vh;border-radius:0;overflow-y:auto}.qr-paciente-modal__body{grid-template-columns:1fr;padding:18px}.qr-paciente-modal__visual{min-height:250px}}
+</style>
+
 @php
     $cuentaBanco = $cuentaBancariaMedsdi['cuenta'] ?? [];
     $pacienteCuenta = $cuentaBancariaMedsdi['paciente'] ?? [];
@@ -543,7 +599,7 @@
                                     <td><strong>{{ $cuenta['banco'] ?: 'Banco no disponible' }}</strong><div class="small text-muted">{{ filled($cuenta['numero_cuenta'] ?? null) ? 'Terminada en '.substr((string) $cuenta['numero_cuenta'], -4) : 'Número no disponible' }}</div></td>
                                     <td>{{ $cuenta['tipo_cuenta'] ?: 'No disponible' }}</td>
                                     <td>@if(!empty($cuenta['principal']))<span class="badge bg-success">Principal</span>@else<span class="badge bg-secondary">Secundaria</span>@endif</td>
-                                    <td class="text-end"><div class="d-inline-flex gap-1"><button type="button" class="btn btn-sm btn-outline-info paciente-notificar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Notificar</button><button type="button" class="btn btn-sm btn-outline-primary paciente-editar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Editar</button></div></td>
+                                    <td class="text-end"><div class="d-inline-flex flex-wrap justify-content-end gap-1"><button type="button" class="btn btn-sm btn-outline-primary paciente-editar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Editar</button><button type="button" class="btn btn-sm btn-outline-info paciente-autorizar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Autorizar App</button><button type="button" class="btn btn-sm btn-outline-danger paciente-eliminar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Eliminar cuenta</button></div></td>
                                 </tr>
                             @empty
                                 <tr><td colspan="5" class="text-center text-muted py-3">No hay cuentas bancarias registradas.</td></tr>
@@ -568,6 +624,82 @@
 </div>
 
 <script>
+const modalQrPaciente = document.getElementById('modalQrPaciente');
+const qrPacienteImagen = document.getElementById('qrPacienteImagen');
+async function abrirQrPaciente(datos) {
+    if (!modalQrPaciente || !qrPacienteImagen) return;
+    const asignar = (id, valor) => { const elemento = document.getElementById(id); if (elemento) elemento.textContent = valor || 'Sin dato'; };
+    asignar('qrPacienteCodigo', datos.bonoCodigo);
+    asignar('qrPacienteServicio', datos.servicio);
+    asignar('qrPacienteProfesional', datos.profesional);
+    asignar('qrPacienteEstado', String(datos.bonoEstado || '').replaceAll('_', ' '));
+    asignar('qrPacienteVencimiento', datos.vencimiento);
+    qrPacienteImagen.hidden = true;
+    qrPacienteImagen.removeAttribute('src');
+    const cargando = document.getElementById('qrPacienteCargando');
+    cargando.hidden = false;
+    cargando.textContent = 'Generando QR seguro…';
+    modalQrPaciente.hidden = false;
+    document.body.classList.add('modal-open');
+    document.getElementById('cerrarModalQrPaciente')?.focus();
+    try {
+        const response = await fetch(datos.qrDatosUrl, {headers:{'Accept':'application/json'}});
+        const payload = await response.json();
+        if (!response.ok || !payload.qr_image_url) throw new Error(payload.message || 'No fue posible generar el QR.');
+        qrPacienteImagen.src = payload.qr_image_url;
+        qrPacienteImagen.hidden = false;
+        cargando.hidden = true;
+    } catch (error) {
+        cargando.textContent = error.message || 'No fue posible generar el QR.';
+    }
+}
+function cerrarQrPaciente() {
+    if (!modalQrPaciente) return;
+    modalQrPaciente.hidden = true;
+    qrPacienteImagen?.removeAttribute('src');
+    document.body.classList.remove('modal-open');
+}
+document.querySelectorAll('.qr-resumen-modal-trigger').forEach(link => link.addEventListener('click', event => {
+    event.preventDefault();
+    abrirQrPaciente(link.dataset);
+}));
+document.getElementById('cerrarModalQrPaciente')?.addEventListener('click', cerrarQrPaciente);
+modalQrPaciente?.addEventListener('click', event => { if (event.target === modalQrPaciente) cerrarQrPaciente(); });
+
+const modalLectorSimulado = document.getElementById('modalLectorSimulado');
+function abrirLectorSimulado(datos) {
+    if (!modalLectorSimulado) return;
+    const asignar = (id, valor) => { const elemento = document.getElementById(id); if (elemento) elemento.textContent = valor || 'Sin dato'; };
+    asignar('modalLectorSimuladoCodigo', datos.bonoCodigo);
+    asignar('lectorDatoCodigo', datos.bonoCodigo);
+    asignar('lectorDatoEstado', String(datos.bonoEstado || '').replaceAll('_', ' '));
+    asignar('lectorDatoServicio', datos.servicio);
+    asignar('lectorDatoPaciente', datos.paciente);
+    asignar('lectorDatoProfesional', datos.profesional);
+    asignar('lectorDatoFecha', datos.fechaHora);
+    asignar('lectorDatoHoraMedsdi', datos.horaMedsdi);
+    asignar('lectorDatoValor', datos.valor);
+    modalLectorSimulado.hidden = false;
+    document.body.classList.add('modal-open');
+    document.getElementById('cerrarModalLectorSimulado')?.focus();
+}
+function cerrarLectorSimulado() {
+    if (!modalLectorSimulado) return;
+    modalLectorSimulado.hidden = true;
+    document.body.classList.remove('modal-open');
+}
+document.querySelectorAll('.lector-simulado-modal-trigger').forEach(link => link.addEventListener('click', event => {
+    event.preventDefault();
+    abrirLectorSimulado(link.dataset);
+}));
+document.getElementById('cerrarModalLectorSimulado')?.addEventListener('click', cerrarLectorSimulado);
+modalLectorSimulado?.addEventListener('click', event => { if (event.target === modalLectorSimulado) cerrarLectorSimulado(); });
+document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (!modalQrPaciente?.hidden) cerrarQrPaciente();
+    else if (!modalLectorSimulado?.hidden) cerrarLectorSimulado();
+});
+
 function abrirCuentaBancaria() {
     const modal = document.getElementById('modalCuentaBancaria');
     if (!modal) return;
@@ -607,8 +739,8 @@ function cargarCuentaBancariaPaciente(cuenta) {
     form.querySelector('[name="email"]').value = cuenta?.email || @json($pacienteCuenta['email'] ?? $pacienteMedsdi['email'] ?? '');
 }
 document.querySelectorAll('.paciente-editar-cuenta').forEach(button => button.addEventListener('click', () => cargarCuentaBancariaPaciente(cuentasBancariasPaciente.find(cuenta => String(cuenta.id) === button.dataset.cuentaId))));
-document.querySelectorAll('.paciente-notificar-cuenta').forEach(button => button.addEventListener('click', async () => {
-    const confirmado = typeof swal === 'function' ? await swal({title:'¿Notificar al paciente?',text:'Se enviará un aviso sobre sus datos bancarios a la App Android.',icon:'warning',buttons:['Cancelar','Notificar']}) : confirm('¿Enviar notificación Android?');
+document.querySelectorAll('.paciente-autorizar-cuenta').forEach(button => button.addEventListener('click', async () => {
+    const confirmado = typeof swal === 'function' ? await swal({title:'¿Autorizar esta cuenta en la App?',text:'Se enviará una confirmación de los datos bancarios a la App del paciente.',icon:'warning',buttons:['Cancelar','Autorizar App']}) : confirm('¿Autorizar esta cuenta en la App?');
     if (!confirmado) return;
     button.disabled = true;
     try {
@@ -616,11 +748,28 @@ document.querySelectorAll('.paciente-notificar-cuenta').forEach(button => button
         if (!csrf) throw new Error('No se encontró el token de seguridad. Recarga la página e inténtalo nuevamente.');
         const response = await fetch('{{ route('paciente.cuenta_bancaria.notificar') }}', {method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({cuenta_id:button.dataset.cuentaId})});
         const data = await response.json();
-        if (!response.ok) throw new Error(data.mensaje || 'No fue posible enviar la notificación.');
-        if (typeof swal === 'function') await swal({title:'Notificación procesada',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
+        if (!response.ok) throw new Error(data.mensaje || 'No fue posible solicitar la autorización.');
+        if (typeof swal === 'function') await swal({title:'Autorización enviada',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
     } catch (error) {
-        if (typeof swal === 'function') await swal({title:'No se pudo notificar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
+        if (typeof swal === 'function') await swal({title:'No se pudo autorizar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
     } finally { button.disabled = false; }
+}));
+document.querySelectorAll('.paciente-eliminar-cuenta').forEach(button => button.addEventListener('click', async () => {
+    const confirmado = typeof swal === 'function' ? await swal({title:'¿Eliminar esta cuenta bancaria?',text:'La cuenta dejará de estar disponible y se enviará una confirmación a la App del paciente.',icon:'warning',buttons:['Cancelar','Eliminar y confirmar']}) : confirm('¿Eliminar esta cuenta y enviar confirmación a la App?');
+    if (!confirmado) return;
+    button.disabled = true;
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('#modalCuentaBancaria input[name="_token"]')?.value;
+        if (!csrf) throw new Error('No se encontró el token de seguridad. Recarga la página e inténtalo nuevamente.');
+        const response = await fetch('{{ route('paciente.cuenta_bancaria.eliminar') }}', {method:'DELETE',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({cuenta_id:button.dataset.cuentaId})});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || 'No fue posible eliminar la cuenta bancaria.');
+        if (typeof swal === 'function') await swal({title:'Cuenta eliminada',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
+        window.location.reload();
+    } catch (error) {
+        button.disabled = false;
+        if (typeof swal === 'function') await swal({title:'No se pudo eliminar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
+    }
 }));
 document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => {
     cargarCuentaBancariaPaciente(null);
@@ -1031,6 +1180,15 @@ document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => 
                     <div class="alert alert-danger py-2 px-3">
                         Recuerde validar los datos del paciente, profesional y convenio con los datos del bono físico.
                     </div>
+                    <div id="pagoAutorizacionEstado" class="alert alert-primary d-none" role="status" aria-live="polite">
+                        <div class="d-flex align-items-center gap-3">
+                            <span id="pagoAutorizacionSpinner" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <div>
+                                <strong id="pagoAutorizacionTitulo">Esperando respuesta desde la app</strong>
+                                <div id="pagoAutorizacionMensaje" class="small mt-1">Enviamos una solicitud al dispositivo autorizado del paciente.</div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">RUT del paciente</label>
@@ -1077,7 +1235,7 @@ document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => 
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success"><i class="feather icon-check"></i> Pagar bono</button>
+                    <button type="submit" id="pagoBonoSubmit" class="btn btn-success"><i class="feather icon-check"></i> Solicitar autorización de pago</button>
                 </div>
             </form>
         </div>
@@ -1578,9 +1736,40 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', () => ocultarModalDemo(button.closest('.modal')));
     });
 
+    const formPagoBono = document.getElementById('formPagoBono');
+    const pagoEstado = document.getElementById('pagoAutorizacionEstado');
+    const pagoEstadoTitulo = document.getElementById('pagoAutorizacionTitulo');
+    const pagoEstadoMensaje = document.getElementById('pagoAutorizacionMensaje');
+    const pagoEstadoSpinner = document.getElementById('pagoAutorizacionSpinner');
+    const pagoSubmit = document.getElementById('pagoBonoSubmit');
+    let pagoPollingTimer = null;
+    let pagoConsultando = false;
+
+    function detenerConsultaPago() {
+        if (pagoPollingTimer) window.clearTimeout(pagoPollingTimer);
+        pagoPollingTimer = null;
+        pagoConsultando = false;
+    }
+
+    function mostrarEstadoPago(tipo, titulo, mensaje) {
+        pagoEstado.classList.remove('d-none', 'alert-primary', 'alert-success', 'alert-danger');
+        pagoEstado.classList.add(tipo === 'success' ? 'alert-success' : (tipo === 'danger' ? 'alert-danger' : 'alert-primary'));
+        pagoEstadoTitulo.textContent = titulo;
+        pagoEstadoMensaje.textContent = mensaje;
+        pagoEstadoSpinner.classList.toggle('d-none', tipo !== 'pending');
+    }
+
+    function reiniciarModalPago() {
+        detenerConsultaPago();
+        pagoEstado.classList.add('d-none');
+        pagoSubmit.disabled = false;
+        pagoSubmit.innerHTML = '<i class="feather icon-check"></i> Solicitar autorización de pago';
+    }
+
     document.querySelectorAll('.abrir-pago-bono').forEach(button => {
         button.addEventListener('click', () => {
-            document.getElementById('formPagoBono').action = button.dataset.actionUrl;
+            reiniciarModalPago();
+            formPagoBono.action = button.dataset.actionUrl;
             document.getElementById('pagoBonoCodigo').value = button.dataset.codigo;
             document.getElementById('pagoBonoProfesional').value = button.dataset.profesional;
             document.getElementById('pagoBonoValor').value = money(button.dataset.valor);
@@ -1588,6 +1777,72 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('pagoBonoCopago').value = money(button.dataset.copago);
             mostrarModalDemo(document.getElementById('modalPagoBono'));
         });
+    });
+
+    async function consultarAutorizacionPago() {
+        if (pagoConsultando || !formPagoBono.action) return;
+        pagoConsultando = true;
+
+        try {
+            const response = await fetch(formPagoBono.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: new FormData(formPagoBono),
+            });
+            const data = await response.json();
+
+            if (response.status === 429) {
+                mostrarEstadoPago('pending', 'Esperando respuesta desde la app', 'Estamos moderando las consultas de seguridad. Volveremos a revisar la autorización automáticamente.');
+                pagoSubmit.disabled = true;
+                pagoSubmit.textContent = 'Esperando autorización…';
+                const retryAfter = Number(response.headers.get('Retry-After')) || 6;
+                pagoPollingTimer = window.setTimeout(consultarAutorizacionPago, Math.max(retryAfter, 4) * 1000);
+                return;
+            }
+
+            if (response.status === 202 || data.pendiente_autorizacion) {
+                mostrarEstadoPago('pending', 'Esperando respuesta desde la app', data.mensaje || 'El paciente debe autorizar o rechazar el pago desde su dispositivo registrado.');
+                pagoSubmit.disabled = true;
+                pagoSubmit.textContent = 'Esperando autorización…';
+                pagoPollingTimer = window.setTimeout(consultarAutorizacionPago, 3000);
+                return;
+            }
+
+            if (!response.ok || !data.ok) {
+                detenerConsultaPago();
+                const rechazado = Boolean(data.autorizacion_rechazada);
+                mostrarEstadoPago('danger', rechazado ? 'Pago rechazado desde la app' : 'No se pudo autorizar el pago', data.mensaje || 'Revise la solicitud e intente nuevamente.');
+                pagoSubmit.disabled = false;
+                pagoSubmit.textContent = 'Solicitar una nueva autorización';
+                return;
+            }
+
+            detenerConsultaPago();
+            mostrarEstadoPago('success', 'Pago autorizado', data.mensaje || 'La app autorizó el pago y el bono quedó activo.');
+            pagoSubmit.disabled = true;
+            pagoSubmit.textContent = 'Pago autorizado';
+            window.setTimeout(() => window.location.reload(), 1400);
+        } catch (error) {
+            detenerConsultaPago();
+            mostrarEstadoPago('danger', 'No pudimos consultar la autorización', 'Compruebe la conexión e intente nuevamente. La solicitud no se aprobará automáticamente.');
+            pagoSubmit.disabled = false;
+            pagoSubmit.textContent = 'Reintentar';
+        } finally {
+            pagoConsultando = false;
+        }
+    }
+
+    formPagoBono?.addEventListener('submit', event => {
+        event.preventDefault();
+        consultarAutorizacionPago();
+    });
+
+    document.querySelectorAll('#modalPagoBono [data-bs-dismiss="modal"]').forEach(button => {
+        button.addEventListener('click', detenerConsultaPago);
     });
 
     document.querySelectorAll('.seleccionar-horario-online').forEach(button => {

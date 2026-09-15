@@ -162,6 +162,11 @@ class MedsdiAgendaApiService
         return $this->notificarCuentaBancaria('/api/paciente/cuenta-bancaria/notificar', $this->tokenActivo(), $cuentaId);
     }
 
+    public function eliminarCuentaBancariaPaciente(int $cuentaId): array
+    {
+        return $this->eliminarCuentaBancaria('/api/paciente/cuenta-bancaria', $this->tokenActivo(), $cuentaId);
+    }
+
     public function cuentaBancariaProfesional(): array
     {
         $token = $this->tokenActivoProfesional();
@@ -231,6 +236,33 @@ class MedsdiAgendaApiService
     public function notificarCuentaBancariaProfesional(int $cuentaId): array
     {
         return $this->notificarCuentaBancaria('/api/profesional/cuenta-bancaria/notificar', $this->tokenActivoProfesional(), $cuentaId);
+    }
+
+    public function eliminarCuentaBancariaProfesional(int $cuentaId): array
+    {
+        return $this->eliminarCuentaBancaria('/api/profesional/cuenta-bancaria', $this->tokenActivoProfesional(), $cuentaId);
+    }
+
+    private function eliminarCuentaBancaria(string $endpoint, ?string $token, int $cuentaId): array
+    {
+        if (! $token) {
+            return $this->noDisponible('No fue posible autenticar al usuario en Med-SDI.');
+        }
+
+        try {
+            $response = $this->request()->withToken($token)->withHeaders(['X-Auth-Token' => $token])
+                ->delete(rtrim((string) config('medsdi.base_url'), '/').$endpoint, ['cuenta_id' => $cuentaId]);
+            $payload = $response->json() ?: [];
+
+            return [
+                'ok' => $response->successful() && (int) ($payload['estado'] ?? 0) === 1,
+                'disponible' => true,
+                'dispositivos_notificados' => (int) ($payload['dispositivos_notificados'] ?? 0),
+                'mensaje' => $payload['mensaje'] ?? 'Med-SDI no pudo eliminar la cuenta bancaria.',
+            ];
+        } catch (ConnectionException) {
+            return $this->noDisponible('No fue posible conectar con Med-SDI para eliminar la cuenta bancaria.');
+        }
     }
 
     private function notificarCuentaBancaria(string $endpoint, ?string $token, int $cuentaId): array
@@ -606,11 +638,9 @@ class MedsdiAgendaApiService
     }
 
     /**
-     * Pago online real del copago en Med-SDI. El backend hoy solo expone esta
-     * lógica como ruta web de sesión (/Asistente/venta/bono/pago, rol
-     * Paciente/Asistente/Profesional), no como API con X-Auth-Token. Mientras
-     * no exista un endpoint equivalente bajo /api/paciente/pagar_bono, esto
-     * queda deshabilitado por config y el pago sigue siendo simulado local.
+     * Solicita y consulta la autorización móvil del copago en Med-SDI.
+     * El mismo endpoint registra el pago únicamente después de que la app
+     * aprueba la solicitud asociada a la hora y al monto vigentes.
      */
     public function pagarBono(array $datos): array
     {
@@ -631,8 +661,40 @@ class MedsdiAgendaApiService
         try {
             $response = $this->request()->withHeaders(['X-Auth-Token' => $token])
                 ->post(rtrim((string) config('medsdi.base_url'), '/').'/api/paciente/pagar_bono', $datos);
+            $payload = $response->json() ?: [];
+            $pendiente = (bool) ($payload['pendiente_autorizacion'] ?? false);
+            $mensajeValidacion = collect($payload['errors'] ?? [])->flatten()->first();
+            $mensajeRemoto = $payload['msj'] ?? $payload['mensaje'] ?? $payload['message'] ?? $mensajeValidacion;
 
-            return $this->interpretar($response, 'orden');
+            if (!$response->successful()) {
+                Log::warning('Med-SDI rechazó la solicitud de autorización de pago.', [
+                    'status' => $response->status(),
+                    'mensaje' => is_string($mensajeRemoto) ? $mensajeRemoto : null,
+                    'base_url' => parse_url((string) config('medsdi.base_url'), PHP_URL_HOST),
+                    'claves_respuesta' => array_keys($payload),
+                ]);
+            }
+
+            if (!is_string($mensajeRemoto) || trim($mensajeRemoto) === '') {
+                $mensajeRemoto = match ($response->status()) {
+                    404 => 'El backend configurado no expone todavía la autorización de pago (HTTP 404).',
+                    422 => 'El backend rechazó los datos o aún utiliza el contrato anterior de pago (HTTP 422).',
+                    500 => 'El backend Med-SDI produjo un error interno al crear la autorización (HTTP 500).',
+                    default => 'Med-SDI no pudo procesar el pago (HTTP '.$response->status().').',
+                };
+            }
+
+            return [
+                'ok' => $response->successful() && (int) ($payload['estado'] ?? 0) === 1 && !$pendiente,
+                'pendiente_autorizacion' => $pendiente,
+                'autorizacion_rechazada' => (bool) ($payload['autorizacion_rechazada'] ?? false),
+                'autorizacion_expirada' => (bool) ($payload['autorizacion_expirada'] ?? false),
+                'authorization_token' => $payload['authorization_token'] ?? null,
+                'authorization_id' => $payload['authorization_id'] ?? null,
+                'orden' => is_array($payload['orden'] ?? null) ? $payload['orden'] : null,
+                'mensaje' => $mensajeRemoto,
+                'disponible' => true,
+            ];
         } catch (ConnectionException $e) {
             return $this->noDisponible('No fue posible conectar con Med-SDI para pagar el bono.');
         }

@@ -127,7 +127,7 @@ class AgendaExternaCompraService
         });
     }
 
-    public function comprarComoAsistente(User $asistente, array $seleccion, string $rutIngresado, string $ip): Voucher
+    public function comprarComoAsistente(?User $asistente, array $seleccion, string $rutIngresado, string $ip): Voucher
     {
         return DB::transaction(function () use ($asistente, $seleccion, $rutIngresado, $ip) {
             $rut = $this->normalizarRut($rutIngresado);
@@ -140,6 +140,23 @@ class AgendaExternaCompraService
                 throw new RuntimeException($perfilRemoto['mensaje'] ?? 'No fue posible validar al paciente en Med-SDI.');
             }
             $pacienteMedsdi = $perfilRemoto['paciente'];
+            $esDependienteRemoto = ($pacienteMedsdi['tipo'] ?? null) === 'dependiente'
+                || (bool) ($pacienteMedsdi['es_dependiente'] ?? false);
+            $titularRemoto = is_array($pacienteMedsdi['titular'] ?? null) ? $pacienteMedsdi['titular'] : null;
+            $rutTitularSolicitado = $this->normalizarRut($seleccion['titular_rut'] ?? '');
+            $responsablesRemotos = collect(is_array($pacienteMedsdi['responsables'] ?? null) ? $pacienteMedsdi['responsables'] : []);
+            if ($esDependienteRemoto && $responsablesRemotos->count() > 1 && $rutTitularSolicitado === '') {
+                throw new RuntimeException('Seleccione al titular responsable vigente del dependiente.');
+            }
+            if ($esDependienteRemoto && $rutTitularSolicitado !== '') {
+                $titularCoincidente = $responsablesRemotos->first(
+                    fn ($responsable) => $this->normalizarRut($responsable['rut'] ?? '') === $rutTitularSolicitado
+                );
+                if (! is_array($titularCoincidente)) {
+                    throw new RuntimeException('El titular seleccionado no figura como responsable vigente del dependiente en Med-SDI.');
+                }
+                $titularRemoto = $titularCoincidente;
+            }
             $sha = hash('sha256', $rut);
             $hmac = hash_hmac('sha256', $rut, (string) config('app.key'));
             $dependiente = $this->vigente(VoucherBaseDependiente::with('usuario')
@@ -148,6 +165,12 @@ class AgendaExternaCompraService
             $titularBase = $dependiente?->usuario;
             if ($dependiente && (! $titularBase || ! $this->registroVigente($titularBase))) {
                 throw new RuntimeException('El dependiente fue encontrado, pero su titular responsable no está vigente.');
+            }
+            if ($dependiente && $rutTitularSolicitado !== '') {
+                $rutTitularBase = $this->normalizarRut($this->descifrar($titularBase?->rut_encrypted));
+                if ($rutTitularBase === '' || ! hash_equals($rutTitularBase, $rutTitularSolicitado)) {
+                    throw new RuntimeException('El titular seleccionado no coincide con el responsable vigente del dependiente en la base local.');
+                }
             }
             if (! $dependiente) {
                 $titularBase = $this->vigente(VoucherBaseUsuario::query()
@@ -226,15 +249,15 @@ class AgendaExternaCompraService
             $agenda = VoucherAgenda::create([
                 'voucher_id' => $voucher->id, 'cliente_id' => $cliente?->id,
                 'fecha_hora_solicitada' => $fechaHora, 'fecha_hora_confirmada' => null, 'estado' => 'hora_reservada',
-                'observacion' => 'Reserva asistida vía API Med-SDI. Operador local #'.$asistente->id.' · Profesional #'.$seleccion['id_profesional'],
+                'observacion' => ($asistente ? 'Reserva asistida' : 'Reserva desde tótem').' vía API Med-SDI. '.($asistente ? 'Operador local #'.$asistente->id.' · ' : '').'Profesional #'.$seleccion['id_profesional'],
                 'medichile_hora_medica_id' => $horaRemotaId ?: null, 'medichile_estado_id' => $horaRemotaId ? 1 : null,
                 'medichile_sincronizado_at' => $horaRemotaId ? now() : null, 'medichile_sync_error' => null,
             ]);
             $voucher->update(['agenda_id' => $agenda->id]);
             VoucherAuditoria::create([
-                'voucher_id' => $voucher->id, 'accion' => 'agenda_externa_asistente_hora_reservada',
-                'usuario_tipo' => 'asistente', 'usuario_id' => $asistente->id,
-                'descripcion' => 'La asistente reservó la hora Med-SDI #'.$horaRemotaId.' para el paciente '.$nombrePaciente.'.', 'ip' => $ip,
+                'voucher_id' => $voucher->id, 'accion' => $asistente ? 'agenda_externa_asistente_hora_reservada' : 'agenda_externa_totem_hora_reservada',
+                'usuario_tipo' => $asistente ? 'asistente' : 'totem', 'usuario_id' => $asistente?->id,
+                'descripcion' => ($asistente ? 'La asistente' : 'El paciente desde el tótem').' reservó la hora Med-SDI #'.$horaRemotaId.' para '.$nombrePaciente.'.', 'ip' => $ip,
             ]);
 
             return $voucher->fresh(['agenda', 'pagos']);
