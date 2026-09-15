@@ -25,6 +25,7 @@ class AsistenteVentaBonoController extends Controller
             'id_lugar' => ['required', 'integer'], 'lugar_nombre' => ['nullable', 'string', 'max:190'],
             'direccion' => ['nullable', 'string', 'max:255'], 'fecha_hora' => ['required', 'date'],
             'rut' => ['required', 'string', 'max:30'], 'id_prestacion' => ['required', 'integer'],
+            'titular_rut' => ['nullable', 'string', 'max:30'],
             'origen_prestacion' => ['required', 'in:prestacion_fonasa_bono'],
             'prestacion_codigo' => ['required', 'string', 'max:40'], 'prestacion_nombre' => ['required', 'string', 'max:255'],
         ]);

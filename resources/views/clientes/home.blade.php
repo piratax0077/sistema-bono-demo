@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Inicio paciente · Medichile</title>
+    <title>Inicio paciente · Salud Digital Integrada</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root{--blue:#1848a1;--cyan:#31bebe;--ink:#17283f;--muted:#65758a;--line:#d5e1f1;--soft:#edf4ff}

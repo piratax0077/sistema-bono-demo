@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAgenda;
 use App\Models\VoucherAuditoria;
+use App\Models\VoucherBaseDependiente;
+use App\Models\VoucherBaseUsuario;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +29,19 @@ class AgendaExternaCompraService
                 throw new RuntimeException('No fue posible validar el paciente autenticado en Med-SDI: '.$perfilRemoto['mensaje']);
             }
             $pacienteMedsdi = $perfilRemoto['paciente'];
+            $esDependienteRemoto = ($pacienteMedsdi['tipo'] ?? null) === 'dependiente'
+                || (bool) ($pacienteMedsdi['es_dependiente'] ?? false);
+            $titularRemoto = is_array($pacienteMedsdi['titular'] ?? null) ? $pacienteMedsdi['titular'] : null;
+            $rutTitularSolicitado = $this->normalizarRut($seleccion['titular_rut'] ?? '');
+            if ($esDependienteRemoto && $rutTitularSolicitado !== '') {
+                $titularCoincidente = collect($pacienteMedsdi['responsables'] ?? [])->first(function ($responsable) use ($rutTitularSolicitado) {
+                    return $this->normalizarRut($responsable['rut'] ?? '') === $rutTitularSolicitado;
+                });
+                if (! is_array($titularCoincidente)) {
+                    throw new RuntimeException('El titular seleccionado no figura como responsable vigente del dependiente en Med-SDI.');
+                }
+                $titularRemoto = $titularCoincidente;
+            }
             $rut = $this->normalizarRut($rutIngresado);
             if (! $this->rutValido($rut)) {
                 throw new RuntimeException('RUT no válido. Revise el número y el dígito verificador.');
@@ -125,9 +140,28 @@ class AgendaExternaCompraService
                 throw new RuntimeException($perfilRemoto['mensaje'] ?? 'No fue posible validar al paciente en Med-SDI.');
             }
             $pacienteMedsdi = $perfilRemoto['paciente'];
+            $sha = hash('sha256', $rut);
+            $hmac = hash_hmac('sha256', $rut, (string) config('app.key'));
+            $dependiente = $this->vigente(VoucherBaseDependiente::with('usuario')
+                ->where(fn ($query) => $query->whereIn('rut_hash', [$hmac, $sha])->orWhere('rut_sha256', $sha)))
+                ->first();
+            $titularBase = $dependiente?->usuario;
+            if ($dependiente && (! $titularBase || ! $this->registroVigente($titularBase))) {
+                throw new RuntimeException('El dependiente fue encontrado, pero su titular responsable no está vigente.');
+            }
+            if (! $dependiente) {
+                $titularBase = $this->vigente(VoucherBaseUsuario::query()
+                    ->where(fn ($query) => $query->whereIn('rut_hash', [$hmac, $sha])->orWhere('rut_sha256', $sha)))
+                    ->first();
+            }
+            $esDependiente = (bool) $dependiente || $esDependienteRemoto;
+            $titularRut = $dependiente
+                ? $this->descifrar($titularBase?->rut_encrypted)
+                : ($esDependienteRemoto ? ($titularRemoto['rut'] ?? null) : $rut);
+            $titularRut = $this->normalizarRut($titularRut ?: $rut);
             $cliente = User::query()
                 ->where('rol', 'cliente')
-                ->whereRaw("UPPER(REPLACE(REPLACE(REPLACE(rut, '.', ''), '-', ''), ' ', '')) = ?", [$rut])
+                ->whereRaw("UPPER(REPLACE(REPLACE(REPLACE(rut, '.', ''), '-', ''), ' ', '')) = ?", [$titularRut])
                 ->first();
             $persona = PersonaBusqueda::porRut($rut)->first();
             $fechaHora = Carbon::parse($seleccion['fecha_hora']);
@@ -157,17 +191,26 @@ class AgendaExternaCompraService
                 throw new RuntimeException('Med-SDI rechazó la reserva: '.$reservaReal['mensaje']);
             }
 
-            $nombrePaciente = $persona->nombre_completo ?? ($pacienteMedsdi['nombre_completo'] ?? trim(($pacienteMedsdi['nombres'] ?? '').' '.($pacienteMedsdi['apellido_uno'] ?? '').' '.($pacienteMedsdi['apellido_dos'] ?? '')));
+            $nombrePaciente = $dependiente?->nombre ?? $persona->nombre_completo ?? ($pacienteMedsdi['nombre_completo'] ?? trim(($pacienteMedsdi['nombres'] ?? '').' '.($pacienteMedsdi['apellido_uno'] ?? '').' '.($pacienteMedsdi['apellido_dos'] ?? '')));
+            $nombreTitular = $titularBase?->nombre
+                ?: ($esDependiente ? ($titularRemoto['nombre_completo'] ?? $cliente?->name) : $nombrePaciente);
+            $titularOtros = is_array($titularBase?->otros) ? $titularBase->otros : [];
             $valor = (float) ($cotizacion['valor'] ?? 0);
             $copago = (float) ($cotizacion['copago'] ?? 0);
             $voucher = Voucher::create([
                 'codigo' => 'BONO-EXT-'.now()->format('ymd').'-'.Str::upper(Str::random(7)),
                 'qr_token' => Str::random(80), 'qr_expira' => now()->addDays(30), 'qr_usado' => false,
-                'cliente_id' => $cliente?->id, 'cliente_rut' => Crypt::encryptString($rut), 'cliente_rut_hash' => hash('sha256', $rut),
-                'cliente_nombre' => $nombrePaciente, 'cliente_email' => $pacienteMedsdi['email'] ?? $cliente?->email,
-                'cliente_telefono' => $pacienteMedsdi['telefono_uno'] ?? $cliente?->telefono,
-                'beneficiario_tipo' => 'titular', 'beneficiario_nombre' => $nombrePaciente,
+                'cliente_id' => $cliente?->id, 'cliente_rut' => Crypt::encryptString($titularRut), 'cliente_rut_hash' => hash('sha256', $titularRut),
+                'cliente_nombre' => $nombreTitular ?: $nombrePaciente, 'cliente_email' => $cliente?->email ?? ($titularOtros['email'] ?? $titularRemoto['email'] ?? $pacienteMedsdi['email'] ?? null),
+                'cliente_telefono' => $cliente?->telefono ?? ($titularOtros['telefono'] ?? $titularRemoto['telefono_uno'] ?? $pacienteMedsdi['telefono_uno'] ?? null),
+                'beneficiario_tipo' => $esDependiente ? 'carga' : 'titular',
+                'beneficiario_base_usuario_id' => $titularBase?->id,
+                'beneficiario_dependiente_id' => $dependiente?->id,
+                'beneficiario_nombre' => $nombrePaciente,
                 'beneficiario_rut' => Crypt::encryptString($rut), 'beneficiario_rut_hash' => hash_hmac('sha256', $rut, (string) config('app.key')),
+                'beneficiario_parentesco' => $dependiente?->parentesco ?: ($esDependienteRemoto ? ($pacienteMedsdi['parentesco'] ?? 'Carga') : 'Titular'),
+                'beneficiario_direccion' => $dependiente?->direccion_encrypted ?: $titularBase?->direccion_encrypted,
+                'beneficiario_fecha_nacimiento' => $dependiente?->fecha_nacimiento_encrypted ?: $titularBase?->fecha_nacimiento_encrypted,
                 'tipo_servicio' => $seleccion['prestacion_nombre'], 'valor' => $valor, 'valor_total' => $valor,
                 'copago_usuario' => $copago, 'saldo_veterinario' => max($valor - $copago, 0), 'porcentaje_descuento' => 100,
                 'estado' => 'pendiente_confirmacion', 'fecha_vencimiento' => now()->addDays(30), 'cliente_aceptado_en' => now(), 'otp_validado_at' => now(),
@@ -199,6 +242,26 @@ class AgendaExternaCompraService
     }
 
     private function normalizarRut($rut): string { return strtoupper(preg_replace('/[^0-9K]/i', '', (string) $rut)); }
+
+    private function vigente($query)
+    {
+        return $query->whereIn('estado', ['activo', 'vigente'])
+            ->where(fn ($builder) => $builder->whereNull('vigente_desde')->orWhere('vigente_desde', '<=', now()->toDateString()))
+            ->where(fn ($builder) => $builder->whereNull('vigente_hasta')->orWhere('vigente_hasta', '>=', now()->toDateString()));
+    }
+
+    private function registroVigente(VoucherBaseUsuario $usuario): bool
+    {
+        return in_array($usuario->estado, ['activo', 'vigente'], true)
+            && (! $usuario->vigente_desde || $usuario->vigente_desde->lte(today()))
+            && (! $usuario->vigente_hasta || $usuario->vigente_hasta->gte(today()));
+    }
+
+    private function descifrar(?string $valor): ?string
+    {
+        if (! filled($valor)) return null;
+        try { return Crypt::decryptString($valor); } catch (\Throwable) { return $valor; }
+    }
 
     private function rutValido(string $rut): bool
     {

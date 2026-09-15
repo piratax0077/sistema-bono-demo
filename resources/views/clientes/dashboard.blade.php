@@ -18,9 +18,9 @@
         .table td { vertical-align:middle; }
         .secure-note { background:#effafa; border:1px solid #bce5e5; border-radius:16px; padding:14px; }
         .qr-route { word-break:break-word; }
-        .share-modal-backdrop { align-items:center; background:rgba(3,22,19,.66); display:flex; inset:0; justify-content:center; padding:22px; position:fixed; z-index:1050; }
+        .share-modal-backdrop { align-items:center; background:rgba(3,22,19,.66); display:flex; inset:0; justify-content:center; padding:16px 22px; position:fixed; z-index:11000; }
         .share-modal-backdrop[hidden] { display:none !important; }
-        .share-modal { background:#fff; border-radius:28px; box-shadow:0 30px 90px rgba(0,0,0,.28); max-height:92vh; overflow:auto; width:min(980px,100%); }
+        .share-modal { background:#fff; border-radius:28px; box-shadow:0 30px 90px rgba(0,0,0,.28); max-height:calc(100vh - 32px); overflow:auto; width:min(980px,100%); }
         .share-modal-header { align-items:flex-start; border-bottom:1px solid #dcebe8; display:flex; gap:18px; justify-content:space-between; padding:26px 28px 18px; }
         .share-close { align-items:center; background:#e8f4f1; border:0; border-radius:16px; color:#063d37; display:inline-flex; font-size:1.5rem; height:44px; justify-content:center; line-height:1; width:44px; }
         .share-modal-body { padding:24px 28px 28px; }
@@ -672,6 +672,10 @@ document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => 
                             <input type="checkbox" class="share-channel-input" value="copy">
                             Copiar imagen
                         </label>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small" role="note">
+                        Si no tiene instalada la aplicación Med-SDI, verifique que el número de WhatsApp registrado sea correcto y autentíquese por ese medio.
                     </div>
 
                     <label class="form-label fw-semibold" for="shareVoucherMessage">Mensaje QR editable</label>

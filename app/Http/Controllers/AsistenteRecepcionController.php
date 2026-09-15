@@ -9,7 +9,12 @@ use App\Models\VoucherPago;
 use App\Services\MedichileAgendaService;
 use App\Services\MedsdiAgendaApiService;
 use App\Models\Voucher;
+use App\Models\ClienteAutorizacion;
+use App\Models\VoucherBaseDependiente;
+use App\Models\VoucherBaseUsuario;
+use App\Services\ClienteAuthorizationGate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -86,6 +91,7 @@ class AsistenteRecepcionController extends Controller
         $bonos = collect();
 
         if ($data['metodo'] === 'codigo') {
+            $request->session()->forget('asistente_recepcion_paciente');
             $valor = trim((string) $data['codigo']);
             $path = parse_url($valor, PHP_URL_PATH);
             $token = $valor;
@@ -103,17 +109,39 @@ class AsistenteRecepcionController extends Controller
                 })->get();
         } else {
             $rut = strtoupper((string) preg_replace('/[^0-9K]/i', '', $data['rut']));
+            $pacienteRemoto = $medsdiApi->pacientePorRutComoAsistente($rut);
+            $pacienteMedsdi = $pacienteRemoto['paciente'] ?? null;
+            $paciente = $this->normalizarPacienteMedsdi($pacienteMedsdi, $rut)
+                ?: $this->resolverPaciente($rut);
             $resultado = $medsdiApi->horasVigentesPorRut($rut);
-            if (! $resultado['ok']) {
-                return back()->withInput()->with('abrir_recepcion_modal', true)->with('error', $resultado['mensaje']);
+            if (! $resultado['ok'] && ! $paciente) {
+                return back()->withInput()->with('abrir_recepcion_modal', true)
+                    ->with('error', $pacienteRemoto['mensaje'] ?? $resultado['mensaje']);
             }
 
             $idsHoras = collect($resultado['registros'] ?? [])
                 ->map(fn ($hora) => (int) ($hora['id_hora_medica'] ?? $hora['id'] ?? 0))
                 ->filter()->unique()->values()->all();
-            $bonos = Voucher::with(['agenda', 'profesional', 'servicio'])
-                ->whereHas('agenda', fn ($query) => $query->whereIn('medichile_hora_medica_id', $idsHoras))
+            $sha = hash('sha256', $rut);
+            $hmac = hash_hmac('sha256', $rut, (string) config('app.key'));
+            $bonos = Voucher::with(['agenda', 'profesional', 'servicio', 'beneficiarioDependiente', 'beneficiarioBaseUsuario'])
+                ->where(function ($query) use ($idsHoras, $sha, $hmac) {
+                    if ($idsHoras !== []) {
+                        $query->whereHas('agenda', fn ($agenda) => $agenda->whereIn('medichile_hora_medica_id', $idsHoras));
+                    }
+                    $metodo = $idsHoras === [] ? 'where' : 'orWhere';
+                    $query->{$metodo}(fn ($voucher) => $voucher
+                        ->whereIn('beneficiario_rut_hash', [$sha, $hmac])
+                        ->orWhere('cliente_rut_hash', $sha));
+                })
                 ->get();
+            $rutTitularBono = $bonos->first()?->cliente_rut_visible;
+            $paciente = $this->normalizarPacienteMedsdi($pacienteMedsdi, $rut, $rutTitularBono)
+                ?: $paciente;
+            $request->session()->put('asistente_recepcion_paciente', $paciente ?: [
+                'tipo' => 'desconocido', 'nombre' => null, 'rut' => $rut,
+                'parentesco' => null, 'titular_nombre' => null, 'titular_rut' => null,
+            ]);
         }
 
         $bonos = $bonos->filter(function ($bono) {
@@ -134,6 +162,171 @@ class AsistenteRecepcionController extends Controller
         return redirect()->route('asistente.escritorio')
             ->with('abrir_recepcion_modal', true)
             ->with('ok', 'Paciente reconocido. Seleccione la hora que desea enviar a sala de espera.');
+    }
+
+    public function solicitarAutorizacionPaciente(
+        Request $request,
+        Voucher $voucher,
+        ClienteAuthorizationGate $authorizationGate
+    ) {
+        abort_unless(config('demo.enabled'), 404);
+        $this->autorizarVoucherBuscado($request, $voucher);
+
+        $titularRut = $voucher->cliente_rut_visible;
+        $clienteId = $authorizationGate->clienteIdForRut($titularRut, $voucher->cliente_id);
+        if (! $clienteId) {
+            return back()->with('abrir_recepcion_modal', true)
+                ->with('error', 'No se encontró la ficha del titular responsable para enviar la autorización.');
+        }
+
+        $existente = ClienteAutorizacion::query()
+            ->where('cliente_id', $clienteId)
+            ->where('tipo_accion', 'recepcion_bono_paciente')
+            ->where('referencia_tipo', 'voucher')
+            ->where('referencia_id', $voucher->id)
+            ->where('estado', 'pendiente')
+            ->where('expira_at', '>', now())
+            ->latest('id')
+            ->first();
+        $resultado = $existente
+            ? ['autorizacion' => $existente]
+            : $authorizationGate->requestAuthorization(
+                $clienteId,
+                'recepcion_bono_paciente',
+                'voucher',
+                $voucher->id,
+                $request,
+                [
+                    'canal' => 'escritorio_asistente',
+                    'bono' => $voucher->codigo,
+                    'beneficiario' => $voucher->beneficiario_nombre ?: $voucher->cliente_nombre,
+                    'beneficiario_tipo' => $voucher->beneficiario_tipo ?: 'titular',
+                    'beneficiario_rut' => $voucher->beneficiario_rut_visible,
+                    'parentesco' => $voucher->beneficiario_parentesco,
+                    'titular' => $voucher->cliente_nombre,
+                    'titular_rut' => $titularRut,
+                    'servicio_nombre' => $voucher->tipo_servicio,
+                    'profesional_nombre' => $voucher->prestador_nombre,
+                    'copago' => (float) $voucher->copago_usuario,
+                ]
+            );
+        $autorizacion = $resultado['autorizacion'] ?? null;
+        if (! $autorizacion) {
+            return back()->with('abrir_recepcion_modal', true)
+                ->with('error', $resultado['mensaje'] ?? 'No fue posible enviar la solicitud a la App del paciente.');
+        }
+
+        return back()->with('abrir_app_paciente_modal', true)
+            ->with('autorizacion_app_paciente_id', $autorizacion->id);
+    }
+
+    public function responderAutorizacionPaciente(Request $request, ClienteAutorizacion $autorizacion)
+    {
+        abort_unless(config('demo.enabled'), 404);
+        abort_unless($autorizacion->tipo_accion === 'recepcion_bono_paciente', 404);
+        $ids = collect($request->session()->get('asistente_recepcion_voucher_ids', []))->map(fn ($id) => (int) $id);
+        abort_unless($autorizacion->referencia_tipo === 'voucher' && $ids->contains((int) $autorizacion->referencia_id), 403);
+        $data = $request->validate(['respuesta' => ['required', 'in:aprobar,rechazar']]);
+
+        if ($autorizacion->estado !== 'pendiente' || ($autorizacion->expira_at && now()->gte($autorizacion->expira_at))) {
+            if ($autorizacion->estado === 'pendiente') $autorizacion->update(['estado' => 'expirada']);
+            return back()->with('abrir_recepcion_modal', true)->with('error', 'La solicitud ya fue respondida o expiró.');
+        }
+
+        $aprobada = $data['respuesta'] === 'aprobar';
+        $autorizacion->update([
+            'estado' => $aprobada ? 'aprobada' : 'rechazada',
+            'aprobada_at' => $aprobada ? now() : null,
+            'rechazada_at' => $aprobada ? null : now(),
+        ]);
+        \App\Helpers\SecurityLogger::log(
+            'respuesta_app_paciente_simulada_'.$autorizacion->fresh()->estado,
+            'ClienteAutorizacion', $autorizacion->id, $autorizacion->fresh()->estado,
+            'Respuesta simulada desde la App móvil del titular responsable', $autorizacion->cliente_id
+        );
+
+        return back()->with('abrir_recepcion_modal', true)->with(
+            $aprobada ? 'ok' : 'error',
+            $aprobada ? 'El paciente autorizó el bono desde la App simulada.' : 'El paciente rechazó el bono desde la App simulada.'
+        );
+    }
+
+    private function resolverPaciente(string $rut): ?array
+    {
+        $sha = hash('sha256', $rut);
+        $hmac = hash_hmac('sha256', $rut, (string) config('app.key'));
+        $dependiente = VoucherBaseDependiente::with('usuario')
+            ->whereIn('estado', ['activo', 'vigente'])
+            ->where(fn ($query) => $query->whereNull('vigente_desde')->orWhere('vigente_desde', '<=', now()->toDateString()))
+            ->where(fn ($query) => $query->whereNull('vigente_hasta')->orWhere('vigente_hasta', '>=', now()->toDateString()))
+            ->where(fn ($query) => $query->whereIn('rut_hash', [$hmac, $sha])->orWhere('rut_sha256', $sha))
+            ->first();
+
+        if ($dependiente && $dependiente->usuario && $this->registroBaseVigente($dependiente->usuario)) {
+            return [
+                'tipo' => 'dependiente', 'nombre' => $dependiente->nombre, 'rut' => $rut,
+                'parentesco' => $dependiente->parentesco ?: 'Carga',
+                'titular_nombre' => $dependiente->usuario->nombre,
+                'titular_rut' => $this->descifrar($dependiente->usuario->rut_encrypted),
+            ];
+        }
+
+        $titular = VoucherBaseUsuario::query()
+            ->whereIn('estado', ['activo', 'vigente'])
+            ->where(fn ($query) => $query->whereNull('vigente_desde')->orWhere('vigente_desde', '<=', now()->toDateString()))
+            ->where(fn ($query) => $query->whereNull('vigente_hasta')->orWhere('vigente_hasta', '>=', now()->toDateString()))
+            ->where(fn ($query) => $query->whereIn('rut_hash', [$hmac, $sha])->orWhere('rut_sha256', $sha))
+            ->first();
+        if (! $titular) return null;
+
+        return [
+            'tipo' => 'titular', 'nombre' => $titular->nombre, 'rut' => $rut,
+            'parentesco' => 'Titular', 'titular_nombre' => $titular->nombre, 'titular_rut' => $rut,
+        ];
+    }
+
+    private function normalizarPacienteMedsdi(mixed $paciente, string $rut, ?string $rutTitularEsperado = null): ?array
+    {
+        if (! is_array($paciente)) return null;
+
+        $esDependiente = ($paciente['tipo'] ?? null) === 'dependiente'
+            || (bool) ($paciente['es_dependiente'] ?? false);
+        $titular = is_array($paciente['titular'] ?? null) ? $paciente['titular'] : null;
+        $responsables = collect(is_array($paciente['responsables'] ?? null) ? $paciente['responsables'] : []);
+        if ($rutTitularEsperado) {
+            $rutEsperado = strtoupper((string) preg_replace('/[^0-9K]/i', '', $rutTitularEsperado));
+            $titularBono = $responsables->first(function ($responsable) use ($rutEsperado) {
+                $rutResponsable = strtoupper((string) preg_replace('/[^0-9K]/i', '', (string) ($responsable['rut'] ?? '')));
+                return $rutResponsable !== '' && hash_equals($rutEsperado, $rutResponsable);
+            });
+            if (is_array($titularBono)) $titular = $titularBono;
+        }
+
+        return [
+            'tipo' => $esDependiente ? 'dependiente' : 'titular',
+            'nombre' => $paciente['nombre_completo'] ?? trim(implode(' ', array_filter([
+                $paciente['nombres'] ?? null,
+                $paciente['apellido_uno'] ?? null,
+                $paciente['apellido_dos'] ?? null,
+            ]))),
+            'rut' => $paciente['rut'] ?? $rut,
+            'parentesco' => $esDependiente ? ($paciente['parentesco'] ?? 'Carga') : 'Titular',
+            'titular_nombre' => $esDependiente ? ($titular['nombre_completo'] ?? null) : ($paciente['nombre_completo'] ?? null),
+            'titular_rut' => $esDependiente ? ($titular['rut'] ?? null) : ($paciente['rut'] ?? $rut),
+        ];
+    }
+
+    private function descifrar(?string $valor): ?string
+    {
+        if (! filled($valor)) return null;
+        try { return Crypt::decryptString($valor); } catch (Throwable) { return $valor; }
+    }
+
+    private function registroBaseVigente(VoucherBaseUsuario $usuario): bool
+    {
+        return in_array($usuario->estado, ['activo', 'vigente'], true)
+            && (! $usuario->vigente_desde || $usuario->vigente_desde->lte(today()))
+            && (! $usuario->vigente_hasta || $usuario->vigente_hasta->gte(today()));
     }
 
     public function recibirQr(Request $request, MedichileAgendaService $medichileAgenda)

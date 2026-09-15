@@ -848,6 +848,12 @@ Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
             ->orderByDesc('atencion_cerrada_at')
             ->get();
         $validacionesPendientes = $atencionesCerradas->count();
+        // El paciente reconocido pertenece a una sola búsqueda. Evita que su
+        // ficha quede visible al abrir nuevamente el modal de recepción.
+        $pacienteRecepcion = session()->pull('asistente_recepcion_paciente');
+        $autorizacionAppPaciente = session('autorizacion_app_paciente_id')
+            ? ClienteAutorizacion::find(session('autorizacion_app_paciente_id'))
+            : null;
         ClienteAutorizacion::query()
             ->whereIn('tipo_accion', ['compra_bono_beneficiario', 'compra_bono_asistente'])
             ->where('estado', 'pendiente')
@@ -871,7 +877,9 @@ Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
             'pacientesEnEsperaDetalle',
             'atencionesCerradas',
             'autorizacionesPaciente',
-            'autorizacionesPendientes'
+            'autorizacionesPendientes',
+            'pacienteRecepcion',
+            'autorizacionAppPaciente'
         ));
     })->name('asistente.escritorio');
 
@@ -960,6 +968,10 @@ Route::middleware(['auth', 'rol:admin,asistente', '2fa'])->group(function () {
     Route::post('/asistente/buscar-reserva', [AsistenteRecepcionController::class, 'buscarReserva'])
         ->middleware('throttle:20,1')
         ->name('asistente.recepcion.buscar');
+    Route::post('/asistente/bonos/{voucher}/solicitar-autorizacion-paciente', [AsistenteRecepcionController::class, 'solicitarAutorizacionPaciente'])
+        ->middleware('throttle:10,1')->name('asistente.recepcion.solicitar_autorizacion');
+    Route::post('/asistente/autorizacion-paciente/{autorizacion}/responder', [AsistenteRecepcionController::class, 'responderAutorizacionPaciente'])
+        ->middleware('throttle:20,1')->name('asistente.recepcion.responder_autorizacion');
     Route::post('/asistente/bonos/{voucher}/confirmar-hora', [AsistenteRecepcionController::class, 'confirmarHora'])
         ->middleware('throttle:10,1')->name('asistente.recepcion.confirmar_hora');
     Route::post('/asistente/bonos/{voucher}/sincronizar-hora', [AsistenteRecepcionController::class, 'sincronizarHora'])

@@ -32,7 +32,7 @@
 
     <div class="row g-4">
         <div class="col-md-6 col-xl-4">
-            <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirModalAsistente('modalRecepcionAsistente')">
+            <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirRecepcionNueva()">
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-start">
@@ -285,8 +285,25 @@
                     </div>
                 </div>
 
+                @if($pacienteRecepcion)
+                    <div id="recepcionPacienteResultado" class="alert {{ ($pacienteRecepcion['tipo'] ?? null) === 'dependiente' ? 'alert-info' : 'alert-success' }} mt-4 mb-0">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+                            <div>
+                                <strong>{{ $pacienteRecepcion['nombre'] ?: 'Paciente reconocido' }}</strong>
+                                <span class="badge {{ ($pacienteRecepcion['tipo'] ?? null) === 'dependiente' ? 'bg-info text-dark' : (($pacienteRecepcion['tipo'] ?? null) === 'titular' ? 'bg-success' : 'bg-secondary') }} ms-1">
+                                    {{ ($pacienteRecepcion['tipo'] ?? null) === 'dependiente' ? 'Dependiente' : (($pacienteRecepcion['tipo'] ?? null) === 'titular' ? 'Titular' : 'Paciente') }}
+                                </span>
+                                <div class="small mt-1">RUT {{ sdi_formatear_rut($pacienteRecepcion['rut']) }}@if($pacienteRecepcion['parentesco']) · {{ $pacienteRecepcion['parentesco'] }}@endif</div>
+                            </div>
+                            @if(($pacienteRecepcion['tipo'] ?? null) === 'dependiente')
+                                <div class="text-md-end"><small class="d-block text-muted">Titular responsable y receptor de la App</small><strong>{{ $pacienteRecepcion['titular_nombre'] ?: 'No identificado' }}</strong>@if($pacienteRecepcion['titular_rut'])<div class="small">RUT {{ sdi_formatear_rut($pacienteRecepcion['titular_rut']) }}</div>@endif</div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 @if($bonosRecepcion->isNotEmpty())
-                    <hr class="my-4">
+                    <div id="recepcionHorasResultado"><hr class="my-4">
                     <h5 class="fw-bold mb-3">Horas encontradas</h5>
                     @foreach($bonosRecepcion as $bono)
                         @php($recepcion = $recepcionesPorVoucher->get($bono->id))
@@ -294,11 +311,21 @@
                             <div>
                                 <h5 class="mb-2">{{ $bono->tipo_servicio }} · {{ $bono->codigo }}</h5>
                                 <div><strong>Paciente:</strong> {{ $bono->beneficiario_nombre ?: $bono->cliente_nombre }}</div>
+                                @if(($bono->beneficiario_tipo ?? 'titular') !== 'titular')
+                                    <div><strong>Tipo:</strong> <span class="badge bg-info text-dark">Dependiente · {{ $bono->beneficiario_parentesco ?: 'Carga' }}</span></div>
+                                    <div><strong>Titular responsable:</strong> {{ $bono->cliente_nombre }}</div>
+                                @endif
                                 <div><strong>Profesional:</strong> {{ $bono->prestador_nombre ?: optional($bono->profesional)->nombre }}</div>
                                 <div><strong>Hora:</strong> {{ optional($bono->agenda?->fecha_hora_confirmada ?: $bono->agenda?->fecha_hora_solicitada)?->format('d-m-Y H:i') }}</div>
                                 <div class="mt-2"><strong>Estado:</strong> @include('partials.voucher_estado_celda', ['voucher' => $bono])</div>
                             </div>
                             <div class="d-flex flex-column gap-2 align-self-md-center">
+                                @if(config('demo.enabled'))
+                                    <form method="POST" action="{{ route('asistente.recepcion.solicitar_autorizacion', $bono) }}" class="asistente-solicitar-autorizacion">
+                                        @csrf
+                                        <button class="btn btn-outline-info text-nowrap">📲 Notificar a la App</button>
+                                    </form>
+                                @endif
                                 @if(optional($bono->agenda)->medichile_hora_medica_id)
                                     <form method="POST" action="{{ route('asistente.recepcion.sincronizar_hora', $bono) }}">
                                         @csrf
@@ -328,12 +355,43 @@
                                 @endif
                             </div>
                         </div></div>
-                    @endforeach
+                    @endforeach</div>
                 @endif
             </div>
         </div>
     </div>
 </div>
+
+@if($autorizacionAppPaciente)
+    @php($appDatos = $autorizacionAppPaciente->metadata ?: [])
+    <div class="modal fade" id="modalAppPacienteSimulada" tabindex="-1" aria-labelledby="modalAppPacienteSimuladaTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow" style="border-radius:22px;overflow:hidden">
+                <div class="modal-header text-white" style="background:linear-gradient(120deg,#1848a1,#31bebe)">
+                    <div><div class="small text-uppercase opacity-75 fw-bold">App móvil simulada</div><h4 class="modal-title" id="modalAppPacienteSimuladaTitulo">Autorizar bono médico</h4></div>
+                    <button type="button" class="btn-close btn-close-white" onclick="cerrarModalAsistente('modalAppPacienteSimulada')"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info"><strong>Solicitud segura:</strong> revise los datos antes de aceptar o rechazar.</div>
+                    <dl class="row mb-0">
+                        <dt class="col-4">Beneficiario</dt><dd class="col-8">{{ $appDatos['beneficiario'] ?? 'Paciente' }}@if(($appDatos['beneficiario_tipo'] ?? 'titular') !== 'titular')<span class="badge bg-info text-dark ms-1">Dependiente</span>@endif</dd>
+                        <dt class="col-4">RUT</dt><dd class="col-8">{{ sdi_formatear_rut($appDatos['beneficiario_rut'] ?? '') }}</dd>
+                        @if(($appDatos['beneficiario_tipo'] ?? 'titular') !== 'titular')<dt class="col-4">Titular</dt><dd class="col-8">{{ $appDatos['titular'] ?? 'No informado' }} · {{ sdi_formatear_rut($appDatos['titular_rut'] ?? '') }}</dd>@endif
+                        <dt class="col-4">Bono</dt><dd class="col-8">{{ $appDatos['bono'] ?? '-' }}</dd>
+                        <dt class="col-4">Prestación</dt><dd class="col-8">{{ $appDatos['servicio_nombre'] ?? '-' }}</dd>
+                        <dt class="col-4">Profesional</dt><dd class="col-8">{{ $appDatos['profesional_nombre'] ?? '-' }}</dd>
+                        <dt class="col-4">Copago</dt><dd class="col-8 fw-bold">${{ number_format((float) ($appDatos['copago'] ?? 0), 0, ',', '.') }}</dd>
+                    </dl>
+                    <small class="text-muted">Esta solicitud vence {{ $autorizacionAppPaciente->expira_at?->format('d-m-Y H:i:s') }}.</small>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0 d-grid gap-2" style="grid-template-columns:1fr 1fr">
+                    <form method="POST" action="{{ route('asistente.recepcion.responder_autorizacion', $autorizacionAppPaciente) }}" class="form-app-paciente" data-respuesta="rechazar">@csrf<input type="hidden" name="respuesta" value="rechazar"><button class="btn btn-outline-danger w-100">No autorizar</button></form>
+                    <form method="POST" action="{{ route('asistente.recepcion.responder_autorizacion', $autorizacionAppPaciente) }}" class="form-app-paciente" data-respuesta="aprobar">@csrf<input type="hidden" name="respuesta" value="aprobar"><button class="btn btn-success w-100">Aceptar y autorizar</button></form>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
 
 <div class="modal fade" id="modalPagoBonoAsistente" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -361,6 +419,48 @@
     </div>
 </div>
 
+<style>
+    #ventaAsistenteBeneficiarios {
+        gap: .55rem;
+    }
+    #ventaAsistenteBeneficiarios .responsable-option {
+        border: 1px solid #d8e0ea;
+        border-radius: .8rem;
+        background: #fff;
+        color: #243142;
+        padding: .85rem 1rem;
+        transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    }
+    #ventaAsistenteBeneficiarios .responsable-option:hover {
+        border-color: #9aabba;
+        background: #f8fafc;
+    }
+    #ventaAsistenteBeneficiarios .responsable-option.active {
+        border-color: #55748f;
+        background: #eef3f7;
+        color: #172536;
+        box-shadow: 0 0 0 2px rgba(85, 116, 143, .1);
+    }
+    #ventaAsistenteBeneficiarios .responsable-rut {
+        color: #708092;
+    }
+    #ventaAsistenteBeneficiarios .responsable-badge {
+        border: 1px solid #cbd5df;
+        border-radius: 999px;
+        background: #f5f7f9;
+        color: #536273;
+        font-size: .76rem;
+        font-weight: 600;
+        padding: .35rem .6rem;
+        white-space: nowrap;
+    }
+    #ventaAsistenteBeneficiarios .responsable-option.active .responsable-badge {
+        border-color: #afbfcd;
+        background: #fff;
+        color: #3d566b;
+    }
+</style>
+
 <div class="modal fade" id="modalVentaBonoAsistente" tabindex="-1" aria-labelledby="modalVentaBonoTitulo" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
@@ -378,6 +478,8 @@
                         <button id="ventaAsistenteValidar" type="button" class="btn btn-primary">Validar paciente</button>
                     </div>
                     <div id="ventaAsistentePaciente" class="alert alert-success mt-3 mb-0 d-none"></div>
+                    <div id="ventaAsistenteBeneficiariosTitulo" class="small fw-bold mt-3 mb-2 d-none">Seleccione el titular responsable que autorizará desde la App</div>
+                    <div id="ventaAsistenteBeneficiarios" class="list-group mt-2 d-none" aria-label="Responsables disponibles"></div>
                 </section>
 
                 <section id="ventaAsistentePasoPrestacion" class="border rounded-3 p-3 mb-3 d-none">
@@ -446,6 +548,12 @@ function abrirModalAsistente(id) {
     fondo.onclick = function () { cerrarModalAsistente(id); };
     document.body.appendChild(fondo);
 }
+function abrirRecepcionNueva() {
+    document.querySelectorAll('#modalRecepcionAsistente input[name="rut"], #modalRecepcionAsistente input[name="codigo"]').forEach(function (input) { input.value = ''; });
+    document.getElementById('recepcionPacienteResultado')?.classList.add('d-none');
+    document.getElementById('recepcionHorasResultado')?.classList.add('d-none');
+    abrirModalAsistente('modalRecepcionAsistente');
+}
 function cerrarModalAsistente(id) {
     var modal = document.getElementById(id);
     if (!modal) return;
@@ -458,6 +566,27 @@ function cerrarModalAsistente(id) {
 }
 document.addEventListener('DOMContentLoaded', function () {
     const monedaAsistente = valor => new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(Number(valor) || 0);
+    document.querySelectorAll('.asistente-solicitar-autorizacion').forEach(form => form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const confirmado = typeof swal === 'function'
+            ? await swal({title:'¿Notificar al paciente?',text:'La solicitud se enviará al dispositivo del titular responsable y se abrirá la App móvil simulada.',icon:'warning',buttons:['Cancelar','Enviar notificación']})
+            : confirm('¿Enviar la solicitud de autorización a la App del paciente?');
+        if (confirmado) HTMLFormElement.prototype.submit.call(form);
+    }));
+    document.querySelectorAll('.form-app-paciente').forEach(form => form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const aprobar = form.dataset.respuesta === 'aprobar';
+        const confirmado = typeof swal === 'function'
+            ? await swal({
+                title: aprobar ? '¿Aceptar y autorizar?' : '¿Rechazar el bono?',
+                text: aprobar ? 'La App registrará la autorización del titular responsable.' : 'La App informará que el paciente no autorizó el bono.',
+                icon: aprobar ? 'warning' : 'error',
+                buttons: ['Cancelar', aprobar ? 'Autorizar' : 'Rechazar'],
+                dangerMode: !aprobar,
+            })
+            : confirm(aprobar ? '¿Autorizar el bono?' : '¿Rechazar el bono?');
+        if (confirmado) HTMLFormElement.prototype.submit.call(form);
+    }));
     document.querySelectorAll('.form-responder-autorizacion').forEach(form => form.addEventListener('submit', async event => {
         event.preventDefault();
         const aprobar = form.dataset.respuesta === 'aprobar';
@@ -591,12 +720,47 @@ document.addEventListener('DOMContentLoaded', function () {
         ventaAviso('Validando paciente en Med-SDI...', 'info');
         const data = await ventaJson(`{{ route('asistente.venta_bonos.paciente') }}?rut=${encodeURIComponent(rut)}`);
         if (!data.ok || !data.paciente) return ventaAviso(data.mensaje || 'Paciente no encontrado.');
-        venta.paciente = data.paciente;
-        document.getElementById('ventaAsistentePaciente').textContent = `✓ ${data.paciente.nombre_completo} · RUT ${data.paciente.rut}`;
-        document.getElementById('ventaAsistentePaciente').classList.remove('d-none');
-        document.getElementById('ventaAsistentePasoPrestacion').classList.remove('d-none');
+        const paciente = data.paciente;
+        const esDependiente = paciente.tipo === 'dependiente' || Boolean(paciente.es_dependiente);
+        const responsables = Array.isArray(paciente.responsables) ? paciente.responsables : [];
+        const contenedor = document.getElementById('ventaAsistenteBeneficiarios');
+        contenedor.innerHTML = '';
+        const mostrarPaciente = responsable => {
+            venta.paciente = {...paciente, titular: responsable || null};
+            const estado = esDependiente
+                ? `Dependiente (${paciente.parentesco || 'Carga'}) · Responsable: ${responsable?.nombre_completo || 'por seleccionar'}`
+                : 'Titular';
+            document.getElementById('ventaAsistentePaciente').textContent = `✓ ${paciente.nombre_completo} · RUT ${paciente.rut} · ${estado}`;
+            document.getElementById('ventaAsistentePaciente').classList.remove('d-none');
+            contenedor.querySelectorAll('button').forEach(boton => boton.classList.toggle('active', boton.dataset.rut === String(responsable?.rut || '')));
+            document.getElementById('ventaAsistentePasoPrestacion').classList.toggle('d-none', esDependiente && !responsable);
+            if (!esDependiente || responsable) document.getElementById('ventaAsistentePrestacionBuscar').focus();
+        };
+        responsables.forEach(responsable => {
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 'responsable-option d-flex justify-content-between align-items-center gap-3 text-start';
+            boton.dataset.rut = responsable.rut;
+            const texto = document.createElement('span');
+            texto.innerHTML = `<strong></strong><small class="d-block text-muted"></small>`;
+            texto.querySelector('strong').textContent = responsable.nombre_completo;
+            texto.querySelector('small').classList.add('responsable-rut');
+            texto.querySelector('small').textContent = `RUT ${responsable.rut}`;
+            const badge = document.createElement('span');
+            badge.className = 'responsable-badge';
+            badge.textContent = responsable.parentesco ? `Responsable · ${responsable.parentesco}` : 'Responsable';
+            boton.append(texto, badge);
+            boton.onclick = () => mostrarPaciente(responsable);
+            contenedor.appendChild(boton);
+        });
+        document.getElementById('ventaAsistenteBeneficiariosTitulo').classList.toggle('d-none', !esDependiente);
+        contenedor.classList.toggle('d-none', !esDependiente);
+        if (esDependiente && responsables.length === 0) {
+            mostrarPaciente(null);
+            return ventaAviso('El paciente figura como dependiente, pero Med-SDI no devolvió un responsable vigente.');
+        }
+        mostrarPaciente(esDependiente && responsables.length === 1 ? responsables[0] : (esDependiente ? null : null));
         document.getElementById('ventaAsistenteAviso').classList.add('d-none');
-        document.getElementById('ventaAsistentePrestacionBuscar').focus();
     });
 
     const buscarPrestaciones = async () => {
@@ -749,7 +913,7 @@ document.addEventListener('DOMContentLoaded', function () {
             : confirm('¿Confirmar reserva para este paciente?');
         if (!confirmado) return;
         const s=venta.seleccion,p=venta.prestacion;
-        const data=await ventaJson('{{ route('asistente.venta_bonos.agendar') }}',{method:'POST',body:JSON.stringify({rut:venta.paciente.rut,id_profesional:s.idProfesional,nombre_profesional:s.nombreProfesional,id_especialidad:s.idEspecialidad||null,especialidad:s.especialidad,id_lugar:s.idLugar,lugar_nombre:s.lugarNombre,direccion:'',fecha_hora:fechaHora,id_prestacion:p.id,origen_prestacion:p.origen,prestacion_codigo:p.codigo,prestacion_nombre:p.nombre})});
+        const data=await ventaJson('{{ route('asistente.venta_bonos.agendar') }}',{method:'POST',body:JSON.stringify({rut:venta.paciente.rut,titular_rut:venta.paciente.titular?.rut||null,id_profesional:s.idProfesional,nombre_profesional:s.nombreProfesional,id_especialidad:s.idEspecialidad||null,especialidad:s.especialidad,id_lugar:s.idLugar,lugar_nombre:s.lugarNombre,direccion:'',fecha_hora:fechaHora,id_prestacion:p.id,origen_prestacion:p.origen,prestacion_codigo:p.codigo,prestacion_nombre:p.nombre})});
         if (!data.ok) {
             if (typeof swal === 'function') await swal({icon:'error',title:'No fue posible reservar',text:data.mensaje || 'No fue posible reservar la hora.',button:'Aceptar'});
             else ventaAviso(data.mensaje || 'No fue posible reservar la hora.');
@@ -765,5 +929,8 @@ document.addEventListener('DOMContentLoaded', function () {
 @endif
 @if(session('abrir_autorizaciones_modal'))
 <script>document.addEventListener('DOMContentLoaded', function () { abrirModalAsistente('modalAutorizacionesPaciente'); });</script>
+@endif
+@if(session('abrir_app_paciente_modal') && $autorizacionAppPaciente)
+<script>document.addEventListener('DOMContentLoaded', function () { cerrarModalAsistente('modalRecepcionAsistente'); abrirModalAsistente('modalAppPacienteSimulada'); });</script>
 @endif
 @endsection
