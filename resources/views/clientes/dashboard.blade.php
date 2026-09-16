@@ -53,22 +53,23 @@
         $telefonoPacienteReal = $pacienteMedsdi['telefono_uno'] ?? $user->telefono;
     @endphp
     <section class="patient-hero mb-4">
-        <div class="eyebrow">Medichile · Portal del paciente</div>
-        <h1 class="display-6 fw-bold mt-2 mb-2">Hola, {{ $nombrePacienteReal }}</h1>
-        <p class="mb-0">Reserva tu hora, confirma el copago y llega al centro médico. La hora, el médico, el pago y el QR permanecen vinculados durante todo el recorrido.</p>
+        <div class="eyebrow">Salud Digital integrada · Flujo demo paciente</div>
+        <h1 class="display-6 fw-bold mt-2 mb-2 text-white">Hola, {{ $nombrePacienteReal }}</h1>
+        <p class="mb-0">El paciente,reserva su hora,elije profesional en un centro médico. El sistema se conecta mediante api con FONASA (consulta si ambos están habilitados primer control); se produce el co-pago; el paciente debe autorizar mediante App o WhatsApp, si acepta: se genera un QR DINAMICO y que permanecen vinculados hasta el cobro por el profesional.</p>
+        <p class="mb-0">SI EL PACIENTE RECHAZA SE ANULA LA OPERACIÓN Y EL DINERO DEL COPAGO SE DEPOSITA EN LA CUENTA DEL BENEFICIARIO SI NO TIENE SE DEJA COMO SALDO A FAVOR</p>
         <div class="patient-profile"><span class="patient-chip">Paciente Med-SDI #{{ $pacienteMedsdi['id'] ?? 'no disponible' }}</span><span class="patient-chip">RUT {{ sdi_formatear_rut($rutPacienteReal) }}</span><span class="patient-chip">WhatsApp {{ $telefonoPacienteReal ?: 'no registrado' }}</span>@if($pacienteMedsdi)<span class="patient-chip">{{ $pacienteMedsdi['email'] ?? 'Correo no registrado' }}</span>@endif</div>
     </section>
 
     <section aria-label="Acciones principales del paciente">
         <div class="journey-actions">
             <div class="journey-action" role="button" tabindex="0" id="abrirReservaMedsdi">
-                <span class="journey-number">1</span><span class="journey-icon">📅</span><strong>Reservar hora (Med-SDI)</strong><small>Busca profesionales reales del centro configurado vía la API de Med-SDI y confirma la reserva.</small><span class="journey-go">Buscar profesional →</span>
+                <span class="journey-number">1</span><span class="journey-icon">📅</span><strong>Reservar hora (SDI)</strong><small>Busca profesionales reales del centro configurado vía la API de SDI y confirma la reserva.</small><span class="journey-go">Buscar profesional →</span>
             </div>
             <div class="journey-action" role="button" tabindex="0" id="abrirAutorizacionDemo">
                 <span class="journey-number">2</span><span class="journey-icon">📲</span><strong>Autorizar por App o WhatsApp</strong><small>Simula la aprobación o rechazo del copago antes de emitir el bono.</small><span class="journey-go">Simular autorización →</span>
             </div>
             <div class="journey-action">
-                <span class="journey-number">3</span><span class="journey-icon">▦</span><strong>QR de respaldo y llegada</strong><small>El QR queda disponible en la agenda profesional; úsalo solo como respaldo en tótem o secretaría.</small>
+                <span class="journey-number">3</span><span class="journey-icon">▦</span><strong>QR de respaldo y Aviso de llegada</strong><small>El QR queda disponible en la agenda del profesional;  en tótem o secretaría.El que le llega por email es solo respaldo</small>
                 <div class="journey-subactions">
                     @if($qrRespaldo && $qrRespaldo->qr_token && $qrRespaldo->estado === 'activo')
                         <a href="{{ route('vouchers.qr', $qrRespaldo->qr_token) }}">Ver QR</a>
@@ -85,13 +86,13 @@
             <div class="eyebrow">Portal beneficiario</div>
             <h1 class="h3 mb-1">Hola, {{ $nombrePacienteReal }}</h1>
             <p class="text-muted mb-0">
-                Perfil autenticado en Med-SDI · RUT {{ sdi_formatear_rut($rutPacienteReal) }} · {{ $telefonoPacienteReal ?: 'Teléfono no registrado' }}.
+                Perfil autenticado en SDI · RUT {{ sdi_formatear_rut($rutPacienteReal) }} · {{ $telefonoPacienteReal ?: 'Teléfono no registrado' }}.
             </p>
         </div>
     </div>
 
     @if(! $perfilRemotoMedsdi['ok'])
-        <div class="alert alert-warning">No fue posible cargar el perfil real desde Med-SDI: {{ $perfilRemotoMedsdi['mensaje'] }}</div>
+        <div class="alert alert-warning">No fue posible cargar el perfil real desde SDI: {{ $perfilRemotoMedsdi['mensaje'] }}</div>
     @endif
 
     @if(session('ok'))
@@ -132,7 +133,7 @@
                 @csrf
                 <input type="hidden" name="cliente_authorization_token" value="{{ session('authorization_pending_token') }}">
                 <button class="btn btn-success">
-                    Ya autorice en mi app, generar bono
+                    Ya autorice en mi app, generar bono (Qr.)
                 </button>
             </form>
             <small class="d-block mt-2 text-muted">

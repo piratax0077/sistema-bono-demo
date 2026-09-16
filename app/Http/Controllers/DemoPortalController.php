@@ -26,9 +26,16 @@ class DemoPortalController extends Controller
             ->with('ok', 'Sesión demo-bono autenticada automáticamente.');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         abort_unless(config('demo.enabled'), 404);
+
+        if (! Auth::check() && config('demo.user_switch_enabled')) {
+            return $this->loginBono($request);
+        }
+        if (Auth::user()?->rol === 'cliente') {
+            return redirect()->route('paciente.home');
+        }
 
         $vouchers = Voucher::with(['agenda', 'atencion', 'cobros.auditor', 'cobros.decisorPago'])
             ->latest('id')->take(50)->get();

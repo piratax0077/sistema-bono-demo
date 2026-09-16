@@ -1,4 +1,5 @@
 @if(config('demo.enabled') && config('demo.user_switch_enabled'))
+@include('partials.demo_wide_layout')
 <section class="demo-switcher" aria-label="Cambiar perfil de demostración">
     <a class="demo-switcher__home" href="{{ route('demo.portal') }}"><span class="demo-switcher__mark">M</span><span>Medichile Demo</span></a>
     <details class="demo-switcher__current demo-switcher__profile">
