@@ -102,7 +102,7 @@ class ClienteAgendaExternaController extends Controller
         return response()->json($api->horasDisponibles((int) $data['id_profesional'], (int) $data['id_lugar'], $data['fecha']));
     }
 
-    public function agendar(Request $request, AgendaExternaCompraService $service)
+    public function agendar(Request $request, AgendaExternaCompraService $service, MedsdiAgendaApiService $medsdiApi)
     {
         abort_unless(config('demo.enabled') && config('payments.allow_demo'), 404);
 
@@ -123,6 +123,23 @@ class ClienteAgendaExternaController extends Controller
 
         try {
             $voucher = $service->comprar($request->user(), $data, $data['rut'], $request->ip());
+            $notificacion = $medsdiApi->notificarBonoAdquirido([
+                'codigo' => $voucher->codigo,
+                'servicio' => $voucher->tipo_servicio ?: 'Bono médico',
+                'estado_bono' => $voucher->estado,
+                'profesional' => $voucher->prestador_nombre,
+            ]);
+
+            VoucherAuditoria::create([
+                'voucher_id' => $voucher->id,
+                'accion' => ($notificacion['ok'] ?? false)
+                    ? 'agenda_externa_notificacion_android_enviada'
+                    : 'agenda_externa_notificacion_android_fallida',
+                'usuario_tipo' => 'cliente',
+                'usuario_id' => $request->user()->id,
+                'descripcion' => $notificacion['mensaje'] ?? 'Notificación Android procesada después de reservar.',
+                'ip' => $request->ip(),
+            ]);
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -134,6 +151,11 @@ class ClienteAgendaExternaController extends Controller
                         'servicio' => $voucher->tipo_servicio,
                         'estado' => $voucher->estado,
                         'hora_medsdi_id' => optional($voucher->agenda)->medichile_hora_medica_id,
+                    ],
+                    'notificacion' => [
+                        'ok' => (bool) ($notificacion['ok'] ?? false),
+                        'mensaje' => $notificacion['mensaje'] ?? 'No fue posible confirmar la entrega de la notificación.',
+                        'dispositivos_notificados' => (int) ($notificacion['dispositivos_notificados'] ?? 0),
                     ],
                 ]);
             }

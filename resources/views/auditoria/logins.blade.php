@@ -93,7 +93,7 @@
         $accesosFallidos = $logins->where('resultado', 'fallido')->count();
     @endphp
 
-    <main class="page-shell container-fluid">
+    <main class="page-shell container">
         <section class="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3 mb-4">
             <div>
                 <div class="eyebrow mb-1">Seguridad y control de acceso</div>

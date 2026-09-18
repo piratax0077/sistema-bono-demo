@@ -1265,13 +1265,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 body: JSON.stringify({voucher_id: selector.value}),
             });
-            const data = await respuesta.json();
+            const respuestaTexto = await respuesta.text();
+            let data = {};
+            try { data = respuestaTexto ? JSON.parse(respuestaTexto) : {}; }
+            catch (_) { throw new Error(`El servidor respondió HTTP ${respuesta.status} sin un mensaje válido.`); }
             if (!respuesta.ok || !data.ok) throw new Error(data.mensaje || 'No fue posible enviar la notificación.');
             if (typeof swal === 'function') {
                 swal({title:'Notificación procesada', text:data.mensaje, icon:data.dispositivos_notificados > 0 ? 'success' : 'info', button:'Aceptar'});
-            }
+            } else alert(data.mensaje || 'Notificación procesada.');
         } catch (error) {
             if (typeof swal === 'function') swal({title:'No se pudo notificar', text:error.message, icon:'error', button:'Aceptar'});
+            else alert('No se pudo notificar: ' + error.message);
         } finally {
             this.disabled = false;
             this.textContent = textoOriginal;
@@ -2014,16 +2018,19 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             ocultarModalDemo(document.getElementById('modalReservaMedsdi'));
+            const notificacion = data.notificacion || {};
+            const notificacionEntregada = Boolean(notificacion.ok) && Number(notificacion.dispositivos_notificados || 0) > 0;
+            const notificacionGuardada = Boolean(notificacion.ok);
             const continuar = () => setTimeout(() => mostrarModalDemo(modalAutorizacion), 120);
             if (typeof swal === 'function') {
                 swal({
-                    title:'Hora reservada correctamente',
-                    text:`Med-SDI confirmó la hora #${data.voucher?.hora_medsdi_id || ''}. Ahora puede solicitar la autorización o enviar el aviso del bono.`,
-                    icon:'success',
+                    title: notificacionEntregada ? 'Hora reservada y app notificada' : 'Hora reservada correctamente',
+                    text: `Med-SDI confirmó la hora #${data.voucher?.hora_medsdi_id || ''}. ${notificacion.mensaje || 'No fue posible confirmar la notificación a la app.'}`,
+                    icon: notificacionEntregada ? 'success' : (notificacionGuardada ? 'info' : 'warning'),
                     button:'Continuar',
                 }).then(continuar);
             } else {
-                alert(data.mensaje);
+                alert(`${data.mensaje} ${notificacion.mensaje || ''}`);
                 continuar();
             }
         } catch (error) {

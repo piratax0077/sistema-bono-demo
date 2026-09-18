@@ -11,7 +11,7 @@
 </head>
 <body>
 @include('partials.demo_user_switcher')
-<main class="container-fluid notifications-shell py-4 px-4">
+<main class="container notifications-shell py-4 px-4">
     <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div><div class="page-kicker">Operación central</div><h1 class="h2 fw-bold mb-1">Notificaciones de auditoría</h1><p class="text-muted mb-0">Alertas y eventos que requieren revisión del equipo de Contraloría.</p></div>
     </header>

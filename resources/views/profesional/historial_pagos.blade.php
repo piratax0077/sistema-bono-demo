@@ -14,7 +14,7 @@
 <main class="container history-shell py-5">
     <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div><div class="page-kicker">Liquidaciones y trazabilidad</div><h1 class="h2 fw-bold mb-1">Historial de pagos</h1><p class="text-muted mb-0">Consulta bonos, cobros, auditorías y depósitos asociados a tus atenciones.</p></div>
-        <a href="{{ route('profesional.cobros') }}" class="btn btn-primary">Ir a Gestión de cobros</a>
+        <!-- <a href="{{ route('profesional.cobros') }}" class="btn btn-primary">Ir a Gestión de cobros</a> -->
     </header>
 
     <section class="row g-3 mb-4">
