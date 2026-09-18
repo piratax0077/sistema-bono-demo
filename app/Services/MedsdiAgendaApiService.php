@@ -593,6 +593,26 @@ class MedsdiAgendaApiService
         }
     }
 
+    public function pagarBonoComoAsistente(int $idHora, string $metodoPago): array
+    {
+        if (! config('medsdi.pago_enabled')) {
+            return $this->noDisponible('El pago real en Med-SDI está deshabilitado.');
+        }
+        $token = $this->tokenActivoAsistente();
+        if (! $token) return $this->noDisponible('No fue posible autenticar al asistente en Med-SDI.');
+
+        try {
+            $response = $this->request()->withToken($token)->withHeaders(['X-Auth-Token' => $token])
+                ->post(rtrim((string) config('medsdi.base_url'), '/').'/api/asistente/pagar-bono', [
+                    'id_hora_medica' => $idHora,
+                    'metodo_pago' => $metodoPago,
+                ]);
+            return $this->interpretar($response, 'orden');
+        } catch (ConnectionException) {
+            return $this->noDisponible('No fue posible conectar con Med-SDI para registrar el pago asistido.');
+        }
+    }
+
     /**
      * Lista las horas médicas del paciente autenticado (GET /api/paciente/mis_horas_medicas).
      * Se usa para consultar el estado real de una hora ya reservada, sin mutarla.
@@ -634,6 +654,8 @@ class MedsdiAgendaApiService
             'fecha_confirmacion' => $hora['fecha_confirmacion'] ?? null,
             'fecha_cancelacion' => $hora['fecha_cancelacion'] ?? null,
             'comentarios_cancelacion' => $hora['comentarios_cancelacion'] ?? null,
+            'pago_online' => (bool) ($hora['pago_online'] ?? false),
+            'orden_id' => $hora['orden_id'] ?? null,
         ];
     }
 

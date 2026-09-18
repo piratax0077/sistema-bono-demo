@@ -174,7 +174,7 @@ class ClienteAgendaExternaController extends Controller
 
     public function confirmarHora(Request $request, Voucher $voucher, MedsdiAgendaApiService $api)
     {
-        abort_unless((int) $voucher->cliente_id === (int) $request->user()->id, 403);
+        $this->autorizarVoucherPaciente($request, $voucher, $api);
         $agenda = $voucher->agenda;
         if (! $agenda || ! $agenda->medichile_hora_medica_id) {
             return back()->with('error', 'El bono no tiene una hora Med-SDI vinculada.');
@@ -218,7 +218,7 @@ class ClienteAgendaExternaController extends Controller
      */
     public function sincronizarHora(Request $request, Voucher $voucher, MedsdiAgendaApiService $api)
     {
-        abort_unless((int) $voucher->cliente_id === (int) $request->user()->id, 403);
+        $this->autorizarVoucherPaciente($request, $voucher, $api);
 
         $agenda = $voucher->agenda;
         if (! $agenda || ! $agenda->medichile_hora_medica_id) {
@@ -262,6 +262,17 @@ class ClienteAgendaExternaController extends Controller
 
         if ($idEstadoRemoto === 2 && $voucher->estado === 'pendiente_confirmacion') {
             $voucher->update(['estado' => 'pendiente_pago']);
+        }
+
+        if (($estadoRemoto['pago_online'] ?? false) && !$voucher->pagos()->where('estado_pago', 'pagado')->exists()) {
+            VoucherPago::create([
+                'voucher_id'=>$voucher->id,
+                'monto_pagado_usuario'=>$voucher->copago_usuario,
+                'metodo_pago'=>'sincronizado_medsdi',
+                'estado_pago'=>'pagado',
+                'comprobante'=>'MEDSDI-ORDEN-'.($estadoRemoto['orden_id'] ?? 'N-D'),
+            ]);
+            $voucher->update(['estado'=>'activo']);
         }
 
         VoucherAuditoria::create([
@@ -311,7 +322,7 @@ class ClienteAgendaExternaController extends Controller
     public function simularPago(Request $request, Voucher $voucher, MedsdiAgendaApiService $api)
     {
         abort_unless(config('demo.enabled') && config('payments.allow_demo'), 404);
-        abort_unless((int) $voucher->cliente_id === (int) $request->user()->id, 403);
+        $this->autorizarVoucherPaciente($request, $voucher, $api);
 
         $data = $request->validate([
             'metodo_pago' => ['required', 'in:tarjeta_credito,tarjeta_debito,transferencia,efectivo'],
@@ -409,5 +420,23 @@ class ClienteAgendaExternaController extends Controller
         return $request->expectsJson()
             ? response()->json(['ok' => true, 'mensaje' => $mensaje])
             : back()->with('ok', $mensaje);
+    }
+
+    private function autorizarVoucherPaciente(Request $request, Voucher $voucher, MedsdiAgendaApiService $api): void
+    {
+        if ((int) $voucher->cliente_id === (int) $request->user()->id) {
+            return;
+        }
+
+        $perfilRemoto = $api->pacienteAutenticado();
+        $rut = strtoupper((string) preg_replace('/[^0-9K]/i', '', (string) data_get($perfilRemoto, 'paciente.rut')));
+        $hash = $rut !== '' ? hash('sha256', $rut) : null;
+
+        abort_unless(
+            ($perfilRemoto['ok'] ?? false)
+            && $hash
+            && hash_equals((string) $voucher->cliente_rut_hash, $hash),
+            403
+        );
     }
 }

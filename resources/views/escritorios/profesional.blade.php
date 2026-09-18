@@ -6,11 +6,50 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>.page-shell{max-width:1320px}.page-kicker{color:#1848a1;font-size:.75rem;font-weight:850;letter-spacing:.16em;text-transform:uppercase}.clinical-card .card-header{background:linear-gradient(90deg,#f6f9ff,#f1fbfb)!important}.empty-state{padding:3rem 1rem!important}.header-actions,.patient-actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;justify-content:flex-end}.agenda-dialog{width:min(720px,calc(100% - 28px));border:0;border-radius:24px;padding:0;box-shadow:0 30px 90px rgba(16,39,74,.3)}.agenda-dialog::backdrop{background:#07172bb3}.agenda-dialog-head{display:flex;justify-content:space-between;gap:18px;padding:22px 24px;background:linear-gradient(110deg,#1848a1,#31bebe);color:#fff}.agenda-dialog-head h2{color:#fff}.agenda-dialog-body{padding:24px}.agenda-dialog-grid{display:grid;grid-template-columns:1fr 230px;gap:22px}.agenda-qr svg{width:210px;height:210px;background:#fff;padding:10px;border:1px solid #d7e2f2;border-radius:18px}.security-check{padding:13px;border-radius:13px;background:#edf4ff;color:#294d78;font-size:.86rem}@media(max-width:650px){.agenda-dialog-grid{grid-template-columns:1fr}.agenda-qr{text-align:center}}</style>
 </head>
+   <style>
+        body { background:#edf4ff; color:#1f2d3d; }
+        .shell { max-width:1180px; margin:0 auto; padding:32px 18px; }
+        .card { border:1px solid #d9e4f3; border-radius:22px; box-shadow:0 18px 42px rgba(24,72,161,.09); }
+        .eyebrow { color:#1848a1; font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; font-weight:800; }
+        .metric strong { display:block; font-size:2rem; color:#1848a1; }
+        .btn { border-radius:12px; font-weight:700; }
+        .form-control, .form-select { border-radius:12px; border-color:#c9d8ef; }
+        .table td { vertical-align:middle; }
+        .secure-note { background:#effafa; border:1px solid #bce5e5; border-radius:16px; padding:14px; }
+        .qr-route { word-break:break-word; }
+        .share-modal-backdrop { align-items:center; background:rgba(3,22,19,.66); display:flex; inset:0; justify-content:center; padding:16px 22px; position:fixed; z-index:11000; }
+        .share-modal-backdrop[hidden] { display:none !important; }
+        .share-modal { background:#fff; border-radius:28px; box-shadow:0 30px 90px rgba(0,0,0,.28); max-height:calc(100vh - 32px); overflow:auto; width:min(980px,100%); }
+        .share-modal-header { align-items:flex-start; border-bottom:1px solid #dcebe8; display:flex; gap:18px; justify-content:space-between; padding:26px 28px 18px; }
+        .share-close { align-items:center; background:#e8f4f1; border:0; border-radius:16px; color:#063d37; display:inline-flex; font-size:1.5rem; height:44px; justify-content:center; line-height:1; width:44px; }
+        .share-modal-body { padding:24px 28px 28px; }
+        .share-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+        .share-option-card { border:1px solid #d6e8e4; border-radius:18px; cursor:pointer; display:block; padding:16px; transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease; }
+        .share-option-card:hover { border-color:#009688; box-shadow:0 10px 28px rgba(0,121,107,.12); transform:translateY(-1px); }
+        .share-option-card input { margin-right:8px; }
+        .qr-share-preview { background:#f4fbfa; border:1px solid #d6e8e4; border-radius:22px; padding:14px; }
+        .qr-share-preview img { border-radius:18px; display:block; margin:0 auto; max-width:260px; width:100%; }
+        .share-channel-list { display:flex; flex-wrap:wrap; gap:10px; }
+        .share-channel { align-items:center; border:1px solid #d6e8e4; border-radius:999px; cursor:pointer; display:inline-flex; gap:8px; padding:11px 15px; }
+        .share-results { background:#f7fbfa; border:1px solid #dcebe8; border-radius:18px; padding:14px; }
+        .share-result-item { align-items:center; border-bottom:1px solid #e2eeeb; display:flex; gap:12px; justify-content:space-between; padding:12px 0; }
+        .share-result-item:last-child { border-bottom:0; }
+        .share-muted { color:#5f7470; font-size:.88rem; }
+        .section-title { color:#00796b; font-size:.8rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+        .bank-account-modal .modal-dialog{max-width:980px;margin:1rem auto}.bank-account-modal .modal-content{max-height:calc(100vh - 2rem);overflow:hidden}.bank-account-modal form{display:flex;flex-direction:column;min-height:0;overflow:hidden}.bank-account-modal .modal-body{overflow-y:auto}.bank-account-modal .modal-footer{background:#fff;flex-shrink:0}.bank-account-table{border:1px solid #d9e4f3;border-radius:14px;overflow:hidden}.bank-account-table .table{margin:0}.bank-account-table th{background:#f3f7fd;color:#52647b;font-size:.73rem;letter-spacing:.06em;text-transform:uppercase}.bank-account-table td{font-size:.9rem}.bank-account-number{align-items:center;background:#eaf1ff;border-radius:9px;color:#1848a1;display:inline-flex;font-weight:800;height:30px;justify-content:center;width:30px}@media(max-width:767px){.bank-account-modal .modal-dialog{margin:.5rem}.bank-account-modal .modal-content{max-height:calc(100vh - 1rem)}.bank-account-modal .modal-body{padding:1rem!important}}
+        .patient-hero{position:relative;overflow:hidden;padding:34px;border-radius:28px;background:linear-gradient(125deg,#153d8d,#1e69ad 55%,#31bebe);color:#fff;box-shadow:0 24px 58px rgba(24,72,161,.22)}.patient-hero:after{content:"";position:absolute;width:280px;height:280px;border-radius:50%;right:-80px;top:-120px;background:#ffffff18}.patient-hero .eyebrow,.patient-hero h1{color:#fff}.patient-hero p{color:#ddf5ff;max-width:720px}.patient-profile{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.patient-chip{padding:8px 12px;border:1px solid #ffffff44;border-radius:999px;background:#ffffff16;font-size:.85rem;font-weight:700}.journey-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 28px}.journey-action{display:flex;flex-direction:column;min-height:210px;padding:18px;border:1px solid #d2dff1;border-radius:20px;background:#fff;text-decoration:none;color:#263b57;box-shadow:0 12px 30px rgba(24,72,161,.08);transition:.18s}.journey-action:hover{transform:translateY(-3px);border-color:#31bebe;color:#263b57}.journey-action button{border:0;background:transparent;text-align:left;padding:0;color:inherit}.journey-number{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#1848a1;color:#fff;font-weight:900}.journey-icon{font-size:28px;margin:14px 0 8px}.journey-action strong{font-size:1rem}.journey-action small{color:#6d7d91;line-height:1.4;margin-top:7px}.journey-go{margin-top:auto;padding-top:13px;color:#1848a1;font-weight:900;font-size:.82rem}.journey-action form{margin-top:auto}.journey-subactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:10px}.journey-subactions a,.journey-subactions button{padding:7px 9px;border-radius:9px;background:#edf4ff;color:#1848a1;font-size:.72rem;font-weight:850;text-decoration:none}.authorization-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px}.authorization-choice button{padding:16px;border:0;border-radius:14px;font-weight:900}.auth-approve{background:#31bebe;color:#fff}.auth-reject{background:#fff0f1;color:#a8333e}@media(max-width:1050px){.journey-actions{grid-template-columns:repeat(2,1fr)}.journey-action:last-child{grid-column:1/-1}}@media(max-width:620px){.patient-hero{padding:24px}.journey-actions{grid-template-columns:1fr}.journey-action:last-child{grid-column:auto}}
+    </style>
 
 <body>
 @include('partials.demo_user_switcher')
 
 <div class="container page-shell py-5">
+    <section class="patient-hero mb-4">
+        <div class="eyebrow">Medichile · Portal del profesional</div>
+        <h1 class="display-6 fw-bold mt-2 mb-2">Hola, Jaime Kriman Astorga</h1>
+        <p class="mb-0">Reserva tu hora, confirma el copago y llega al centro médico. La hora, el médico, el pago y el QR permanecen vinculados durante todo el recorrido.</p>
+        <div class="patient-profile"><span class="patient-chip">Profesional Med-SDI #</span><span class="patient-chip">RUT</span><span class="patient-chip">WhatsApp</span><span class="patient-chip"></span></div>
+    </section>
     <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div><div class="page-kicker">Medichile · Agenda clínica</div><h1 class="h2 fw-bold mb-1">Escritorio profesional</h1><p class="text-muted mb-0">Pacientes recepcionados, atención clínica y gestión de cobros.</p></div>
     </header>
@@ -36,7 +75,7 @@
                         <th>Llegada</th>
                         <th>Hora Medichile</th>
                         <th>Estado</th>
-                        <th class="text-end">Acción</th>
+                        <th class="d-flex justify-content-end">Acción</th>
                     </tr>
                 </thead>
                 <tbody>

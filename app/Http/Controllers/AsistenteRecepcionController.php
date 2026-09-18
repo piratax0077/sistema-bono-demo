@@ -38,27 +38,68 @@ class AsistenteRecepcionController extends Controller
         $estadoAgenda = [1=>'hora_reservada',2=>'hora_confirmada',3=>'hora_rechazada',4=>'paciente_en_espera',5=>'hora_confirmada',6=>'atencion_realizada',7=>'no_asiste'][$idEstado] ?? $agenda->estado;
         $agenda->update(['estado'=>$estadoAgenda,'medichile_estado_id'=>$idEstado,'medichile_sincronizado_at'=>now(),'medichile_sync_error'=>null]);
         if ($idEstado === 2 && $voucher->estado === 'pendiente_confirmacion') $voucher->update(['estado'=>'pendiente_pago']);
+        if ((bool) data_get($resultado, 'registros.pago_online', false)) {
+            DB::transaction(function () use ($request, $voucher, $resultado) {
+                $voucher = Voucher::whereKey($voucher->id)->lockForUpdate()->firstOrFail();
+                if (! $voucher->pagos()->where('estado_pago', 'pagado')->exists()) {
+                    VoucherPago::create([
+                        'voucher_id'=>$voucher->id,
+                        'monto_pagado_usuario'=>$voucher->copago_usuario,
+                        'metodo_pago'=>'sincronizado_medsdi',
+                        'estado_pago'=>'pagado',
+                        'comprobante'=>'MEDSDI-ORDEN-'.data_get($resultado, 'registros.orden_id', 'N-D'),
+                    ]);
+                }
+                if (in_array($voucher->estado, ['pendiente_confirmacion', 'pendiente_pago'], true)) {
+                    $voucher->update(['estado'=>'activo']);
+                }
+                VoucherAuditoria::create([
+                    'voucher_id'=>$voucher->id,
+                    'accion'=>'agenda_externa_pago_reconciliado',
+                    'usuario_tipo'=>'asistente',
+                    'usuario_id'=>$request->user()->id,
+                    'descripcion'=>'Pago reconciliado desde la orden Med-SDI #'.data_get($resultado, 'registros.orden_id', 'N/D').'.',
+                    'ip'=>$request->ip(),
+                ]);
+            });
+        }
         return back()->with('abrir_recepcion_modal', true)->with('ok', 'Estado actualizado desde Med-SDI: '.data_get($resultado, 'registros.texto_estado', $estadoAgenda));
     }
 
-    public function pagarBono(Request $request, Voucher $voucher)
+    public function pagarBono(Request $request, Voucher $voucher, MedsdiAgendaApiService $medsdiApi)
     {
         abort_unless(config('demo.enabled') && config('payments.allow_demo'), 404);
         $this->autorizarVoucherBuscado($request, $voucher);
         $data = $request->validate(['metodo_pago'=>['required','in:tarjeta_credito,tarjeta_debito,transferencia,efectivo']]);
+        $agenda = $voucher->agenda;
+        if (!$agenda?->medichile_hora_medica_id) {
+            return back()->with('abrir_recepcion_modal', true)->with('error', 'El bono no tiene una hora Med-SDI vinculada.');
+        }
+        if ($voucher->estado !== 'pendiente_pago' || $agenda->estado !== 'hora_confirmada') {
+            return back()->with('abrir_recepcion_modal', true)->with('error', 'La hora debe estar confirmada antes de pagar.');
+        }
+        if ($voucher->pagos()->where('estado_pago', 'pagado')->exists()) {
+            return back()->with('abrir_recepcion_modal', true)->with('ok', 'El bono ya se encuentra pagado.');
+        }
+
+        $resultadoRemoto = $medsdiApi->pagarBonoComoAsistente((int) $agenda->medichile_hora_medica_id, $data['metodo_pago']);
+        if (!($resultadoRemoto['ok'] ?? false)) {
+            return back()->with('abrir_recepcion_modal', true)
+                ->with('error', 'Med-SDI no registró el pago: '.($resultadoRemoto['mensaje'] ?? 'respuesta no válida.'));
+        }
         try {
-            DB::transaction(function () use ($request, $voucher, $data) {
+            DB::transaction(function () use ($request, $voucher, $data, $resultadoRemoto) {
                 $voucher = Voucher::whereKey($voucher->id)->lockForUpdate()->firstOrFail();
                 if ($voucher->estado !== 'pendiente_pago' || !$voucher->agenda || $voucher->agenda->estado !== 'hora_confirmada') throw new \RuntimeException('La hora debe estar confirmada antes de pagar.');
                 if ($voucher->pagos()->where('estado_pago','pagado')->exists()) throw new \RuntimeException('Este bono ya se encuentra pagado.');
                 VoucherPago::create(['voucher_id'=>$voucher->id,'monto_pagado_usuario'=>$voucher->copago_usuario,'metodo_pago'=>$data['metodo_pago'],'estado_pago'=>'pagado','comprobante'=>'PAGO-ASISTENTE-'.now()->format('YmdHis').'-'.$voucher->id]);
                 $voucher->update(['estado'=>'activo']);
-                VoucherAuditoria::create(['voucher_id'=>$voucher->id,'accion'=>'agenda_externa_pago_asistente','usuario_tipo'=>'asistente','usuario_id'=>$request->user()->id,'descripcion'=>'Copago registrado por asistente; bono y QR activados.','ip'=>$request->ip()]);
+                VoucherAuditoria::create(['voucher_id'=>$voucher->id,'accion'=>'agenda_externa_pago_asistente','usuario_tipo'=>'asistente','usuario_id'=>$request->user()->id,'descripcion'=>'Copago registrado por API en Med-SDI; orden remota #'.data_get($resultadoRemoto, 'registros.id', 'N/D').'. Bono y QR locales activados.','ip'=>$request->ip()]);
             });
         } catch (\RuntimeException $exception) {
             return back()->with('abrir_recepcion_modal', true)->with('error', $exception->getMessage());
         }
-        return back()->with('abrir_recepcion_modal', true)->with('ok', 'Pago aprobado. El bono y su QR están activos.');
+        return back()->with('abrir_recepcion_modal', true)->with('ok', 'Pago registrado en Med-SDI. El bono y su QR están activos.');
     }
 
     public function confirmarHora(Request $request, Voucher $voucher, MedsdiAgendaApiService $medsdiApi)
@@ -71,10 +112,20 @@ class AsistenteRecepcionController extends Controller
         $resultado = $medsdiApi->confirmarHoraMedicaComoAsistente((int) $agenda->medichile_hora_medica_id);
         if (!($resultado['ok'] ?? false)) return back()->with('abrir_recepcion_modal', true)->with('error', $resultado['mensaje'] ?? 'Med-SDI no pudo confirmar la hora.');
 
-        DB::transaction(function () use ($request, $voucher, $agenda, $resultado) {
-            $agenda->update(['estado' => 'hora_confirmada','fecha_hora_confirmada' => $agenda->fecha_hora_solicitada,'medichile_estado_id' => (int) data_get($resultado, 'registros.id_estado', 2),'medichile_sincronizado_at' => now(),'medichile_sync_error' => null]);
+        // No confiar sólo en la respuesta del comando: comprobamos el estado
+        // persistido en Med-SDI antes de modificar el espejo local.
+        $verificacion = $medsdiApi->estadoHoraMedicaComoAsistente((int) $agenda->medichile_hora_medica_id);
+        if (!($verificacion['ok'] ?? false) || (int) data_get($verificacion, 'registros.id_estado', 0) !== 2) {
+            return back()->with('abrir_recepcion_modal', true)->with(
+                'error',
+                'Med-SDI recibió la confirmación, pero no fue posible verificar que la hora quedara confirmada. Actualice el estado antes de continuar.'
+            );
+        }
+
+        DB::transaction(function () use ($request, $voucher, $agenda, $verificacion) {
+            $agenda->update(['estado' => 'hora_confirmada','fecha_hora_confirmada' => $agenda->fecha_hora_solicitada,'medichile_estado_id' => (int) data_get($verificacion, 'registros.id_estado'),'medichile_sincronizado_at' => now(),'medichile_sync_error' => null]);
             $voucher->update(['estado' => 'pendiente_pago']);
-            VoucherAuditoria::create(['voucher_id'=>$voucher->id,'accion'=>'agenda_externa_hora_confirmada_asistente','usuario_tipo'=>'asistente','usuario_id'=>$request->user()->id,'descripcion'=>'Hora confirmada por asistente desde recepción.','ip'=>$request->ip()]);
+            VoucherAuditoria::create(['voucher_id'=>$voucher->id,'accion'=>'agenda_externa_hora_confirmada_asistente','usuario_tipo'=>'asistente','usuario_id'=>$request->user()->id,'descripcion'=>'Hora confirmada por asistente y verificada en Med-SDI.','ip'=>$request->ip()]);
         });
 
         return back()->with('abrir_recepcion_modal', true)->with('ok', 'Hora confirmada. El bono quedó pendiente de pago.');
