@@ -760,5 +760,6 @@ window.addEventListener('pageshow', function () {
 </script>
 @endif
 @include('partials.rut_input_script')
+@include('partials.demo_footer')
 </body>
 </html>

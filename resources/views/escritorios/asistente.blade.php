@@ -40,17 +40,19 @@
     </style>
 
 <div class="container py-5" style="max-width:1320px;margin-inline:auto">
-    <section class="patient-hero mb-4">
-        <div class="eyebrow">Medichile · Portal del asistente</div>
-        <h1 class="display-6 fw-bold mt-2 mb-2">Hola, {{ $sesionMedsdi['user']['name'] ?: $sesionMedsdi['user']['email'] }}</h1>
-        <p class="mb-0">Reserva tu hora, confirma el copago y llega al centro médico. La hora, el médico, el pago y el QR permanecen vinculados durante todo el recorrido.</p>
-        <div class="patient-profile"><span class="patient-chip">Asistente Med-SDI #</span><span class="patient-chip">RUT</span><span class="patient-chip">WhatsApp</span><span class="patient-chip"></span></div>
-    </section>
-    <div class="mb-4">
-        <div class="text-uppercase text-primary fw-bold small">Centro médico</div>
-        <h2 class="fw-bold mb-1">Escritorio Asistente SDI</h2>
-        <p class="text-muted mb-0">Recepción, sala de espera y validación de atenciones.</p>
-    </div>
+
+    @include('partials.role_welcome_hero', [
+        'class' => 'mb-4',
+        'eyebrow' => 'Medichile · Recepción del centro médico',
+        'title' => 'Hola, '.($sesionMedsdi['user']['name'] ?? auth()->user()->name),
+        'description' => 'Recepciona pacientes, reserva horas y coordina su ingreso a sala de espera manteniendo identidad, bono y agenda conectados.',
+        'chips' => [
+            'Perfil asistente',
+            $sesionMedsdi['user']['email'] ?? auth()->user()->email,
+            $sesionMedsdi['ok'] ? 'Conectada con Med-SDI' : 'Conexión Med-SDI pendiente',
+            $pendientesRecepcion.' recepciones pendientes',
+        ],
+    ])
 
     <div class="alert {{ $sesionMedsdi['ok'] ? 'alert-success' : 'alert-warning' }} d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4" role="status">
         <div>

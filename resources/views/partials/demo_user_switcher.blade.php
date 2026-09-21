@@ -110,4 +110,5 @@ html{background:var(--sdi-bg)}body{background:radial-gradient(circle at 5% 0%,rg
 .demo-switcher__split{display:flex;align-items:stretch}.demo-switcher__split>form>.demo-switcher__split-main{height:100%;border-radius:999px 0 0 999px;border-right:0;padding-right:.55rem}.demo-switcher__split-menu>summary{display:grid;height:100%;place-items:center;border-radius:0 999px 999px 0;padding:.5rem .58rem}.demo-switcher__split.is-active .demo-switcher__split-main,.demo-switcher__split.is-active .demo-switcher__split-menu>summary{background:#fff;color:#1848a1;border-color:#fff}.demo-switcher__split-menu .demo-switcher__dropdown-menu{right:0}
 </style>
 @include('partials.rut_input_script')
+@include('partials.datatables_demo')
 @endif

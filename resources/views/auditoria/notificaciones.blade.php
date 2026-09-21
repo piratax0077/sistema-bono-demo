@@ -46,5 +46,6 @@
         </div>
     </section>
 </main>
+@include('partials.demo_footer')
 </body>
 </html>

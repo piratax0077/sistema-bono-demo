@@ -44,15 +44,19 @@
 @include('partials.demo_user_switcher')
 
 <div class="container page-shell py-5">
-    <section class="patient-hero mb-4">
-        <div class="eyebrow">Medichile · Portal del profesional</div>
-        <h1 class="display-6 fw-bold mt-2 mb-2">Hola, Jaime Kriman Astorga</h1>
-        <p class="mb-0">Reserva tu hora, confirma el copago y llega al centro médico. La hora, el médico, el pago y el QR permanecen vinculados durante todo el recorrido.</p>
-        <div class="patient-profile"><span class="patient-chip">Profesional Med-SDI #</span><span class="patient-chip">RUT</span><span class="patient-chip">WhatsApp</span><span class="patient-chip"></span></div>
-    </section>
-    <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-        <div><div class="page-kicker">Medichile · Agenda clínica</div><h1 class="h2 fw-bold mb-1">Escritorio profesional</h1><p class="text-muted mb-0">Pacientes recepcionados, atención clínica y gestión de cobros.</p></div>
-    </header>
+
+    @include('partials.role_welcome_hero', [
+        'class' => 'mb-4',
+        'eyebrow' => 'Medichile · Agenda clínica profesional',
+        'title' => 'Hola, '.auth()->user()->name,
+        'description' => 'Revisa pacientes recepcionados, registra la atención clínica y envía cobros respaldados por una trazabilidad verificable.',
+        'chips' => [
+            'Perfil profesional',
+            auth()->user()->email,
+            $pacientesEnEspera->count().' pacientes en espera',
+            'Agenda conectada con Med-SDI',
+        ],
+    ])
 
     @include('partials.demo_flow_guide', ['demoStep' => $pacientesEnEspera->isNotEmpty() ? 4 : 5])
 
@@ -93,7 +97,7 @@
                             <td class="text-end"><div class="patient-actions">
                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('agenda-qr-{{ $voucher->id }}').showModal()">Ficha y QR</button>
                                 @if($voucher->prestador_nombre)
-                                    <form method="POST" action="{{ route('profesional.medsdi.iniciar_atencion', $voucher->id) }}">
+                                    <form method="POST" action="{{ route('profesional.medsdi.iniciar_atencion', $voucher->id) }}" class="professional-demo-action" data-action-kind="start" data-patient="{{ $voucher->cliente_nombre }}" data-service="{{ $voucher->tipo_servicio }}">
                                         @csrf
                                         <button class="btn btn-primary btn-sm">Atender</button>
                                     </form>
@@ -166,7 +170,7 @@
                                 <td><span class="badge bg-light text-dark border">#{{ $bono['id_hora_medica'] }}</span></td>
                                 <td><span class="badge bg-info text-dark">{{ $bono['estado_medsdi'] }}</span></td>
                                 <td class="text-end">
-                                    <form method="POST" action="{{ route('profesional.medsdi.finalizar_hora', $bono['voucher']->id) }}">
+                                    <form method="POST" action="{{ route('profesional.medsdi.finalizar_hora', $bono['voucher']->id) }}" class="professional-demo-action" data-action-kind="finish" data-patient="{{ $bono['voucher']?->cliente_nombre ?? 'Paciente' }}" data-service="{{ $bono['voucher']?->tipo_servicio ?? 'Consulta médica' }}">
                                         @csrf
                                         <button class="btn btn-success btn-sm">Finalizar consulta</button>
                                     </form>
@@ -269,5 +273,50 @@
 
 </div>
 
+<script src="{{ asset('js/plugins/sweetalert.min.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.professional-demo-action').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const isStart = form.dataset.actionKind === 'start';
+            const patient = form.dataset.patient || 'el paciente';
+            const service = form.dataset.service || 'la consulta médica';
+            const button = form.querySelector('button[type="submit"]');
+            const title = isStart ? '¿Iniciar atención simulada?' : '¿Finalizar consulta simulada?';
+            const text = isStart
+                ? `Esta acción demostrativa registrará el inicio de la atención de ${patient} por ${service}. La hora cambiará a “Atención en curso” en Med-SDI y quedará trazabilidad del profesional que inició el proceso.`
+                : `Esta acción demostrativa cerrará la atención de ${patient} por ${service}. La hora se marcará como realizada y se generará evidencia para los procesos posteriores de cobro y auditoría.`;
+
+            if (typeof swal !== 'function') {
+                if (window.confirm(title + '\n\n' + text)) form.submit();
+                return;
+            }
+
+            swal({
+                title: title,
+                text: text,
+                icon: isStart ? 'info' : 'warning',
+                buttons: {
+                    cancel: {text: 'Cancelar', value: null, visible: true, className: 'btn btn-outline-secondary', closeModal: true},
+                    confirm: {text: isStart ? 'Sí, comenzar atención' : 'Sí, finalizar consulta', value: true, visible: true, className: isStart ? 'btn btn-primary' : 'btn btn-success', closeModal: true}
+                },
+                dangerMode: false,
+                closeOnClickOutside: false
+            }).then(function (confirmed) {
+                if (!confirmed) return;
+                if (button) {
+                    button.disabled = true;
+                    button.textContent = isStart ? 'Iniciando…' : 'Finalizando…';
+                }
+                form.submit();
+            });
+        });
+    });
+});
+</script>
+
+@include('partials.demo_footer')
 </body>
 </html>

@@ -39,6 +39,7 @@
         .section-title { color:#00796b; font-size:.8rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
         .bank-account-modal .modal-dialog{max-width:980px;margin:1rem auto}.bank-account-modal .modal-content{max-height:calc(100vh - 2rem);overflow:hidden}.bank-account-modal form{display:flex;flex-direction:column;min-height:0;overflow:hidden}.bank-account-modal .modal-body{overflow-y:auto}.bank-account-modal .modal-footer{background:#fff;flex-shrink:0}.bank-account-table{border:1px solid #d9e4f3;border-radius:14px;overflow:hidden}.bank-account-table .table{margin:0}.bank-account-table th{background:#f3f7fd;color:#52647b;font-size:.73rem;letter-spacing:.06em;text-transform:uppercase}.bank-account-table td{font-size:.9rem}.bank-account-number{align-items:center;background:#eaf1ff;border-radius:9px;color:#1848a1;display:inline-flex;font-weight:800;height:30px;justify-content:center;width:30px}@media(max-width:767px){.bank-account-modal .modal-dialog{margin:.5rem}.bank-account-modal .modal-content{max-height:calc(100vh - 1rem)}.bank-account-modal .modal-body{padding:1rem!important}}
         .patient-hero{position:relative;overflow:hidden;padding:34px;border-radius:28px;background:linear-gradient(125deg,#153d8d,#1e69ad 55%,#31bebe);color:#fff;box-shadow:0 24px 58px rgba(24,72,161,.22)}.patient-hero:after{content:"";position:absolute;width:280px;height:280px;border-radius:50%;right:-80px;top:-120px;background:#ffffff18}.patient-hero .eyebrow,.patient-hero h1{color:#fff}.patient-hero p{color:#ddf5ff;max-width:720px}.patient-profile{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.patient-chip{padding:8px 12px;border:1px solid #ffffff44;border-radius:999px;background:#ffffff16;font-size:.85rem;font-weight:700}.journey-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 28px}.journey-action{display:flex;flex-direction:column;min-height:210px;padding:18px;border:1px solid #d2dff1;border-radius:20px;background:#fff;text-decoration:none;color:#263b57;box-shadow:0 12px 30px rgba(24,72,161,.08);transition:.18s}.journey-action:hover{transform:translateY(-3px);border-color:#31bebe;color:#263b57}.journey-action button{border:0;background:transparent;text-align:left;padding:0;color:inherit}.journey-number{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#1848a1;color:#fff;font-weight:900}.journey-icon{font-size:28px;margin:14px 0 8px}.journey-action strong{font-size:1rem}.journey-action small{color:#6d7d91;line-height:1.4;margin-top:7px}.journey-go{margin-top:auto;padding-top:13px;color:#1848a1;font-weight:900;font-size:.82rem}.journey-action form{margin-top:auto}.journey-subactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:10px}.journey-subactions a,.journey-subactions button{padding:7px 9px;border-radius:9px;background:#edf4ff;color:#1848a1;font-size:.72rem;font-weight:850;text-decoration:none}.authorization-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px}.authorization-choice button{padding:16px;border:0;border-radius:14px;font-weight:900}.auth-approve{background:#31bebe;color:#fff}.auth-reject{background:#fff0f1;color:#a8333e}@media(max-width:1050px){.journey-actions{grid-template-columns:repeat(2,1fr)}.journey-action:last-child{grid-column:1/-1}}@media(max-width:620px){.patient-hero{padding:24px}.journey-actions{grid-template-columns:1fr}.journey-action:last-child{grid-column:auto}}
+        .voucher-status{display:flex;min-width:175px;flex-direction:column;align-items:flex-start;gap:6px}.voucher-status__pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid transparent;border-radius:999px;font-size:.76rem;font-weight:800;line-height:1.1;white-space:nowrap}.voucher-status__dot,.voucher-status__remote-dot{display:inline-block;flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:currentColor}.voucher-status__pill.is-success{border-color:#bce5d9;background:#e9f8f3;color:#08775c}.voucher-status__pill.is-warning{border-color:#f1d79d;background:#fff8e7;color:#8a5a00}.voucher-status__pill.is-info{border-color:#bed8ef;background:#edf6ff;color:#17598d}.voucher-status__pill.is-danger{border-color:#efc1c5;background:#fff0f1;color:#a53640}.voucher-status__pill.is-neutral{border-color:#d8e0e9;background:#f4f7fa;color:#526477}.voucher-status__remote{display:flex;align-items:center;gap:6px;color:#65758a;font-size:.76rem;line-height:1.2}.voucher-status__remote strong{color:#31465f;font-weight:800}.voucher-status__remote-dot.is-success{color:#159478}.voucher-status__remote-dot.is-warning{color:#d49318}.voucher-status__remote-dot.is-info{color:#3182bd}.voucher-status__remote-dot.is-danger{color:#cf4450}.voucher-status__remote-dot.is-neutral{color:#7b8795}.voucher-status__sync{padding-left:13px;color:#8592a4;font-size:.7rem}.voucher-status__error{max-width:220px;color:#b12c39;font-size:.72rem;line-height:1.3}.voucher-actions{display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:7px;white-space:nowrap}.voucher-actions form{flex:0 0 auto}.voucher-actions .btn{display:inline-grid;place-items:center;flex:0 0 42px;width:42px;height:42px;padding:0;border-width:1px;border-radius:11px;box-shadow:none;transition:transform .15s ease,box-shadow .15s ease,background-color .15s ease}.voucher-actions .btn:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(24,72,161,.13)}.voucher-actions .btn-outline-primary{background:#f4f8ff}.voucher-actions .btn-outline-success{background:#f1fbf7}.voucher-actions .btn-success{border-color:#31bebe;background:#31bebe}.voucher-actions .btn-warning{border-color:#e7bd50;background:#fff4cf;color:#735000}.voucher-history-table td:last-child,.voucher-history-table th:last-child{min-width:210px}@media(max-width:900px){.voucher-history-table{min-width:1120px}}
     </style>
 </head>
 <body>
@@ -52,12 +53,18 @@
         $rutPacienteReal = $pacienteMedsdi['rut'] ?? $user->rut;
         $telefonoPacienteReal = $pacienteMedsdi['telefono_uno'] ?? $user->telefono;
     @endphp
-    <section class="patient-hero mb-4">
-        <div class="eyebrow">Medichile · Portal del paciente</div>
-        <h1 class="display-6 fw-bold mt-2 mb-2">Hola, {{ $nombrePacienteReal }}</h1>
-        <p class="mb-0">Reserva tu hora, confirma el copago y llega al centro médico. La hora, el médico, el pago y el QR permanecen vinculados durante todo el recorrido.</p>
-        <div class="patient-profile"><span class="patient-chip">Paciente Med-SDI #{{ $pacienteMedsdi['id'] ?? 'no disponible' }}</span><span class="patient-chip">RUT {{ sdi_formatear_rut($rutPacienteReal) }}</span><span class="patient-chip">WhatsApp {{ $telefonoPacienteReal ?: 'no registrado' }}</span>@if($pacienteMedsdi)<span class="patient-chip">{{ $pacienteMedsdi['email'] ?? 'Correo no registrado' }}</span>@endif</div>
-    </section>
+    @include('partials.role_welcome_hero', [
+        'class' => 'mb-4',
+        'eyebrow' => 'Medichile · Portal del paciente',
+        'title' => 'Hola, '.$nombrePacienteReal,
+        'description' => 'Reserva tu hora, confirma el copago y llega al centro médico. La hora, el médico, el pago y el QR permanecen vinculados durante todo el recorrido.',
+        'chips' => [
+            'Paciente Med-SDI #'.($pacienteMedsdi['id'] ?? 'no disponible'),
+            'RUT '.sdi_formatear_rut($rutPacienteReal),
+            'WhatsApp '.($telefonoPacienteReal ?: 'no registrado'),
+            $pacienteMedsdi['email'] ?? null,
+        ],
+    ])
 
     <section aria-label="Acciones principales del paciente">
         <div class="journey-actions">
@@ -170,7 +177,7 @@
         <div class="col-md-4">
             <div class="card metric p-4">
                 <span class="text-muted">Bonos asociados</span>
-                <strong>{{ $vouchers->total() }}</strong>
+                <strong>{{ $vouchers->count() }}</strong>
             </div>
         </div>
         <div class="col-md-4">
@@ -365,7 +372,7 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover mb-0 voucher-history-table">
                 <thead class="table-light">
                     <tr>
                         <th>Codigo</th>
@@ -399,7 +406,7 @@
                             </td>
                             <td>{{ $voucher->fecha_vencimiento ? \Illuminate\Support\Carbon::parse($voucher->fecha_vencimiento)->format('d-m-Y') : '-' }}</td>
                             <td class="text-end">
-                                <div class="d-flex justify-content-end align-items-center flex-wrap gap-2">
+                                <div class="voucher-actions">
                                     @if(optional($voucher->agenda)->medichile_hora_medica_id)
                                         <form method="POST" action="{{ route('cliente.medsdi.sincronizar_hora', $voucher) }}" class="m-0" data-medsdi-sync data-voucher-id="{{ $voucher->id }}">
                                             @csrf
@@ -475,7 +482,6 @@
         </div>
 
         <div class="p-3">
-            {{ $vouchers->links() }}
         </div>
     </section>
 
@@ -1090,7 +1096,7 @@ document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => 
 </div>
 <style>
 .medichile-alert-overlay{position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.42);display:grid;place-items:center;padding:20px}.medichile-alert-card{width:min(430px,100%);background:#fff;border-radius:16px;padding:30px;text-align:center;box-shadow:0 18px 60px rgba(0,0,0,.28);animation:medichileAlertIn .18s ease-out}.medichile-alert-icon{width:72px;height:72px;border:4px solid #ef6b6b;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;color:#e24b4b;font-size:46px;font-weight:300;line-height:1}.medichile-alert-card h2{font-size:24px;margin:0 0 10px;color:#263238}.medichile-alert-card p{font-size:17px;color:#65727a;margin:0 0 24px}.medichile-alert-card button{min-width:120px;border:0;border-radius:8px;background:#198754;color:#fff;font-weight:700;padding:10px 20px}.medichile-alert-card button:hover{background:#146c43}@keyframes medichileAlertIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
-.modal.demo-modal-visible{display:block;background:rgba(5,33,30,.48);overflow-y:auto}.modal.demo-modal-visible .modal-dialog{animation:medichileAlertIn .18s ease-out}body.demo-modal-open{overflow:hidden}
+.modal.demo-modal-visible{display:block;z-index:12050!important;background:rgba(5,33,30,.58);overflow:hidden;padding:18px}.modal.demo-modal-visible .modal-dialog{animation:medichileAlertIn .18s ease-out;margin:0 auto;height:calc(100dvh - 36px);min-height:0;display:flex;align-items:center}.modal.demo-modal-visible .modal-content{max-height:100%;min-height:0}.modal.demo-modal-visible .modal-body{overflow-y:auto;overscroll-behavior:contain}.modal.demo-modal-visible .modal-header,.modal.demo-modal-visible .modal-footer{flex:0 0 auto}.modal.demo-modal-visible .modal-footer{position:relative;z-index:2;background:#fff;box-shadow:0 -8px 20px rgba(20,48,70,.08)}#modalPagoBono .modal-content{height:100%;display:flex;flex-direction:column}#modalPagoBono form{display:flex;flex:1 1 auto;min-height:0;flex-direction:column;overflow:hidden}#modalPagoBono .modal-body{flex:1 1 auto;min-height:0}#modalPagoBono .modal-footer{flex:0 0 auto}.payment-app-note{display:grid;grid-template-columns:42px 1fr;gap:13px;padding:14px 16px;border:1px solid #bcdbea;border-radius:16px;background:#edf8ff;color:#214c69}.payment-app-note__icon{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#1848a1;color:#fff;font-size:1.25rem}.payment-app-note strong{display:block;margin-bottom:3px;color:#173c58}.payment-app-note p{margin:0;font-size:.88rem;line-height:1.45}.payment-rejection-note{margin-top:10px;color:#7b4b18;font-size:.82rem;line-height:1.4}body.demo-modal-open{overflow:hidden}@media(max-width:640px){.modal.demo-modal-visible{padding:8px}.modal.demo-modal-visible .modal-dialog{height:calc(100dvh - 16px)}#modalPagoBono .modal-body{padding:1rem!important}#modalPagoBono .modal-footer{display:grid;grid-template-columns:1fr;gap:.5rem}#modalPagoBono .modal-footer .btn{width:100%}}
 </style>
 
 <div class="modal fade" id="modalAgendaWeb" tabindex="-1" aria-labelledby="modalAgendaWebLabel" aria-hidden="true">
@@ -1177,8 +1183,13 @@ document.getElementById('pacienteNuevaCuenta')?.addEventListener('click', () => 
             <form method="POST" id="formPagoBono">
                 @csrf
                 <div class="modal-body p-4">
-                    <div class="alert alert-danger py-2 px-3">
-                        Recuerde validar los datos del paciente, profesional y convenio con los datos del bono físico.
+                    <div class="payment-app-note mb-3">
+                        <span class="payment-app-note__icon" aria-hidden="true">📲</span>
+                        <div>
+                            <strong>Necesita la app Med-SDI</strong>
+                            <p>Para continuar debe tener instalada y activa la app Med-SDI en su dispositivo registrado. Allí podrá aceptar el monto o rechazarlo si no reconoce esta operación.</p>
+                            <div class="payment-rejection-note"><strong>Si rechaza:</strong> el pago se bloquea y queda registrado como posible operación no reconocida. Cualquier monto que ya estuviera retenido se deriva a revisión y sólo se liquida al profesional conforme a la resolución del proceso.</div>
+                        </div>
                     </div>
                     <div id="pagoAutorizacionEstado" class="alert alert-primary d-none" role="status" aria-live="polite">
                         <div class="d-flex align-items-center gap-3">
@@ -1819,7 +1830,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok || !data.ok) {
                 detenerConsultaPago();
                 const rechazado = Boolean(data.autorizacion_rechazada);
-                mostrarEstadoPago('danger', rechazado ? 'Pago rechazado desde la app' : 'No se pudo autorizar el pago', data.mensaje || 'Revise la solicitud e intente nuevamente.');
+                mostrarEstadoPago(
+                    'danger',
+                    rechazado ? 'Operación rechazada y enviada a revisión' : 'No se pudo autorizar el pago',
+                    rechazado
+                        ? 'El pago fue bloqueado como operación no reconocida. La evidencia quedó registrada; cualquier monto previamente retenido seguirá el proceso de revisión y liquidación correspondiente.'
+                        : (data.mensaje || 'Revise la solicitud e intente nuevamente.')
+                );
                 pagoSubmit.disabled = false;
                 pagoSubmit.textContent = 'Solicitar una nueva autorización';
                 return;
@@ -2387,5 +2404,6 @@ document.addEventListener('DOMContentLoaded', function () {
     @endif
 });
 </script>
+@include('partials.demo_footer')
 </body>
 </html>

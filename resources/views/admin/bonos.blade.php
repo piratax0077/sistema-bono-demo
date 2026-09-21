@@ -50,5 +50,6 @@
         @if($vouchers->hasPages())<div class="p-3 border-top">{{ $vouchers->links() }}</div>@endif
     </section>
 </main>
+@include('partials.demo_footer')
 </body>
 </html>

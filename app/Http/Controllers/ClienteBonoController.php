@@ -95,7 +95,7 @@ class ClienteBonoController extends Controller
                     ->orWhere('qr_usado', false);
             })
             ->orderBy('id', 'desc')
-            ->paginate(10);
+            ->get();
 
         $saldos = ClienteSaldo::query()
             ->where('cliente_rut_hash', hash('sha256', $rutNormalizado))

@@ -253,5 +253,6 @@
             resultFilter.addEventListener('change', applyFilters);
         })();
     </script>
+@include('partials.demo_footer')
 </body>
 </html>

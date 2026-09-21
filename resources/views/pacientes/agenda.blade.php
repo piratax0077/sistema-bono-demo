@@ -70,5 +70,6 @@
         @endforelse
     </tbody></table></section>
 </main>
+@include('partials.demo_footer')
 </body>
 </html>

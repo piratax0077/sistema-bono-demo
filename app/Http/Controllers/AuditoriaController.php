@@ -39,7 +39,7 @@ class AuditoriaController extends Controller
             ])
             ->orderByRaw("CASE WHEN estado = 'pendiente' THEN 0 ELSE 1 END")
             ->orderBy('id', 'desc')
-            ->paginate(10, ['*'], 'preconsultas_page');
+            ->get();
 
         $notificacionesPendientes = AuditorNotificacion::where('leido', false)->count();
         $ultimasNotificaciones = AuditorNotificacion::latest()->take(5)->get();

@@ -604,5 +604,6 @@ document.addEventListener('DOMContentLoaded', abrirCuentaBancariaProfesional);
     aplicarFiltros();
 })();
 </script>
+@include('partials.demo_footer')
 </body>
 </html>

@@ -94,5 +94,6 @@
         <p class="note">Entorno demostrativo: las integraciones y respuestas de autorización están simuladas para presentar el circuito completo de forma segura.</p>
     </section>
 </main>
+@include('partials.demo_footer')
 </body>
 </html>

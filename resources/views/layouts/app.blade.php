@@ -83,5 +83,6 @@
                 sdiInicializarMenus();
             }
         </script>
-    </body>
+@include('partials.demo_footer')
+</body>
 </html>

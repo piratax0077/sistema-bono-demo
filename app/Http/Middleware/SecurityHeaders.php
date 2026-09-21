@@ -20,8 +20,8 @@ class SecurityHeaders
             "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; " .
             "img-src 'self' data:; " .
             "font-src 'self' data: https://fonts.gstatic.com; " .
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; " .
-            "script-src 'self' 'unsafe-inline'; " .
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.datatables.net https://fonts.googleapis.com; " .
+            "script-src 'self' 'unsafe-inline' https://cdn.datatables.net; " .
             "connect-src 'self' " . config('security.totem_origin')
         );
 
