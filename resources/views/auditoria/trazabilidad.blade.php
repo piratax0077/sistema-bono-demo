@@ -43,7 +43,7 @@
 <body>
 @include('partials.demo_user_switcher')
 
-<main class="container-fluid py-4 px-3 px-md-4">
+<main class="container py-4 px-3 px-md-4">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
         <div>
             <div class="text-uppercase small fw-bold text-success">Contraloría · visión transversal</div>
@@ -126,5 +126,6 @@
         });
     })();
 </script>
+@include('partials.demo_footer')
 </body>
 </html>

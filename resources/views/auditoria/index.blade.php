@@ -25,18 +25,19 @@
 <body>
 @include('partials.demo_user_switcher')
 
-<div class="container-fluid py-4 px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <div class="text-uppercase small fw-bold text-success">
-                Operacion central
-            </div>
-            <h2 class="fw-bold mb-0">
-                Auditoria SDI
-            </h2>
-        </div>
-
-    </div>
+<div class="container py-4 px-4">
+    @include('partials.role_welcome_hero', [
+        'class' => 'mb-4',
+        'eyebrow' => 'Medichile · Operación central',
+        'title' => 'Hola, '.auth()->user()->name,
+        'description' => 'Supervisa expedientes, controles y autorizaciones antes de liberar pagos, conservando evidencia de cada decisión.',
+        'chips' => [
+            'Perfil Contraloría',
+            auth()->user()->email,
+            $cobrosAuditoria->where('estado', 'pendiente_auditoria')->count().' cobros pendientes',
+            $notificacionesPendientes.' alertas pendientes',
+        ],
+    ])
 
     @if(session('ok'))
         <div class="alert alert-success">
@@ -456,7 +457,6 @@
         </div>
 
         <div class="mt-3">
-            {{ $preconsultaAuditorias->links() }}
         </div>
     </div>
 
@@ -518,5 +518,6 @@
     </div>
 </div>
 
+@include('partials.demo_footer')
 </body>
 </html>

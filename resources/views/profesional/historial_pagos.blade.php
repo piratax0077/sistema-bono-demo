@@ -14,7 +14,7 @@
 <main class="container history-shell py-5">
     <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div><div class="page-kicker">Liquidaciones y trazabilidad</div><h1 class="h2 fw-bold mb-1">Historial de pagos</h1><p class="text-muted mb-0">Consulta bonos, cobros, auditorías y depósitos asociados a tus atenciones.</p></div>
-        <a href="{{ route('profesional.cobros') }}" class="btn btn-primary">Ir a Gestión de cobros</a>
+        <!-- <a href="{{ route('profesional.cobros') }}" class="btn btn-primary">Ir a Gestión de cobros</a> -->
     </header>
 
     <section class="row g-3 mb-4">
@@ -26,11 +26,6 @@
     <section class="card history-card border-0 shadow-sm">
         <div class="card-header bg-white p-4">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3"><div><div class="page-kicker">Registro consolidado</div><h2 class="h4 mb-0">Operaciones del profesional</h2></div><span class="badge bg-light text-dark border" id="historialCantidad">{{ $vouchers->count() }} registros</span></div>
-            <div class="history-filters">
-                <input type="search" id="historialBuscar" class="form-control" placeholder="Buscar por bono, paciente o prestación">
-                <select id="historialEstado" class="form-select"><option value="">Todos los estados</option><option value="pagado">Pagados</option><option value="auditoria">En auditoría</option><option value="depositado">Depositados</option><option value="pendiente">Pendientes</option></select>
-                <button type="button" id="historialLimpiar" class="btn btn-outline-secondary">Limpiar filtros</button>
-            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -59,28 +54,6 @@
         </div>
     </section>
 </main>
-<script>
-(() => {
-    const buscar = document.getElementById('historialBuscar');
-    const estado = document.getElementById('historialEstado');
-    const filas = [...document.querySelectorAll('.historial-pago-row')];
-    const cantidad = document.getElementById('historialCantidad');
-    const vacio = document.getElementById('historialSinResultados');
-    const filtrar = () => {
-        const texto = buscar.value.trim().toLocaleLowerCase('es');
-        let visibles = 0;
-        filas.forEach(fila => {
-            const mostrar = (!texto || fila.dataset.search.includes(texto)) && (!estado.value || fila.dataset.estado === estado.value);
-            fila.classList.toggle('d-none', !mostrar);
-            if (mostrar) visibles++;
-        });
-        cantidad.textContent = `${visibles} ${visibles === 1 ? 'registro' : 'registros'}`;
-        vacio?.classList.toggle('d-none', visibles !== 0 || filas.length === 0);
-    };
-    buscar?.addEventListener('input', filtrar);
-    estado?.addEventListener('change', filtrar);
-    document.getElementById('historialLimpiar')?.addEventListener('click', () => { buscar.value=''; estado.value=''; filtrar(); buscar.focus(); });
-})();
-</script>
+@include('partials.demo_footer')
 </body>
 </html>

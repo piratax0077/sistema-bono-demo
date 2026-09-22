@@ -81,5 +81,6 @@
         </main>
     </div>
 </div>
+@include('partials.demo_footer')
 </body>
 </html>

@@ -186,6 +186,16 @@ class AgendaExternaCompraService
                 ->where('rol', 'cliente')
                 ->whereRaw("UPPER(REPLACE(REPLACE(REPLACE(rut, '.', ''), '-', ''), ' ', '')) = ?", [$titularRut])
                 ->first();
+            // En la demo el usuario web es sólo la puerta de entrada y la
+            // identidad clínica real proviene del token Med-SDI. Si el RUT
+            // remoto no coincide con el usuario semilla, asociamos igualmente
+            // el espejo local al perfil Paciente configurado para que ambos
+            // escritorios operen sobre el mismo voucher.
+            if (!$cliente && config('demo.enabled')) {
+                $cliente = User::where('rol', 'cliente')
+                    ->where('email', data_get(config('demo.users'), 'paciente.email'))
+                    ->first();
+            }
             $persona = PersonaBusqueda::porRut($rut)->first();
             $fechaHora = Carbon::parse($seleccion['fecha_hora']);
             if ($fechaHora->isPast()) {

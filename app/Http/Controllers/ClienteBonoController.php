@@ -6,6 +6,7 @@ use App\Models\ClienteSaldo;
 use App\Models\Voucher;
 use App\Models\VoucherAgenda;
 use App\Models\VoucherAuditoria;
+use App\Models\VoucherPago;
 use App\Models\VoucherBaseProfesional;
 use App\Models\VoucherBaseRelacion;
 use App\Models\VoucherBaseServicio;
@@ -27,15 +28,17 @@ class ClienteBonoController extends Controller
     public function home(MedsdiAgendaApiService $medsdiApi)
     {
         $user = auth()->user();
-        $rutNormalizado = $this->normalizarRut($user->rut);
+        $perfilRemotoMedsdi = $medsdiApi->pacienteAutenticado();
+        $pacienteMedsdi = $perfilRemotoMedsdi['ok'] ? $perfilRemotoMedsdi['paciente'] : null;
+        $rutNormalizado = $this->normalizarRut($pacienteMedsdi['rut'] ?? $user->rut);
 
         $vouchers = Voucher::query()
             ->with(['agenda', 'pagos'])
             ->where(function ($query) use ($user, $rutNormalizado) {
                 $query->where('cliente_id', $user->id);
 
-                if ($user->rut) {
-                    $query->orWhere('cliente_rut', $user->rut)
+                if ($rutNormalizado !== '') {
+                    $query->orWhere('cliente_rut_hash', hash('sha256', $rutNormalizado))
                         ->orWhereRaw(
                             "UPPER(REPLACE(REPLACE(REPLACE(cliente_rut, '.', ''), '-', ''), ' ', '')) = ?",
                             [$rutNormalizado]
@@ -60,23 +63,26 @@ class ClienteBonoController extends Controller
             'en_espera' => $vouchers->filter(fn ($voucher) => optional($voucher->agenda)->estado === 'paciente_en_espera')->count(),
         ];
 
-        $perfilRemotoMedsdi = $medsdiApi->pacienteAutenticado();
-        $pacienteMedsdi = $perfilRemotoMedsdi['ok'] ? $perfilRemotoMedsdi['paciente'] : null;
         return view('clientes.home', compact('user', 'proximaAgenda', 'resumen', 'perfilRemotoMedsdi', 'pacienteMedsdi'));
     }
 
     public function dashboard(MedsdiAgendaApiService $medsdiApi)
     {
         $user = auth()->user();
-        $rutNormalizado = $this->normalizarRut($user->rut);
+        // La identidad visible del demo proviene de Med-SDI. Todas las
+        // consultas deben usar ese mismo paciente, no el RUT del usuario local
+        // empleado únicamente para entrar al portal de demostración.
+        $perfilRemotoMedsdi = $medsdiApi->pacienteAutenticado();
+        $pacienteMedsdi = $perfilRemotoMedsdi['ok'] ? $perfilRemotoMedsdi['paciente'] : null;
+        $rutNormalizado = $this->normalizarRut($pacienteMedsdi['rut'] ?? $user->rut);
 
         $vouchers = Voucher::query()
             ->with(['agenda', 'pagos'])
             ->where(function ($query) use ($user, $rutNormalizado) {
                 $query->where('cliente_id', $user->id);
 
-                if ($user->rut) {
-                    $query->orWhere('cliente_rut', $user->rut)
+                if ($rutNormalizado !== '') {
+                    $query->orWhere('cliente_rut_hash', hash('sha256', $rutNormalizado))
                         ->orWhereRaw(
                             "UPPER(REPLACE(REPLACE(REPLACE(cliente_rut, '.', ''), '-', ''), ' ', '')) = ?",
                             [$rutNormalizado]
@@ -89,7 +95,7 @@ class ClienteBonoController extends Controller
                     ->orWhere('qr_usado', false);
             })
             ->orderBy('id', 'desc')
-            ->paginate(10);
+            ->get();
 
         $saldos = ClienteSaldo::query()
             ->where('cliente_rut_hash', hash('sha256', $rutNormalizado))
@@ -143,8 +149,6 @@ class ClienteBonoController extends Controller
         $agendaOnlineResultado = session('agenda_online_voucher_id')
             ? Voucher::with(['agenda', 'pagos', 'profesional'])->find(session('agenda_online_voucher_id'))
             : null;
-        $perfilRemotoMedsdi = $medsdiApi->pacienteAutenticado();
-        $pacienteMedsdi = $perfilRemotoMedsdi['ok'] ? $perfilRemotoMedsdi['paciente'] : null;
         $cuentaBancariaMedsdi = $medsdiApi->cuentaBancariaPaciente();
         if ($pacienteMedsdi) {
             $perfilPersona = [
@@ -166,15 +170,17 @@ class ClienteBonoController extends Controller
             ->where(function ($query) use ($user, $rutNormalizado) {
                 $query->where('cliente_id', $user->id);
 
-                if ($user->rut) {
-                    $query->orWhere('cliente_rut', $user->rut)
+                if ($rutNormalizado !== '') {
+                    $query->orWhere('cliente_rut_hash', hash('sha256', $rutNormalizado))
                         ->orWhereRaw(
                             "UPPER(REPLACE(REPLACE(REPLACE(cliente_rut, '.', ''), '-', ''), ' ', '')) = ?",
                             [$rutNormalizado]
                         );
                 }
             })
-            ->whereIn('estado', ['activo', 'pagado', 'validado_atencion'])
+            // Una reserva debe ser visible desde que Med-SDI la crea, aunque
+            // todavía esté esperando confirmación o pago.
+            ->whereIn('estado', ['pendiente_confirmacion', 'pendiente_pago', 'activo', 'pagado', 'asignado', 'validado_atencion'])
             ->where(function ($query) {
                 $query->whereNull('qr_usado')
                     ->orWhere('qr_usado', false);
@@ -184,7 +190,12 @@ class ClienteBonoController extends Controller
             ->get();
 
         $bonosRecientesNotificables = Voucher::query()
-            ->where('cliente_id', $user->id)
+            ->where(function ($query) use ($user, $rutNormalizado) {
+                $query->where('cliente_id', $user->id);
+                if ($rutNormalizado !== '') {
+                    $query->orWhere('cliente_rut_hash', hash('sha256', $rutNormalizado));
+                }
+            })
             ->where('created_at', '>=', now()->subDays(30))
             ->whereNotIn('estado', ['anulado', 'rechazado'])
             ->latest('id')
@@ -196,6 +207,50 @@ class ClienteBonoController extends Controller
             ->orderBy('fecha_hora_solicitada', 'desc')
             ->take(20)
             ->get();
+
+        // Reconciliar los estados locales con la misma agenda remota que usa
+        // el escritorio asistente. El voucher conserva QR/auditoría, pero el
+        // estado clínico siempre lo decide Med-SDI.
+        $idPacienteMedsdi = (int) ($pacienteMedsdi['id'] ?? 0);
+        if ($idPacienteMedsdi > 0 && $agendas->isNotEmpty()) {
+            $horasRemotas = $medsdiApi->misHorasMedicas($idPacienteMedsdi);
+            if ($horasRemotas['ok'] ?? false) {
+                $porId = collect($horasRemotas['registros'] ?? [])->keyBy(fn ($hora) => (int) ($hora['id'] ?? 0));
+                $estadosLocales = [
+                    1=>'hora_reservada', 2=>'hora_confirmada', 3=>'hora_rechazada',
+                    4=>'paciente_en_espera', 5=>'hora_confirmada',
+                    6=>'atencion_realizada', 7=>'no_asiste', 8=>'paciente_en_espera',
+                ];
+                foreach ($agendas as $agenda) {
+                    $remota = $porId->get((int) $agenda->medichile_hora_medica_id);
+                    if (!is_array($remota)) continue;
+                    $idEstado = (int) ($remota['id_estado'] ?? 0);
+                    $agenda->update([
+                        'estado'=>$estadosLocales[$idEstado] ?? $agenda->estado,
+                        'fecha_hora_confirmada'=>$idEstado === 2 && !$agenda->fecha_hora_confirmada
+                            ? $agenda->fecha_hora_solicitada : $agenda->fecha_hora_confirmada,
+                        'medichile_estado_id'=>$idEstado ?: $agenda->medichile_estado_id,
+                        'medichile_sincronizado_at'=>now(),
+                        'medichile_sync_error'=>null,
+                    ]);
+                    if ($idEstado === 2 && $agenda->voucher?->estado === 'pendiente_confirmacion') {
+                        $agenda->voucher->update(['estado'=>'pendiente_pago']);
+                    }
+                    if (($remota['pago_online'] ?? false) && $agenda->voucher
+                        && !$agenda->voucher->pagos()->where('estado_pago', 'pagado')->exists()) {
+                        VoucherPago::create([
+                            'voucher_id'=>$agenda->voucher->id,
+                            'monto_pagado_usuario'=>$agenda->voucher->copago_usuario,
+                            'metodo_pago'=>'sincronizado_medsdi',
+                            'estado_pago'=>'pagado',
+                            'comprobante'=>'MEDSDI-ORDEN-'.($remota['orden_id'] ?? 'N-D'),
+                        ]);
+                        $agenda->voucher->update(['estado'=>'activo']);
+                    }
+                }
+                $agendas->load(['voucher', 'profesional']);
+            }
+        }
 
         return view('clientes.dashboard', compact(
             'user',
