@@ -22,7 +22,7 @@ class DemoPortalController extends Controller
 
         Log::info('Ingreso automático demo-bono', ['user_id' => $user->id, 'ip' => $request->ip()]);
 
-        return redirect()->route('paciente.home')
+        return redirect()->route('home')
             ->with('ok', 'Sesión demo-bono autenticada automáticamente.');
     }
 
@@ -48,7 +48,7 @@ class DemoPortalController extends Controller
             'depositados' => VoucherCobro::where('pago_estado', 'depositado')->count(),
         ];
 
-        return view('demo.portal', compact('vouchers', 'resumen'));
+        return view('home', compact('resumen'));
     }
 
     public function switchUser(Request $request, string $perfil)
@@ -70,15 +70,25 @@ class DemoPortalController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        $destinosPaciente = ['paciente.totem', 'paciente.escritorio', 'paciente.agenda'];
+        $destinosPaciente = ['home', 'paciente.totem', 'paciente.escritorio', 'paciente.agenda'];
         $destino = (string) $request->input('destino', '');
         if ($perfil === 'paciente' && in_array($destino, $destinosPaciente, true)) {
             return redirect()->route($destino)->with('ok', 'Perfil cambiado a Paciente.');
         }
 
-        $destinosProfesional = ['profesional.escritorio', 'profesional.cobros', 'demo.portal'];
+        $destinosProfesional = ['profesional.escritorio', 'profesional.cobros', 'profesional.historial_pagos'];
         if ($perfil === 'profesional' && in_array($destino, $destinosProfesional, true)) {
             return redirect()->route($destino)->with('ok', 'Perfil cambiado a Profesional.');
+        }
+
+        $destinosContraloria = [
+            'auditoria.index',
+            'auditoria.trazabilidad',
+            'auditoria.notificaciones',
+            'auditoria.logins',
+        ];
+        if ($perfil === 'contralor' && in_array($destino, $destinosContraloria, true)) {
+            return redirect()->route($destino)->with('ok', 'Perfil cambiado a Contraloría.');
         }
 
         if (! empty($perfilConfig['route'])) {

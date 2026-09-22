@@ -275,6 +275,14 @@ class ClienteBonoController extends Controller
         return response()->json($resultado, ($resultado['ok'] ?? false) ? 200 : 422);
     }
 
+    public function eliminarCuentaBancaria(Request $request, MedsdiAgendaApiService $medsdiApi)
+    {
+        $data = $request->validate(['cuenta_id' => ['required', 'integer']]);
+        $resultado = $medsdiApi->eliminarCuentaBancariaPaciente((int) $data['cuenta_id']);
+
+        return response()->json($resultado, ($resultado['ok'] ?? false) ? 200 : 422);
+    }
+
     public function agenda()
     {
         abort_unless(config('demo.enabled'), 404);

@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Escritorio Profesional</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>.page-shell{max-width:1320px}.page-kicker{color:#1848a1;font-size:.75rem;font-weight:850;letter-spacing:.16em;text-transform:uppercase}.clinical-card .card-header{background:linear-gradient(90deg,#f6f9ff,#f1fbfb)!important}.empty-state{padding:3rem 1rem!important}.header-actions,.patient-actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;justify-content:flex-end}.agenda-dialog{width:min(720px,calc(100% - 28px));border:0;border-radius:24px;padding:0;box-shadow:0 30px 90px rgba(16,39,74,.3)}.agenda-dialog::backdrop{background:#07172bb3}.agenda-dialog-head{display:flex;justify-content:space-between;gap:18px;padding:22px 24px;background:linear-gradient(110deg,#1848a1,#31bebe);color:#fff}.agenda-dialog-head h2{color:#fff}.agenda-dialog-body{padding:24px}.agenda-dialog-grid{display:grid;grid-template-columns:1fr 230px;gap:22px}.agenda-qr svg{width:210px;height:210px;background:#fff;padding:10px;border:1px solid #d7e2f2;border-radius:18px}.security-check{padding:13px;border-radius:13px;background:#edf4ff;color:#294d78;font-size:.86rem}@media(max-width:650px){.agenda-dialog-grid{grid-template-columns:1fr}.agenda-qr{text-align:center}}</style>
@@ -15,7 +16,7 @@
         <div><div class="page-kicker">Medichile · Agenda clínica</div><h1 class="h2 fw-bold mb-1">Escritorio profesional</h1><p class="text-muted mb-0">Pacientes recepcionados, atención clínica y gestión de cobros.</p></div>
     </header>
 
-    @include('partials.demo_flow_guide', ['demoStep' => $pacientesEnEspera->isNotEmpty() ? 4 : 5])
+    @include('partials.demo_flow_guide', ['demoProfessional' => true, 'demoInteractive' => true])
 
     <div class="card clinical-card border-0 shadow-sm mb-4 overflow-hidden">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">

@@ -13,7 +13,7 @@
 <div class="container admin-shell py-5">
     <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div><div class="page-kicker">Medichile · Operación central</div><h1 class="h2 fw-bold mb-1">Administración de bonos</h1><p class="text-muted mb-0">Control operativo, financiero y de seguridad en una sola vista.</p></div>
-        <div class="header-actions"><a href="{{ route('demo.portal') }}" class="btn btn-outline-secondary">Vista general</a><form method="POST" action="{{ route('logout') }}">@csrf<button class="btn btn-outline-danger">Cerrar sesión</button></form></div>
+        <div class="header-actions"><a href="{{ route('home') }}" class="btn btn-outline-secondary">Vista general</a></div>
     </header>
 
     <div class="row g-4 admin-grid">

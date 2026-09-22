@@ -22,8 +22,8 @@
     <div class="toolbar">
         <div>
             <a href="{{ route('vouchers.qr', $voucher->qr_token) }}">← Volver al bono</a>
-            @if(Route::has('demo.portal'))
-                <a href="{{ route('demo.portal') }}" style="margin-left:18px">Volver al escritorio demo</a>
+            @if(Route::has('home'))
+                <a href="{{ route('home') }}" style="margin-left:18px">Volver al inicio</a>
             @endif
         </div>
         <span class="demo-badge">{{ $whatsappCloudEnabled ? 'PRUEBA REAL · WHATSAPP CLOUD API' : 'SIMULACIÓN · NO ENVÍA MENSAJES REALES' }}</span>

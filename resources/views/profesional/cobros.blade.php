@@ -310,7 +310,7 @@
                                     <td><strong>{{ $cuenta['banco'] ?: 'Banco no disponible' }}</strong><div class="small text-muted">{{ filled($cuenta['numero_cuenta'] ?? null) ? 'Terminada en '.substr((string) $cuenta['numero_cuenta'], -4) : 'Número no disponible' }}</div></td>
                                     <td>{{ $cuenta['tipo_cuenta'] ?: 'No disponible' }}</td>
                                     <td>@if(!empty($cuenta['principal']))<span class="badge bg-success">Principal</span>@else<span class="badge bg-secondary">Secundaria</span>@endif</td>
-                                    <td class="text-end"><div class="d-inline-flex gap-1"><button type="button" class="btn btn-sm btn-outline-info profesional-notificar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Notificar</button><button type="button" class="btn btn-sm btn-outline-primary profesional-editar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Editar</button></div></td>
+                                    <td class="text-end"><div class="d-inline-flex flex-wrap justify-content-end gap-1"><button type="button" class="btn btn-sm btn-outline-primary profesional-editar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Editar</button><button type="button" class="btn btn-sm btn-outline-info profesional-autorizar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Autorizar App</button><button type="button" class="btn btn-sm btn-outline-danger profesional-eliminar-cuenta" data-cuenta-id="{{ $cuenta['id'] }}">Eliminar cuenta</button></div></td>
                                 </tr>
                             @empty
                                 <tr><td colspan="5" class="text-center text-muted py-3">No hay cuentas bancarias registradas.</td></tr>
@@ -455,8 +455,8 @@ function cargarCuentaBancariaProfesional(cuenta) {
     form.querySelector('[name="email"]').value = cuenta?.email || @json($perfilBancoProfesional['email'] ?? '');
 }
 document.querySelectorAll('.profesional-editar-cuenta').forEach(button => button.addEventListener('click', () => cargarCuentaBancariaProfesional(cuentasBancariasProfesional.find(cuenta => String(cuenta.id) === button.dataset.cuentaId))));
-document.querySelectorAll('.profesional-notificar-cuenta').forEach(button => button.addEventListener('click', async () => {
-    const confirmado = typeof swal === 'function' ? await swal({title:'¿Notificar al profesional?',text:'Se enviará un aviso sobre sus datos bancarios a la App Android.',icon:'warning',buttons:['Cancelar','Notificar']}) : confirm('¿Enviar notificación Android?');
+document.querySelectorAll('.profesional-autorizar-cuenta').forEach(button => button.addEventListener('click', async () => {
+    const confirmado = typeof swal === 'function' ? await swal({title:'¿Autorizar esta cuenta en la App?',text:'Se enviará una confirmación de los datos bancarios a la App del profesional.',icon:'warning',buttons:['Cancelar','Autorizar App']}) : confirm('¿Autorizar esta cuenta en la App?');
     if (!confirmado) return;
     button.disabled = true;
     try {
@@ -464,11 +464,28 @@ document.querySelectorAll('.profesional-notificar-cuenta').forEach(button => but
         if (!csrf) throw new Error('No se encontró el token de seguridad. Recarga la página e inténtalo nuevamente.');
         const response = await fetch('{{ route('profesional.cuenta_bancaria.notificar') }}', {method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({cuenta_id:button.dataset.cuentaId})});
         const data = await response.json();
-        if (!response.ok) throw new Error(data.mensaje || 'No fue posible enviar la notificación.');
-        if (typeof swal === 'function') await swal({title:'Notificación procesada',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
+        if (!response.ok) throw new Error(data.mensaje || 'No fue posible solicitar la autorización.');
+        if (typeof swal === 'function') await swal({title:'Autorización enviada',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
     } catch (error) {
-        if (typeof swal === 'function') await swal({title:'No se pudo notificar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
+        if (typeof swal === 'function') await swal({title:'No se pudo autorizar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
     } finally { button.disabled = false; }
+}));
+document.querySelectorAll('.profesional-eliminar-cuenta').forEach(button => button.addEventListener('click', async () => {
+    const confirmado = typeof swal === 'function' ? await swal({title:'¿Eliminar esta cuenta bancaria?',text:'La cuenta dejará de estar disponible y se enviará una confirmación a la App del profesional.',icon:'warning',buttons:['Cancelar','Eliminar y confirmar']}) : confirm('¿Eliminar esta cuenta y enviar confirmación a la App?');
+    if (!confirmado) return;
+    button.disabled = true;
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('#modalCuentaBancariaProfesional input[name="_token"]')?.value;
+        if (!csrf) throw new Error('No se encontró el token de seguridad. Recarga la página e inténtalo nuevamente.');
+        const response = await fetch('{{ route('profesional.cuenta_bancaria.eliminar') }}', {method:'DELETE',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify({cuenta_id:button.dataset.cuentaId})});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || 'No fue posible eliminar la cuenta bancaria.');
+        if (typeof swal === 'function') await swal({title:'Cuenta eliminada',text:data.mensaje,icon:'success',button:'Aceptar'}); else alert(data.mensaje);
+        window.location.reload();
+    } catch (error) {
+        button.disabled = false;
+        if (typeof swal === 'function') await swal({title:'No se pudo eliminar',text:error.message,icon:'error',button:'Aceptar'}); else alert(error.message);
+    }
 }));
 document.getElementById('profesionalNuevaCuenta')?.addEventListener('click', () => {
     cargarCuentaBancariaProfesional(null);

@@ -19,10 +19,12 @@
 
             <div class="hidden sm:flex sm:items-center sm:ml-6">
                 <span class="text-sm font-medium text-gray-600 me-3">{{ Auth::user()->name }}</span>
-                <form method="POST" action="{{ route('logout') }}" class="m-0">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-secondary btn-sm">Cambiar usuario</button>
-                </form>
+                @unless(config('demo.enabled') && config('demo.user_switch_enabled'))
+                    <form method="POST" action="{{ route('logout') }}" class="m-0">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Cambiar usuario</button>
+                    </form>
+                @endunless
             </div>
 
             <div class="-mr-2 flex items-center sm:hidden">
@@ -71,16 +73,18 @@
                 </div>
             </div>
 
-            <div class="mt-3 space-y-1">
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
+            @unless(config('demo.enabled') && config('demo.user_switch_enabled'))
+                <div class="mt-3 space-y-1">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
 
-                    <x-responsive-nav-link :href="route('logout')"
-                        onclick="event.preventDefault(); this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form>
-            </div>
+                        <x-responsive-nav-link :href="route('logout')"
+                            onclick="event.preventDefault(); this.closest('form').submit();">
+                            {{ __('Log Out') }}
+                        </x-responsive-nav-link>
+                    </form>
+                </div>
+            @endunless
 
         </div>
     </div>

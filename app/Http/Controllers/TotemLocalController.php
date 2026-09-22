@@ -11,6 +11,7 @@ use App\Models\VoucherAuditoria;
 use App\Models\VoucherDeliveryRequest;
 use App\Services\MedichileAgendaService;
 use App\Services\MedsdiAgendaApiService;
+use App\Services\AgendaExternaCompraService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -23,10 +24,10 @@ class TotemLocalController extends Controller
         abort_unless(config('demo.enabled'), 404);
         $totem = $this->totemActivo($request);
         $bonos = collect();
-        // Solo se consulta Med-SDI cuando realmente se puede reservar (paciente
-        // identificado), para no gastar la llamada externa en visitas anónimas.
-        $perfilRemotoMedsdi = $request->user()?->rol === 'cliente' ? $medsdiApi->pacienteAutenticado() : null;
-        $pacienteMedsdi = $perfilRemotoMedsdi && $perfilRemotoMedsdi['ok'] ? $perfilRemotoMedsdi['paciente'] : null;
+        // El tótem siempre comienza anónimo. El beneficiario se valida por RUT
+        // dentro del modal y nunca se hereda desde una sesión de paciente.
+        $perfilRemotoMedsdi = null;
+        $pacienteMedsdi = null;
         $horariosOnline = AgendaOnlineHorario::with(['profesional', 'servicio'])
             ->where('estado', 'disponible')
             ->where('fecha_hora', '>', now())
@@ -94,6 +95,53 @@ class TotemLocalController extends Controller
             'perfilRemotoMedsdi',
             'identificacionAutomatica'
         ));
+    }
+
+    public function paciente(Request $request, MedsdiAgendaApiService $medsdiApi)
+    {
+        abort_unless(config('demo.enabled'), 404);
+        if (! $this->totemActivo($request)) {
+            return response()->json(['ok' => false, 'mensaje' => 'El tótem no está activo o provisionado.'], 423);
+        }
+        $data = $request->validate(['rut' => ['required', 'string', 'max:30']]);
+        $rut = $this->normalizarRut($data['rut']);
+
+        if (! $this->rutValido($rut)) {
+            return response()->json(['ok' => false, 'mensaje' => 'Ingrese un RUT chileno válido.'], 422);
+        }
+
+        return response()->json($medsdiApi->pacientePorRutComoAsistente($rut));
+    }
+
+    public function agendar(Request $request, AgendaExternaCompraService $service)
+    {
+        abort_unless(config('demo.enabled') && config('payments.allow_demo'), 404);
+        if (! $this->totemActivo($request)) {
+            return response()->json(['ok' => false, 'mensaje' => 'El tótem no está activo o provisionado.'], 423);
+        }
+        $data = $request->validate([
+            'id_profesional' => ['required', 'integer'], 'nombre_profesional' => ['required', 'string', 'max:190'],
+            'especialidad' => ['nullable', 'string', 'max:190'], 'id_especialidad' => ['nullable', 'integer'],
+            'id_lugar' => ['required', 'integer'], 'lugar_nombre' => ['nullable', 'string', 'max:190'],
+            'direccion' => ['nullable', 'string', 'max:255'], 'fecha_hora' => ['required', 'date'],
+            'rut' => ['required', 'string', 'max:30'], 'titular_rut' => ['nullable', 'string', 'max:30'],
+            'id_prestacion' => ['required', 'integer'], 'origen_prestacion' => ['required', 'in:prestacion_fonasa_bono'],
+            'prestacion_codigo' => ['required', 'string', 'max:40'], 'prestacion_nombre' => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $voucher = $service->comprarComoAsistente(null, $data, $data['rut'], $request->ip());
+            $request->session()->put('agenda_online_voucher_id', $voucher->id);
+
+            return response()->json([
+                'ok' => true,
+                'mensaje' => 'Hora reservada correctamente.',
+                'voucher' => $voucher->codigo,
+                'redirect' => route('paciente.totem', ['tab' => 'reserva']),
+            ]);
+        } catch (Throwable $exception) {
+            return response()->json(['ok' => false, 'mensaje' => $exception->getMessage()], 422);
+        }
     }
 
     public function buscarHora(Request $request, MedsdiAgendaApiService $medsdiApi)

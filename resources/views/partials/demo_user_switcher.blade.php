@@ -1,7 +1,7 @@
 @if(config('demo.enabled') && config('demo.user_switch_enabled'))
 @include('partials.demo_wide_layout')
 <section class="demo-switcher" aria-label="Cambiar perfil de demostración">
-    <a class="demo-switcher__home" href="{{ route('demo.portal') }}"><span class="demo-switcher__mark">M</span><span>Medichile Demo</span></a>
+    <a class="demo-switcher__home" href="{{ route('home') }}"><span class="demo-switcher__mark">M</span><span>Medichile</span></a>
     <details class="demo-switcher__current demo-switcher__profile">
         <summary>
             <span><small>Perfil activo</small>{{ auth()->user()?->name ?? 'Sin sesión' }}</span>
@@ -15,7 +15,7 @@
             @auth
                 @php
                     $inicioPorRol = [
-                        'cliente' => route('paciente.home'),
+                        'cliente' => route('home'),
                         'asistente' => route('asistente.escritorio'),
                         'profesional' => route('profesional.home'),
                         'vendedor' => route('vendedor.home'),
@@ -23,19 +23,19 @@
                         'auditor' => route('contraloria.home'),
                         'contralor' => route('contraloria.home'),
                     ];
-                    $urlInicioPerfil = $inicioPorRol[auth()->user()?->rol] ?? route('demo.portal');
+                    $urlInicioPerfil = $inicioPorRol[auth()->user()?->rol] ?? route('home');
                 @endphp
                 <a class="demo-switcher__profile-link" href="{{ $urlInicioPerfil }}"><span aria-hidden="true">⌂</span> Página de inicio</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button class="demo-switcher__logout" type="submit"><span aria-hidden="true">↪</span> Cerrar sesión</button>
+                    <button class="demo-switcher__logout" type="submit"><span aria-hidden="true">↪</span> Cerrar sesión y volver al login</button>
                 </form>
             @endauth
         </div>
     </details>
     <div @class(['demo-switcher__split', 'is-active' => request()->routeIs('paciente.*', 'totem.local')])>
         <form method="POST" action="{{ route('demo.switch-user', 'paciente') }}">@csrf
-            <input type="hidden" name="destino" value="paciente.escritorio">
+            <input type="hidden" name="destino" value="home">
             <button type="submit" class="demo-switcher__split-main">Paciente</button>
         </form>
         <details class="demo-switcher__dropdown demo-switcher__split-menu">
@@ -69,12 +69,34 @@
                 <button type="submit">Gestión de cobros</button>
             </form>
             <form method="POST" action="{{ route('demo.switch-user', 'profesional') }}">@csrf
-                <input type="hidden" name="destino" value="demo.portal">
-                <button type="submit">Historial de QR</button>
+                <input type="hidden" name="destino" value="profesional.historial_pagos">
+                <button type="submit">Historial de pagos</button>
             </form>
         </div>
     </details>
-    @foreach(collect(config('demo.users'))->except(['paciente', 'asistente', 'profesional', 'administrador']) as $key => $perfil)
+    @php($perfilContralor = config('demo.users.contralor'))
+    <details class="demo-switcher__dropdown">
+        <summary @class(['is-active' => auth()->user()?->email === $perfilContralor['email']])>Contraloría <span aria-hidden="true">▾</span></summary>
+        <div class="demo-switcher__dropdown-menu">
+            <form method="POST" action="{{ route('demo.switch-user', 'contralor') }}">@csrf
+                <input type="hidden" name="destino" value="auditoria.index">
+                <button type="submit" @disabled(request()->routeIs('auditoria.index'))>Vista de Contraloría</button>
+            </form>
+            <form method="POST" action="{{ route('demo.switch-user', 'contralor') }}">@csrf
+                <input type="hidden" name="destino" value="auditoria.trazabilidad">
+                <button type="submit" @disabled(request()->routeIs('auditoria.trazabilidad'))>Trazabilidad de bono</button>
+            </form>
+            <form method="POST" action="{{ route('demo.switch-user', 'contralor') }}">@csrf
+                <input type="hidden" name="destino" value="auditoria.notificaciones">
+                <button type="submit" @disabled(request()->routeIs('auditoria.notificaciones'))>Notificaciones</button>
+            </form>
+            <form method="POST" action="{{ route('demo.switch-user', 'contralor') }}">@csrf
+                <input type="hidden" name="destino" value="auditoria.logins">
+                <button type="submit" @disabled(request()->routeIs('auditoria.logins'))>Auditoría de accesos</button>
+            </form>
+        </div>
+    </details>
+    @foreach(collect(config('demo.users'))->except(['paciente', 'asistente', 'profesional', 'contralor', 'administrador']) as $key => $perfil)
         <form method="POST" action="{{ route('demo.switch-user', $key) }}">@csrf
             <button type="submit" @disabled(auth()->user()?->email === $perfil['email'])>{{ $perfil['label'] }}</button>
         </form>
@@ -89,4 +111,7 @@ html{background:var(--sdi-bg)}body{background:radial-gradient(circle at 5% 0%,rg
 .demo-switcher__split{display:flex;align-items:stretch}.demo-switcher__split>form>.demo-switcher__split-main{height:100%;border-radius:999px 0 0 999px;border-right:0;padding-right:.55rem}.demo-switcher__split-menu>summary{display:grid;height:100%;place-items:center;border-radius:0 999px 999px 0;padding:.5rem .58rem}.demo-switcher__split.is-active .demo-switcher__split-main,.demo-switcher__split.is-active .demo-switcher__split-menu>summary{background:#fff;color:#1848a1;border-color:#fff}.demo-switcher__split-menu .demo-switcher__dropdown-menu{right:0}
 </style>
 @include('partials.rut_input_script')
+@if(request()->routeIs('contraloria.*', 'auditoria.*'))
+    <div class="container pt-3">@include('partials.demo_audit_guide')</div>
+@endif
 @endif

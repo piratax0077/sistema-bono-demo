@@ -277,7 +277,7 @@
                             <input type="hidden" name="metodo" value="rut">
                             <label class="form-label fw-bold">RUT del paciente</label>
                             <div class="input-group input-group-lg">
-                                <input class="form-control" name="rut" value="{{ old('rut') }}" placeholder="Ej.: 6.187.674-K" required>
+                                <input class="form-control" name="rut" value="{{ old('rut') }}" placeholder="Ej.: 6.187.674-K" autocomplete="off" data-rut-input required>
                                 <button class="btn btn-primary">Buscar hora</button>
                             </div>
                         </form>
@@ -474,7 +474,7 @@
                     <div class="small text-primary fw-bold mb-2">1 · PACIENTE</div>
                     <label class="form-label fw-bold" for="ventaAsistenteRut">RUT del paciente</label>
                     <div class="input-group input-group-lg">
-                        <input id="ventaAsistenteRut" class="form-control" placeholder="Ej.: 17.174.188-2">
+                        <input id="ventaAsistenteRut" class="form-control" placeholder="Ej.: 17.174.188-2" autocomplete="off" data-rut-input>
                         <button id="ventaAsistenteValidar" type="button" class="btn btn-primary">Validar paciente</button>
                     </div>
                     <div id="ventaAsistentePaciente" class="alert alert-success mt-3 mb-0 d-none"></div>
@@ -526,6 +526,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ asset('js/plugins/sweetalert.min.js') }}"></script>
+@include('partials.rut_input_script')
 <script>
 function mostrarRevisionEnConstruccion() {
     if (typeof swal === 'function') {

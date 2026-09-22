@@ -36,6 +36,9 @@
 
             <!-- Page Content -->
             <main>
+                @if(config('demo.enabled') && request()->routeIs('asistente.*'))
+                    <div class="container pt-3">@include('partials.demo_assistant_guide')</div>
+                @endif
                @if (isset($slot))
                     {{ $slot }}
                 @else

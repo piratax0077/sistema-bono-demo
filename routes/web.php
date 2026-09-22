@@ -96,10 +96,11 @@ if (! function_exists('sdi_encrypt_optional')) {
 /* PÚBLICAS */
 
 Route::get('/', function () {
-    return config('demo.enabled') ? redirect()->route('demo.portal') : redirect('/login');
+    return config('demo.enabled') ? redirect()->route('home') : redirect('/login');
 });
 
-Route::get('/demo', [DemoPortalController::class, 'index'])->name('demo.portal');
+Route::get('/home', [DemoPortalController::class, 'index'])->name('home');
+Route::get('/demo', fn () => redirect()->route('home'));
 Route::post('/demo/cambiar-usuario/{perfil}', [DemoPortalController::class, 'switchUser'])
     ->middleware('throttle:30,1')->name('demo.switch-user');
 Route::post('/demo/ingresar-bono', [DemoPortalController::class, 'loginBono'])
@@ -115,6 +116,20 @@ Route::post('/totem-local/anexar-qr', [TotemLocalController::class, 'anexarQr'])
     ->middleware('throttle:15,1')->name('totem.local.anexar-qr');
 Route::post('/totem-local/bonos/{voucher}/confirmar-llegada', [TotemLocalController::class, 'confirmarLlegada'])
     ->middleware('throttle:10,1')->name('totem.local.confirmar-llegada');
+Route::prefix('totem-local/reserva')->name('totem.reserva.')->group(function () {
+    Route::get('paciente', [TotemLocalController::class, 'paciente'])->middleware('throttle:20,1')->name('paciente');
+    Route::get('regiones', [ClienteAgendaExternaController::class, 'regiones'])->name('regiones');
+    Route::get('ciudades', [ClienteAgendaExternaController::class, 'ciudades'])->name('ciudades');
+    Route::get('especialidades', [ClienteAgendaExternaController::class, 'especialidades'])->name('especialidades');
+    Route::get('tipo-especialidades', [ClienteAgendaExternaController::class, 'tipoEspecialidades'])->name('tipo_especialidades');
+    Route::get('sub-tipo-especialidades', [ClienteAgendaExternaController::class, 'subTipoEspecialidades'])->name('sub_tipo_especialidades');
+    Route::get('prestaciones', [ClienteAgendaExternaController::class, 'prestaciones'])->name('prestaciones');
+    Route::post('cotizar', [ClienteAgendaExternaController::class, 'cotizar'])->middleware('throttle:30,1')->name('cotizar');
+    Route::get('profesionales', [ClienteAgendaExternaController::class, 'profesionales'])->name('profesionales');
+    Route::get('dias-laborales', [ClienteAgendaExternaController::class, 'diasLaborales'])->name('dias_laborales');
+    Route::get('horas-disponibles', [ClienteAgendaExternaController::class, 'horasDisponibles'])->name('horas_disponibles');
+    Route::post('agendar', [TotemLocalController::class, 'agendar'])->middleware('throttle:10,1')->name('agendar');
+});
 
 Route::post('/logout', function (Request $request) {
     Auth::logout();
@@ -137,7 +152,7 @@ Route::get('/redirigir-rol', function () {
     if ($user->rol == 'asistente') return redirect()->route('asistente.home');
     if ($user->rol == 'profesional') return redirect()->route('profesional.home');
     if ($user->rol == 'auditor') return redirect()->route('contraloria.home');
-    if ($user->rol == 'cliente') return redirect()->route('paciente.home');
+    if ($user->rol == 'cliente') return redirect()->route('home');
     abort(403);
 })->middleware('auth');
 
@@ -601,6 +616,9 @@ Route::middleware(['auth', 'rol:vendedor'])->group(function () {
 
 Route::middleware(['auth', 'rol:profesional'])->group(function () {
 
+    Route::get('/profesional/historial-pagos', [\App\Http\Controllers\ProfesionalHistorialPagosController::class, 'index'])
+        ->name('profesional.historial_pagos');
+
     Route::get('/escritorio-profesional', function (\App\Http\Controllers\ProfesionalAgendaExternaController $medsdiProfesional, \App\Services\MedsdiAgendaApiService $api) {
 
         $medsdiProfesional->sincronizarAgenda($api);
@@ -725,6 +743,8 @@ Route::middleware(['auth', 'rol:profesional'])->group(function () {
         ->name('profesional.cuenta_bancaria.actualizar');
     Route::post('/profesional/cuenta-bancaria/notificar', [\App\Http\Controllers\ProfesionalCuentaBancariaController::class, 'notify'])
         ->middleware('throttle:10,1')->name('profesional.cuenta_bancaria.notificar');
+    Route::delete('/profesional/cuenta-bancaria', [\App\Http\Controllers\ProfesionalCuentaBancariaController::class, 'destroy'])
+        ->middleware('throttle:10,1')->name('profesional.cuenta_bancaria.eliminar');
 
     Route::get('/profesional/cobros/{id}/qr/generar',
         [VoucherWebController::class, 'generarQrCobro'])
@@ -779,6 +799,8 @@ Route::middleware(['auth', 'rol:cliente', 'phone.otp'])->group(function () {
         ->middleware('throttle:10,1')->name('paciente.cuenta_bancaria.actualizar');
     Route::post('/paciente/cuenta-bancaria/notificar', [ClienteBonoController::class, 'notificarCuentaBancaria'])
         ->middleware('throttle:10,1')->name('paciente.cuenta_bancaria.notificar');
+    Route::delete('/paciente/cuenta-bancaria', [ClienteBonoController::class, 'eliminarCuentaBancaria'])
+        ->middleware('throttle:10,1')->name('paciente.cuenta_bancaria.eliminar');
     Route::get('/paciente/agenda', [ClienteBonoController::class, 'agenda'])
         ->name('paciente.agenda');
 
@@ -820,7 +842,7 @@ Route::middleware(['auth', 'rol:cliente', 'phone.otp'])->group(function () {
         Route::post('agendar', [ClienteAgendaExternaController::class, 'agendar'])->middleware('throttle:10,1')->name('agendar');
         Route::post('vouchers/{voucher}/confirmar-hora', [ClienteAgendaExternaController::class, 'confirmarHora'])->middleware('throttle:10,1')->name('confirmar_hora');
         Route::post('vouchers/{voucher}/sincronizar-hora', [ClienteAgendaExternaController::class, 'sincronizarHora'])->middleware('throttle:20,1')->name('sincronizar_hora');
-        Route::post('vouchers/{voucher}/simular-pago', [ClienteAgendaExternaController::class, 'simularPago'])->middleware('throttle:10,1')->name('simular_pago');
+        Route::post('vouchers/{voucher}/simular-pago', [ClienteAgendaExternaController::class, 'simularPago'])->middleware('throttle:60,1')->name('simular_pago');
     });
 });
 
@@ -1092,8 +1114,12 @@ Route::middleware('throttle:5,1')->post(
 
 Route::middleware(['auth', 'rol:admin,auditor', '2fa'])->group(function () {
 
+    Route::view('/auditoria/trazabilidad', 'auditoria.trazabilidad')
+        ->name('auditoria.trazabilidad');
+
     Route::get('/auditoria',
-        [AuditoriaController::class, 'index']);
+        [AuditoriaController::class, 'index'])
+        ->name('auditoria.index');
 
     Route::get('/admin/alertas',
         [AuditoriaController::class, 'alertas'])
