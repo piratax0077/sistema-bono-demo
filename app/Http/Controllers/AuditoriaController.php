@@ -21,6 +21,7 @@ class AuditoriaController extends Controller
 {
     public function index()
     {
+        $reviewSettings = $this->parametrosBonos();
         $auditorias = VoucherAuditoria::with(['voucher', 'usuario'])
             ->orderByRaw("COALESCE(usuario_tipo, 'sistema') ASC")
             ->orderByRaw('COALESCE(usuario_id, 0) ASC')
@@ -78,8 +79,44 @@ class AuditoriaController extends Controller
             'preconsultaAuditorias',
             'notificacionesPendientes',
             'ultimasNotificaciones'
-            ,'cobrosAuditoria'
+            ,'cobrosAuditoria', 'reviewSettings'
         ));
+    }
+
+    public function guardarParametrosBonos(Request $request)
+    {
+        $data = $request->validate([
+            'check_qr_integrity' => 'nullable|boolean',
+            'check_closed_attention' => 'nullable|boolean',
+            'check_professional_relation' => 'nullable|boolean',
+            'check_medsdi_schedule' => 'nullable|boolean',
+            'check_amount' => 'nullable|boolean',
+            'check_duplicates' => 'nullable|boolean',
+            'amount_tolerance' => 'required|numeric|min:0|max:1000000',
+            'max_charges_per_voucher' => 'required|integer|min:1|max:20',
+        ]);
+
+        foreach (array_keys($this->parametrosBonos()) as $key) {
+            if (str_starts_with($key, 'check_')) {
+                $data[$key] = $request->boolean($key);
+            }
+        }
+
+        DB::table('contraloria_bono_settings')->updateOrInsert(
+            ['id' => 1],
+            ['data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'created_at' => now(), 'updated_at' => now()]
+        );
+
+        VoucherAuditoria::create([
+            'voucher_id' => null,
+            'accion' => 'parametros_revision_bonos_actualizados',
+            'usuario_tipo' => 'auditor',
+            'usuario_id' => auth()->id(),
+            'descripcion' => 'Contraloría actualizó los parámetros automáticos de revisión de bonos.',
+            'ip' => $request->ip(),
+        ]);
+
+        return redirect()->route('auditoria.index')->with('ok', 'Parámetros guardados. Los cobros fueron reevaluados con la nueva configuración.');
     }
 
     public function resolverCobro(Request $request, $id)
@@ -275,6 +312,7 @@ class AuditoriaController extends Controller
 
     private function evaluarControlesCobro(VoucherCobro $cobro): array
     {
+        $settings = $this->parametrosBonos();
         $voucher = $cobro->voucher;
         $atencion = optional($voucher)->atencion;
         $agenda = optional($voucher)->agenda;
@@ -282,20 +320,47 @@ class AuditoriaController extends Controller
             ? hash_hmac('sha256', $voucher->id.$voucher->codigo, config('app.key'))
             : null;
         $montoCoincide = $voucher
-            && abs((float) $cobro->monto_cobrado - (float) $voucher->saldo_veterinario) < 0.01
+            && abs((float) $cobro->monto_cobrado - (float) $voucher->saldo_veterinario) <= (float) $settings['amount_tolerance']
             && (float) $cobro->monto_cobrado > 0;
         $controlMedichile = ($voucher && $agenda)
             ? app(MedichileAgendaService::class)->verificarAtencionRealizada($voucher, $agenda)
             : ['ok' => false, 'detalle' => 'No existe una agenda asociada al bono.'];
 
-        return [
-            ['codigo' => 'QR_INTEGRO', 'nombre' => 'Integridad del QR', 'ok' => $voucher && filled($voucher->qr_firma) && hash_equals((string) $voucher->qr_firma, (string) $firmaEsperada), 'detalle' => 'Firma HMAC del bono sin alteraciones.'],
-            ['codigo' => 'ATENCION_CERRADA', 'nombre' => 'Atención cerrada', 'ok' => $atencion && in_array($atencion->estado, ['validada_automaticamente', 'validada_por_asistente'], true) && filled($atencion->cerrada_at), 'detalle' => 'Cierre clínico y diagnóstico registrados.'],
-            ['codigo' => 'RELACION_PROFESIONAL', 'nombre' => 'Paciente–profesional', 'ok' => $voucher && (int) $voucher->profesional_id === (int) $cobro->profesional_id && filled($voucher->beneficiario_nombre ?: $voucher->cliente_nombre), 'detalle' => 'El cobro pertenece al profesional asociado al paciente y bono.'],
-            ['codigo' => 'AGENDA_MEDICHILE', 'nombre' => 'Agenda Medichile', 'ok' => $controlMedichile['ok'], 'detalle' => $controlMedichile['detalle']],
-            ['codigo' => 'MONTO_CONSISTENTE', 'nombre' => 'Valor a cobrar', 'ok' => $montoCoincide, 'detalle' => 'El monto coincide con el saldo registrado para el profesional.'],
-            ['codigo' => 'SIN_DUPLICIDAD', 'nombre' => 'Cobro único', 'ok' => $voucher && $voucher->cobros()->count() === 1, 'detalle' => 'No existen solicitudes de cobro duplicadas para el bono.'],
+        $controls = [
+            ['setting' => 'check_qr_integrity', 'codigo' => 'QR_INTEGRO', 'nombre' => 'Integridad del QR', 'ok' => $voucher && filled($voucher->qr_firma) && hash_equals((string) $voucher->qr_firma, (string) $firmaEsperada), 'detalle' => 'Firma HMAC del bono sin alteraciones.'],
+            ['setting' => 'check_closed_attention', 'codigo' => 'ATENCION_CERRADA', 'nombre' => 'Atención cerrada', 'ok' => $atencion && in_array($atencion->estado, ['validada_automaticamente', 'validada_por_asistente'], true) && filled($atencion->cerrada_at), 'detalle' => 'Cierre clínico y diagnóstico registrados.'],
+            ['setting' => 'check_professional_relation', 'codigo' => 'RELACION_PROFESIONAL', 'nombre' => 'Paciente–profesional', 'ok' => $voucher && (int) $voucher->profesional_id === (int) $cobro->profesional_id && filled($voucher->beneficiario_nombre ?: $voucher->cliente_nombre), 'detalle' => 'El cobro pertenece al profesional asociado al paciente y bono.'],
+            ['setting' => 'check_medsdi_schedule', 'codigo' => 'AGENDA_MEDICHILE', 'nombre' => 'Agenda Medichile', 'ok' => $controlMedichile['ok'], 'detalle' => $controlMedichile['detalle']],
+            ['setting' => 'check_amount', 'codigo' => 'MONTO_CONSISTENTE', 'nombre' => 'Valor a cobrar', 'ok' => $montoCoincide, 'detalle' => 'Diferencia permitida: $'.number_format((float) $settings['amount_tolerance'], 0, ',', '.').'.'],
+            ['setting' => 'check_duplicates', 'codigo' => 'SIN_DUPLICIDAD', 'nombre' => 'Cobros por bono', 'ok' => $voucher && $voucher->cobros()->count() <= (int) $settings['max_charges_per_voucher'], 'detalle' => 'Máximo configurado: '.$settings['max_charges_per_voucher'].' cobro(s) por bono.'],
         ];
+
+        return collect($controls)->map(function ($control) use ($settings) {
+            if (! $settings[$control['setting']]) {
+                $control['ok'] = true;
+                $control['detalle'] = 'Control desactivado por Contraloría.';
+            }
+            unset($control['setting']);
+
+            return $control;
+        })->all();
+    }
+
+    private function parametrosBonos(): array
+    {
+        $defaults = [
+            'check_qr_integrity' => true,
+            'check_closed_attention' => true,
+            'check_professional_relation' => true,
+            'check_medsdi_schedule' => true,
+            'check_amount' => true,
+            'check_duplicates' => true,
+            'amount_tolerance' => 0,
+            'max_charges_per_voucher' => 1,
+        ];
+        $stored = DB::table('contraloria_bono_settings')->where('id', 1)->value('data');
+
+        return array_replace($defaults, $stored ? json_decode($stored, true) : []);
     }
 
     public function resolverPreconsulta(Request $request, $id)

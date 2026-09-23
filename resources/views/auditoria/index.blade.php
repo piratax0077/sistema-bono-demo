@@ -49,6 +49,51 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
+    <div class="card card-soft p-4 mb-4">
+        <div class="mb-4">
+            <div class="text-uppercase small fw-bold text-success">Configuración de Contraloría</div>
+            <h4 class="fw-bold mb-2">Parámetros de revisión automática de bonos</h4>
+            <p class="small-muted mb-0">Los cobros activos se reevaluarán al guardar. Solo los controles habilitados pueden bloquear el visto bueno o la autorización de pago.</p>
+        </div>
+
+        <form method="POST" action="{{ route('auditoria.parametros-bonos') }}">
+            @csrf
+            <div class="row g-3 mb-4">
+                @foreach([
+                    'check_qr_integrity' => 'Exigir integridad y firma HMAC del QR',
+                    'check_closed_attention' => 'Exigir atención cerrada y validada',
+                    'check_professional_relation' => 'Validar relación paciente–profesional–bono',
+                    'check_medsdi_schedule' => 'Verificar agenda y atención en Med-SDI',
+                    'check_amount' => 'Comparar monto cobrado con saldo profesional',
+                    'check_duplicates' => 'Controlar cobros duplicados por bono',
+                ] as $key => $label)
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="{{ $key }}" value="1" id="{{ $key }}" @checked(old($key, $reviewSettings[$key]))>
+                            <label class="form-check-label" for="{{ $key }}">{{ $label }}</label>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="amount_tolerance">Tolerancia máxima en la diferencia del monto ($)</label>
+                    <input class="form-control" id="amount_tolerance" name="amount_tolerance" type="number" min="0" max="1000000" step="1" value="{{ old('amount_tolerance', $reviewSettings['amount_tolerance']) }}" required>
+                    <div class="small-muted mt-1">Cero exige coincidencia exacta con el saldo registrado para el profesional.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="max_charges_per_voucher">Máximo de cobros permitidos por bono</label>
+                    <input class="form-control" id="max_charges_per_voucher" name="max_charges_per_voucher" type="number" min="1" max="20" step="1" value="{{ old('max_charges_per_voucher', $reviewSettings['max_charges_per_voucher']) }}" required>
+                    <div class="small-muted mt-1">El valor recomendado es 1 para impedir solicitudes duplicadas.</div>
+                </div>
+            </div>
+
+            <button class="btn btn-success" type="submit">Guardar y reevaluar cobros</button>
+            <p class="small-muted mt-3 mb-0">Parámetros operativos de demostración. Desactivar un control queda registrado en la trazabilidad y no equivale a una regla normativa.</p>
+        </form>
+    </div>
+
     <div class="card card-soft p-3 mb-4">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>

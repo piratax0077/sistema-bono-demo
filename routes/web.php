@@ -1121,6 +1121,10 @@ Route::middleware(['auth', 'rol:admin,auditor', '2fa'])->group(function () {
         [AuditoriaController::class, 'index'])
         ->name('auditoria.index');
 
+    Route::post('/auditoria/parametros-bonos',
+        [AuditoriaController::class, 'guardarParametrosBonos'])
+        ->name('auditoria.parametros-bonos');
+
     Route::get('/admin/alertas',
         [AuditoriaController::class, 'alertas'])
         ->name('admin.alertas');

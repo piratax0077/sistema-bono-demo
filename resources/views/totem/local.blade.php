@@ -19,7 +19,7 @@
     <style>
         body{background:linear-gradient(145deg,#edf4ff,#f8fbff);color:#1f2d3d}.shell{border:1px solid #d7e2f2;box-shadow:0 24px 70px rgba(24,72,161,.14)}.head{background:linear-gradient(120deg,#1848a1,#31bebe)}.brand small{color:#d9f7f7}.status,.flash.ok{background:#e7f9f9;color:#237f87}.panel,.option,.flow-diagram{border-color:#c9d8ef;background:#fbfdff}.primary,.option button,.voucher form button,.schedule-card button,.qr-result a{background:#31bebe}.next-screen a,.field button,.option.secondary button{background:#1848a1}.meta,.schedule-price{background:#edf4ff}.meta strong,.tab.active,.flow-diagram h3,.schedule-date,.schedule-time,.qr-result h3{color:#1848a1}.flow-arrow{color:#31bebe}.tabs,.med-search{background:#edf4ff;border-color:#c9d8ef}.tab{color:#52657e}.flow-step,.schedule-card,.voucher{border-color:#d5e1f1;box-shadow:0 8px 22px rgba(24,72,161,.07)}.flow-step strong{color:#1f2d3d}.med-search input,.med-search select,.field input{border-color:#c9d8ef}.qr-result{border-color:#31bebe;background:#f0fbfb}.hint{background:#edf4ff;color:#1848a1}
     </style>
-    <style>.method-separator{display:flex;align-items:center;gap:12px;margin:22px 0;color:#71849b;font-weight:800}.method-separator:before,.method-separator:after{content:"";height:1px;flex:1;background:#d5e1f1}.qr-input{text-transform:none!important}.automatic-match{margin:18px 0;padding:16px 18px;border-radius:14px;background:#e7f9f9;color:#176d75;font-weight:800}.alternate-identification{margin-top:15px}.alternate-identification summary{cursor:pointer;color:#1848a1;font-weight:900;padding:10px 0}.next-screen form{width:100%;margin:0}.next-screen button{display:block;width:100%;border:0;padding:17px 22px;border-radius:15px;background:#155ba4;color:#fff;text-align:center;font-family:inherit;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 9px 22px rgba(21,91,164,.2)}.totem-header-row{width:100%;margin:0}.totem-header-row>.col-12{min-width:0}.totem-header-row .demo-switcher{width:100%;max-width:100%;margin:0}</style>
+    <style>.method-separator{display:flex;align-items:center;gap:12px;margin:22px 0;color:#71849b;font-weight:800}.method-separator:before,.method-separator:after{content:"";height:1px;flex:1;background:#d5e1f1}.qr-input{text-transform:none!important}.automatic-match{margin:18px 0;padding:16px 18px;border-radius:14px;background:#e7f9f9;color:#176d75;font-weight:800}.alternate-identification{margin-top:15px}.alternate-identification summary{cursor:pointer;color:#1848a1;font-weight:900;padding:10px 0}.next-screen form{width:100%;margin:0}.next-screen button{display:block;width:100%;border:0;padding:17px 22px;border-radius:15px;background:#155ba4;color:#fff;text-align:center;font-family:inherit;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 9px 22px rgba(21,91,164,.2)}.totem-header-row{width:100%;margin:0}.totem-header-row>.col-12{min-width:0}.totem-header-row .demo-switcher{width:100%;max-width:100%;margin:0}.totem-main{padding-top:24px;padding-bottom:24px}.totem-main .shell{width:100%;max-width:none}.demo-footer{width:100%;justify-self:stretch}@media(max-width:700px){.totem-main{padding-top:14px;padding-bottom:14px}}</style>
 </head>
 <body style="display:block;padding:0">
 <div class="row g-0 totem-header-row">
@@ -27,7 +27,8 @@
         @include('partials.demo_user_switcher')
     </div>
 </div>
-<main class="shell" style="margin:24px auto">
+<main class="container totem-main">
+  <div class="shell">
     <header class="head">
         <div class="brand"><small>Medichile · SDI Salud Digital Integrada</small><h1 style="color: #fff;">Tótem de atención</h1></div>
         <div class="status">● {{ $totem ? 'ACTIVO' : 'SIN EQUIPO ACTIVO' }}</div>
@@ -125,6 +126,7 @@
             <nav class="admin-only"><a href="{{ url('admin/totems/dashboard') }}">Administrar tótem</a></nav>
         @endif
     </section>
+  </div>
 </main>
 
 @if($soloCompra)
