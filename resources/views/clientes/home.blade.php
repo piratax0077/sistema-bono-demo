@@ -27,7 +27,7 @@
 
     <section class="hero">
         <div class="eyebrow">Medichile · Portal del paciente</div>
-        <h1>Hola, {{ $nombrePacienteReal }}</h1>
+        <h1 class="text-white">Hola, {{ $nombrePacienteReal }}</h1>
         <p>Desde aquí puedes administrar tus horas, bonos y llegada al centro médico en un solo lugar.</p>
         <div class="chips">
             <span class="chip">RUT {{ sdi_formatear_rut($rutPacienteReal) }}</span>
@@ -41,6 +41,9 @@
         <div class="alert alert-warning mt-3">No fue posible cargar el perfil desde Med-SDI: {{ $perfilRemotoMedsdi['mensaje'] }}</div>
     @endif
 
+    @include('partials.demo_security_cards')
+    @include('partials.demo_flow_guide', ['demoInteractive' => true])
+
     <div class="section-title"><h2>¿Qué necesitas hacer?</h2><p>Accesos rápidos a las funciones principales.</p></div>
     <section class="actions" aria-label="Acciones principales">
         <a class="action" href="{{ route('cliente.dashboard') }}"><span class="action-icon">📅</span><strong>Reservar una hora</strong><span>Busca profesionales, prestaciones y horarios disponibles en Med-SDI.</span><b>Comenzar →</b></a>
@@ -48,8 +51,6 @@
         <a class="action" href="{{ route('paciente.agenda') }}"><span class="action-icon">🗓️</span><strong>Mi agenda</strong><span>Consulta tus próximas atenciones y el estado de cada reserva.</span><b>Ver agenda →</b></a>
         <a class="action" href="{{ route('paciente.totem', ['tab' => 'autoatencion']) }}"><span class="action-icon">✓</span><strong>Confirmar llegada</strong><span>Identifica tu hora por RUT y avisa que ya llegaste al centro.</span><b>Ir a autoatención →</b></a>
     </section>
-
-    @include('partials.demo_flow_guide', ['demoGuideInformative' => true])
 
     <section class="content-grid">
         <article class="card-home">

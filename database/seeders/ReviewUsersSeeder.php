@@ -28,7 +28,7 @@ class ReviewUsersSeeder extends Seeder
         );
 
         foreach ([
-            ['name' => 'Paciente Revisión', 'email' => 'paciente@gmail.com', 'rol' => 'cliente', 'telefono' => '+56900000000', 'rut' => '10211568-6'],
+            ['name' => 'Paciente Demo', 'email' => 'paciente@gmail.com', 'rol' => 'cliente', 'telefono' => '+56900000000', 'rut' => '10211568-6'],
             ['name' => 'Médico de Prueba', 'email' => 'profesional@gmail.com', 'rol' => 'profesional', 'profesional_id' => $profesional->id],
             ['name' => 'Asistente Revisión', 'email' => 'asistente@gmail.com', 'rol' => 'asistente'],
             ['name' => 'Administrador Revisión', 'email' => 'administrador@gmail.com', 'rol' => 'admin'],

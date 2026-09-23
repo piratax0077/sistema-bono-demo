@@ -30,7 +30,7 @@
 <main class="container totem-main">
   <div class="shell">
     <header class="head">
-        <div class="brand"><small>Medichile · SDI Salud Digital Integrada</small><h1 style="color: #fff;">Tótem de atención</h1></div>
+        <div class="brand"><small>Medichile · SDI Salud Digital Integrada</small><h1 style="color:#fff">Tótem de atención</h1></div>
         <div class="status">● {{ $totem ? 'ACTIVO' : 'SIN EQUIPO ACTIVO' }}</div>
     </header>
     <section class="body">
@@ -86,7 +86,7 @@
                                     <p><strong>Paciente:</strong> {{ $bono->beneficiario_nombre ?: $bono->cliente_nombre }}</p>
                                     <p><strong>Profesional:</strong> {{ $bono->prestador_nombre ?: optional($bono->profesional)->nombre }}</p>
                                     <p><strong>Hora:</strong> {{ optional($bono->agenda?->fecha_hora_confirmada ?: $bono->agenda?->fecha_hora_solicitada)?->format('d-m-Y H:i') ?? 'Hora asociada en Medichile' }}</p>
-                                    <p><strong>Estado:</strong> {{ optional($bono->agenda)->estado === 'paciente_en_espera' ? 'Paciente en espera' : 'Hora confirmada' }}</p>
+                                    <p><strong>Estado:</strong> {{ optional($bono->agenda)->estado === 'paciente_en_espera' ? 'Tu llegada ha sido confirmada. Espera en la sala hasta que tu profesional te llame.' : 'Hora confirmada' }}</p>
                                 </div>
                                 @if(optional($bono->agenda)->estado !== 'paciente_en_espera')
                                     <form method="POST" action="{{ route('totem.local.confirmar-llegada', $bono) }}">
