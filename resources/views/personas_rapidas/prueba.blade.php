@@ -41,6 +41,7 @@
             border-radius: 8px;
         }
     </style>
+    @include('partials.scroll_fade')
 </head>
 <body>
     @php($volverEscritorio = auth()->user()?->rol === 'asistente' ? route('asistente.escritorio') : url('/escritorio-admin'))

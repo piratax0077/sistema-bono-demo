@@ -34,6 +34,7 @@
             text-transform: uppercase;
         }
     </style>
+    @include('partials.scroll_fade')
 </head>
 <body>
 

@@ -406,8 +406,21 @@ class MedsdiAgendaApiService
         }
 
         try {
-            $response = $this->request()->withHeaders(['X-Auth-Token' => $token])
-                ->post(rtrim((string) config('medsdi.base_url'), '/').'/api/profesionales/buscar_profesionales', $filtros);
+            // $response = $this->request()->withHeaders(['X-Auth-Token' => $token])
+            //     ->post(rtrim((string) config('medsdi.base_url'), '/').'/api/profesionales/buscar_profesionales', $filtros);
+            $response = $this->request()
+    ->withoutRedirecting()
+    ->withHeaders(['X-Auth-Token' => $token])
+    ->post(
+        rtrim((string) config('medsdi.base_url'), '/').'/api/profesionales/buscar_profesionales',
+        $filtros
+    );
+
+\Log::info('DEBUG buscar profesionales MedSDI', [
+    'status' => $response->status(),
+    'location' => $response->header('Location'),
+    'url' => rtrim((string) config('medsdi.base_url'), '/').'/api/profesionales/buscar_profesionales',
+]);
 
             $resultado = $this->interpretar($response, 'profesionales');
 

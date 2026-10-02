@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Administración de Bonos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('partials.scroll_fade')
     <style>.admin-shell{max-width:1320px}.page-kicker{color:#1848a1;font-size:.75rem;font-weight:850;letter-spacing:.16em;text-transform:uppercase}.admin-grid>.col-md-4{display:flex}.admin-grid .card{width:100%;position:relative;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}.admin-grid .card:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#1848a1,#31bebe)}.admin-grid .card:hover{transform:translateY(-3px)}.admin-grid .card p{color:#7b8798;min-height:48px}.admin-grid .card .btn{margin-top:auto;width:100%}.header-actions{display:flex;gap:.65rem;flex-wrap:wrap}</style>
 </head>
 

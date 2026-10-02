@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Historial de pagos · Profesional</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('partials.scroll_fade')
     <style>
         .history-shell{max-width:1400px}.page-kicker{color:#1848a1;font-size:.75rem;font-weight:850;letter-spacing:.16em;text-transform:uppercase}.summary-card{border:1px solid #d8e3f0!important;border-radius:18px!important}.summary-card strong{display:block;color:#087b68;font-size:1.65rem}.history-card{overflow:hidden;border-radius:22px!important}.history-filters{display:grid;grid-template-columns:minmax(240px,1.5fr) repeat(2,minmax(170px,.6fr));gap:.75rem}.payment-state{display:inline-block;padding:.35rem .6rem;border-radius:999px;background:#edf4ff;color:#1848a1;font-size:.75rem;font-weight:850;text-transform:capitalize}.payment-state.is-paid{background:#dff5ed;color:#087555}.history-actions{display:flex;justify-content:flex-end;gap:.35rem;flex-wrap:wrap}@media(max-width:760px){.history-filters{grid-template-columns:1fr}}
     </style>

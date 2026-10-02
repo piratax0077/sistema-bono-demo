@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Confirmar llegada y avisar">
+  <g transform="translate(-3.5,-3)" fill="none" stroke="#1848A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M13.5 23.5V12.5A3.5 3.5 0 0117 9h14a3.5 3.5 0 013.5 3.5v11"/>
+    <rect x="8" y="23.5" width="32" height="7.5" rx="3.2"/>
+    <path d="M8 23.5v-3.8a2.9 2.9 0 015.8 0v3.8"/>
+    <path d="M34.2 23.5v-3.8a2.9 2.9 0 015.8 0v3.8"/>
+    <path d="M12 31v6.5M36 31v6.5"/>
+  </g>
+  <g fill="none" stroke="#31BEBE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="39.3" cy="39.3" r="6.3"/>
+    <path d="M36.6 39.2l2 2 3.9-4.2"/>
+  </g>
+</svg>

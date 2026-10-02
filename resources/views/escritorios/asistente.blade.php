@@ -12,6 +12,8 @@
         .eyebrow { color:#1848a1; font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; font-weight:800; }
         .metric strong { display:block; font-size:2rem; color:#1848a1; }
         .btn { border-radius:12px; font-weight:700; }
+        .btn .text-muted { font-weight:400; }
+        .card-body h4 { font-family:'Manrope', sans-serif; }
         .form-control, .form-select { border-radius:12px; border-color:#c9d8ef; }
         .table td { vertical-align:middle; }
         .secure-note { background:#effafa; border:1px solid #bce5e5; border-radius:16px; padding:14px; }
@@ -78,7 +80,7 @@
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div class="fs-2">📲</div>
+                            <img src="{{ asset('images/iconos/pacientes.svg') }}" alt="" style="height:50px;width:50px;display:block">
                             <span class="badge bg-primary rounded-pill">{{ $pendientesRecepcion }}</span>
                         </div>
                         <h4 class="mt-3 text-dark">Recepción de pacientes</h4>
@@ -92,7 +94,7 @@
             <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100 h-100" onclick="abrirModalAsistente('modalVentaBonoAsistente')">
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body p-4">
-                        <div class="fs-2">🎫</div>
+                        <img src="{{ asset('images/iconos/bono-demo.png') }}" alt="" style="height:50px;width:50px;display:block">
                         <h4 class="mt-3 text-dark">Venta de bonos</h4>
                         <p class="text-muted mb-0">Buscar al paciente por RUT, elegir prestación y reservar su hora en Med-SDI.</p>
                     </div>
@@ -105,7 +107,7 @@
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div class="fs-2">🕐</div>
+                            <img src="{{ asset('images/iconos/sala-de-espera.png') }}" alt="" style="height:50px;width:50px;display:block">
                             <span class="badge bg-success rounded-pill">{{ $pacientesEnEspera }}</span>
                         </div>
                         <h4 class="mt-3 text-dark">Sala de espera</h4>

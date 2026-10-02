@@ -7,7 +7,7 @@
         <title>Laravel</title>
 
         <!-- Fonts -->
-        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
         <!-- Styles -->
         <style>
@@ -16,9 +16,13 @@
 
         <style>
             body {
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Roboto', sans-serif;
+            }
+            h1, h2, h3, h4, h5, h6, nav {
+                font-family: 'Manrope', sans-serif;
             }
         </style>
+        @include('partials.scroll_fade')
     </head>
     <body class="antialiased">
         <div class="relative flex items-top justify-center min-h-screen bg-gray-100 dark:bg-gray-900 sm:items-center py-4 sm:pt-0">

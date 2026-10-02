@@ -7,6 +7,7 @@
     <title>SDI - Beneficiario</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     @vite('resources/js/flatpickr.js')
+    @include('partials.scroll_fade')
     <style>
         body { background:#edf4ff; color:#1f2d3d; }
         .shell { max-width:1180px; margin:0 auto; padding:32px 18px; }

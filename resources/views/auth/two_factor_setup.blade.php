@@ -16,6 +16,7 @@
         .brand{letter-spacing:.12em;color:#00806f;font-weight:900;text-transform:uppercase;font-size:.82rem}
         @media(max-width:820px){.grid{grid-template-columns:1fr!important}}
     </style>
+    @include('partials.scroll_fade')
 </head>
 <body>
 <div class="wrap">

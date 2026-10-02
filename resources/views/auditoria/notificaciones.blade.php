@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Notificaciones de auditoría · Medichile</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('partials.scroll_fade')
     <style>
         body{background:#edf4ff;color:#1f2d3d}.notifications-shell{max-width:1500px}.page-kicker{color:#087b68;font-size:.76rem;font-weight:850;letter-spacing:.13em;text-transform:uppercase}.card-soft{overflow:hidden;border:1px solid #d6e1f1!important;border-radius:22px!important;box-shadow:0 18px 45px rgba(24,72,161,.08)}.notification-message{min-width:260px;max-width:440px;white-space:normal}.notification-title{min-width:170px}.empty-notifications{padding:4rem 1rem!important}.status-unread{background:#ffe2e2;color:#9f1f1f}.status-read{background:#e9eef5;color:#607184}.status-pill{display:inline-block;padding:.38rem .65rem;border-radius:999px;font-size:.75rem;font-weight:850}.table td{vertical-align:middle}.header-actions{display:flex;gap:.6rem;flex-wrap:wrap}
     </style>

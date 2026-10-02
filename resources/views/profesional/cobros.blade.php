@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cobros Profesional</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('partials.scroll_fade')
     <style>
         .cobro-modal-backdrop { align-items:center; background:rgba(9,35,30,.6); display:flex; inset:0; justify-content:center; padding:22px; position:fixed; z-index:1050; }
         .cobro-modal-backdrop[hidden] { display:none !important; }

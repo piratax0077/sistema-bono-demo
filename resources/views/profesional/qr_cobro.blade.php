@@ -13,6 +13,7 @@
         .data-value { font-weight: 650; margin-bottom: 1rem; }
         .security-box { background: #e8f8f2; border: 1px solid #b8e3d3; border-radius: 14px; }
     </style>
+    @include('partials.scroll_fade')
 </head>
 <body>
 <main class="container py-4 py-lg-5" style="max-width:1050px">
