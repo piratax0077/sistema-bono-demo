@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Alertas Auditoría</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('partials.scroll_fade')
 </head>
 
 <body style="background:#f4f7fb;">

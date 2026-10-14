@@ -265,6 +265,7 @@
             }
         }
     </style>
+    @include('partials.scroll_fade')
 </head>
 
 <body>

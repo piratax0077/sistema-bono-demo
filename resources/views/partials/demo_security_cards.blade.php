@@ -21,6 +21,8 @@
     .demo-security-cards .demo-guide-step:last-child{grid-column:auto}
     .demo-security-cards .demo-guide-step small{font-size:14px;line-height:1.5}
     .demo-security-cards .demo-guide-security{font-size:13px;line-height:1.45}
+    .demo-security-cards .demo-guide-icon{margin:6px 0 8px}
+    .demo-guide-icon-img{display:block;width:40px;height:40px}
     @media(max-width:900px){.demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:560px){.demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:1fr}}
 </style>
@@ -33,8 +35,8 @@
     <div class="demo-guide-grid">
         @foreach($securityCards as $card)
             <article class="demo-guide-step {{ $loop->first ? 'current' : '' }}" role="button" tabindex="0" aria-label="Explicar control {{ $loop->iteration }}: {{ $card['title'] }}" data-step="{{ $loop->iteration }}">
-                <span class="demo-guide-status">{{ $loop->first ? 'Ahora' : 'Siguiente' }}</span>
-                <span class="demo-guide-icon" aria-hidden="true">{{ $card['icon'] }}</span>
+                <span class="demo-guide-status">{{ $loop->first ? 'Control 1' : 'Siguiente' }}</span>
+                <span class="demo-guide-icon" aria-hidden="true"><img src="{{ asset('images/iconos/'.$card['icon']) }}" alt="" class="demo-guide-icon-img"></span>
                 <strong>{{ $loop->iteration }}. {{ $card['title'] }}</strong>
                 <small>{{ $card['text'] }}</small>
                 <div class="demo-guide-security"><b>{{ $card['purpose_label'] ?? 'Protección' }}:</b> {{ $card['purpose'] }}</div>

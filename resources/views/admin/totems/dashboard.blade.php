@@ -26,6 +26,7 @@
         .table > :not(caption) > * > * { vertical-align:middle; }
         .alert-text { max-width:360px; white-space:normal; }
     </style>
+    @include('partials.scroll_fade')
 </head>
 <body>
 <main class="shell">

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Verificar paciente y reserva">
+  <g fill="none" stroke="#1848A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="9" width="40" height="30" rx="5"/>
+    <circle cx="16.5" cy="20.5" r="4"/>
+    <path d="M10.5 31c0-3.3 2.7-5.2 6-5.2s6 1.9 6 5.2"/>
+    <path d="M28.5 18.5h11M28.5 24.5h11"/>
+  </g>
+  <path d="M28.5 31.5l2.8 2.8 5.7-5.7" fill="none" stroke="#31BEBE" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

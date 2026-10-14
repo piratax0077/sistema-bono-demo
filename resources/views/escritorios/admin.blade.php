@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Administración de Bonos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('partials.scroll_fade')
     <style>.admin-shell{max-width:1320px}.page-kicker{color:#1848a1;font-size:.75rem;font-weight:850;letter-spacing:.16em;text-transform:uppercase}.admin-grid>.col-md-4{display:flex}.admin-grid .card{width:100%;position:relative;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}.admin-grid .card:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#1848a1,#31bebe)}.admin-grid .card:hover{transform:translateY(-3px)}.admin-grid .card p{color:#7b8798;min-height:48px}.admin-grid .card .btn{margin-top:auto;width:100%}.header-actions{display:flex;gap:.65rem;flex-wrap:wrap}</style>
 </head>
 
@@ -13,7 +14,13 @@
 <div class="container admin-shell py-5">
     <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div><div class="page-kicker">Medichile · Operación central</div><h1 class="h2 fw-bold mb-1">Administración de bonos</h1><p class="text-muted mb-0">Control operativo, financiero y de seguridad en una sola vista.</p></div>
-        <div class="header-actions"><a href="{{ route('home') }}" class="btn btn-outline-secondary">Vista general</a></div>
+        <div class="header-actions">
+            <a href="{{ route('home') }}" class="btn btn-outline-secondary">Vista general</a>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
+            </form>
+        </div>
     </header>
 
     <div class="row g-4 admin-grid">

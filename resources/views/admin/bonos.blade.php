@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestión de bonos · Medichile</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('partials.scroll_fade')
     <style>
         body{background:#eef5f3;color:#173b37}.page-title{color:#075e54}.card{border-radius:18px}.status{display:inline-block;padding:.35rem .65rem;border-radius:999px;background:#e6eef1;color:#34515b;font-size:.78rem;font-weight:800}.status-activo,.status-pagado{background:#d9f5e8;color:#08714f}.status-usado,.status-cobrado{background:#e6e9ec;color:#49545c}.table td,.table th{vertical-align:middle}.code{font-weight:800;color:#075e54}.muted{color:#6b7d79;font-size:.85rem}
     </style>

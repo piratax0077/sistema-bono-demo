@@ -12,6 +12,7 @@
         .code-input{font-size:28px;letter-spacing:6px;text-align:center;font-weight:900}
         .brand{letter-spacing:.12em;color:#00806f;font-weight:900;text-transform:uppercase;font-size:.82rem}
     </style>
+    @include('partials.scroll_fade')
 </head>
 <body>
 <div class="card card-sdi p-4 p-lg-5">

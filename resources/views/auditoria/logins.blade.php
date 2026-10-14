@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Auditoría de accesos | Medichile Demo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('partials.scroll_fade')
     <style>
         body {
             background: #edf4ff;
@@ -74,6 +75,10 @@
             font-size: .75rem;
             font-weight: 800;
             padding: .42rem .72rem;
+        }
+
+        .block-access-button {
+            white-space: nowrap;
         }
 
         @media (max-width: 767.98px) {
@@ -176,6 +181,7 @@
                             <th>Resultado</th>
                             <th>Dirección IP</th>
                             <th>Contexto del navegador</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -206,16 +212,24 @@
                                 </td>
                                 <td><code>{{ $login->ip ?: 'No registrada' }}</code></td>
                                 <td><div class="user-agent">{{ $login->user_agent ?: 'Sin información de navegador' }}</div></td>
+                                <td>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-danger block-access-button"
+                                        data-identity="{{ $login->email ?: 'Identidad no informada' }}"
+                                        data-ip="{{ $login->ip ?: 'IP no registrada' }}"
+                                    >Bloquear ingreso</button>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-secondary py-5">
+                                <td colspan="6" class="text-center text-secondary py-5">
                                     No hay eventos de autenticación registrados.
                                 </td>
                             </tr>
                         @endforelse
                         <tr id="noFilteredResults" class="d-none">
-                            <td colspan="5" class="text-center text-secondary py-5">
+                            <td colspan="6" class="text-center text-secondary py-5">
                                 No hay eventos que coincidan con los filtros seleccionados.
                             </td>
                         </tr>
@@ -225,6 +239,7 @@
         </section>
     </main>
 
+    <script src="{{ asset('js/plugins/sweetalert.min.js') }}"></script>
     <script>
         (() => {
             const searchInput = document.getElementById('loginSearch');
@@ -251,6 +266,40 @@
 
             searchInput.addEventListener('input', applyFilters);
             resultFilter.addEventListener('change', applyFilters);
+
+            document.querySelectorAll('.block-access-button').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const identity = button.dataset.identity;
+                    const ip = button.dataset.ip;
+                    const confirmed = await swal({
+                        icon: 'warning',
+                        title: '¿Bloquear el ingreso?',
+                        text: `Se simulará el bloqueo de ${identity}, asociado al evento desde ${ip}. En producción, esta acción impediría nuevos ingresos, invalidaría las sesiones activas y registraría quién aplicó el bloqueo para su posterior revisión.`,
+                        buttons: {
+                            cancel: {
+                                text: 'Cancelar',
+                                value: null,
+                                visible: true,
+                            },
+                            confirm: {
+                                text: 'Aceptar y bloquear',
+                                value: true,
+                                visible: true,
+                            },
+                        },
+                        dangerMode: true,
+                    });
+
+                    if (!confirmed) return;
+
+                    await swal({
+                        icon: 'success',
+                        title: 'Bloqueo simulado',
+                        text: `Se registraría el bloqueo preventivo de ${identity}. Esta demostración no modifica ni deshabilita cuentas reales.`,
+                        button: 'Entendido',
+                    });
+                });
+            });
         })();
     </script>
 @include('partials.demo_footer')

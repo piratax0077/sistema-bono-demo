@@ -44,6 +44,7 @@
             font-size: .9rem;
         }
     </style>
+    @include('partials.scroll_fade')
 </head>
 
 @php

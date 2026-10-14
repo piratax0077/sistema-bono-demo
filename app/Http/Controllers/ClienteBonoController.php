@@ -112,22 +112,33 @@ class ClienteBonoController extends Controller
 
         $conveniosCompra = $this->conveniosDisponibles($user);
 
-        $persona = PersonaBusqueda::porRut($user->rut)->first();
-        $personaEdicion = $persona
-            ? DB::connection('personas_fast')->table('personas_rapidas_ediciones')
-                ->where('rut_normalizado', $persona->rut_normalizado)->first()
-            : null;
-        $baseUsuario = $this->vigente(VoucherBaseUsuario::where('rut_hash', $this->rutHmac($user->rut))
-            ->where('rut_sha256', $this->rutSha256($user->rut)))->first();
+        $baseUsuario = $this->vigente(
+            VoucherBaseUsuario::where('rut_hash', $this->rutHmac($user->rut))
+                ->where('rut_sha256', $this->rutSha256($user->rut))
+        )->first();
+
         $perfilPersona = [
-            'encontrada' => (bool) $persona,
-            'nombre' => $persona?->nombre_completo ?: $user->name,
-            'rut' => $persona?->rut_original ?: $user->rut,
-            'direccion' => $this->desencriptar($personaEdicion?->direccion_encrypted)
-                ?: $this->desencriptar($baseUsuario?->direccion_encrypted),
+            'encontrada' => (bool) $pacienteMedsdi,
+            'nombre' => $pacienteMedsdi
+                ? trim(implode(' ', array_filter([
+                    $pacienteMedsdi['nombres'] ?? null,
+                    $pacienteMedsdi['apellido_uno'] ?? null,
+                    $pacienteMedsdi['apellido_dos'] ?? null,
+                ])))
+                : $user->name,
+
+            'rut' => $pacienteMedsdi['rut'] ?? $user->rut,
+
+            'direccion' => $this->desencriptar($baseUsuario?->direccion_encrypted),
+
             'grupo_ingreso' => data_get($baseUsuario?->otros, 'grupo_ingreso'),
-            'edad' => data_get($baseUsuario?->otros, 'edad'),
-            'origen' => $persona ? 'Base Personas MySQL' : 'Usuario autenticado',
+
+            'edad' => $pacienteMedsdi['edad']
+                ?? data_get($baseUsuario?->otros, 'edad'),
+
+            'origen' => $pacienteMedsdi
+                ? 'Perfil real Med-SDI'
+                : 'Usuario autenticado',
         ];
         $horariosOnline = AgendaOnlineHorario::with(['profesional', 'servicio'])
             ->where('estado', 'disponible')->where('fecha_hora', '>', now())

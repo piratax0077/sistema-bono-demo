@@ -33,6 +33,7 @@
     }
 @endphp
 <style>
+ .demo-guide.assistant-guide{border:none;box-shadow:0 18px 44px rgba(24,72,161,.22)}
  .demo-guide.assistant-guide .demo-guide-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
  .assistant-guide .demo-guide-step{padding:20px}.assistant-guide .demo-guide-step small{font-size:14px;line-height:1.5}.assistant-guide .demo-guide-security{font-size:13px;line-height:1.45}
  @media(max-width:1100px){.demo-guide.assistant-guide .demo-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.assistant-guide .demo-guide-step:last-child{grid-column:auto}}

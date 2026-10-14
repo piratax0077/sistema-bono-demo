@@ -10,6 +10,7 @@
         .otp-card { max-width:520px; border:0; border-radius:24px; box-shadow:0 24px 60px rgba(0,0,0,.24); }
         .brand { color:#087f6f; font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; font-weight:800; }
     </style>
+    @include('partials.scroll_fade')
 </head>
 <body>
 <main class="container min-vh-100 d-flex align-items-center justify-content-center py-5">

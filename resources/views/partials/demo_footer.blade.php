@@ -1,8 +1,7 @@
 <footer class="demo-footer" aria-label="Información de Medichile">
     <div class="demo-footer__inner">
         <div class="demo-footer__brand">
-            <span class="demo-footer__mark" aria-hidden="true">M</span>
-            <div><strong>Medichile</strong><small>Salud digital integrada</small></div>
+            <img src="{{ asset('images/logotipos/medichile-white-h.svg') }}" alt="Medichile" class="demo-footer__logo">
         </div>
         <p class="demo-footer__message">Atención conectada, segura y trazable durante todo el recorrido del paciente.</p>
         <div class="demo-footer__trust" aria-label="Características de seguridad y sostenibilidad">

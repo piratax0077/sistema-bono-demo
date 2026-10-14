@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Verificar el lugar de atención">
+  <g fill="none" stroke="#1848A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 3.5c-6.5 0-11.8 5.3-11.8 11.8C12.2 24 24 37 24 37s11.8-13 11.8-21.7C35.8 8.8 30.5 3.5 24 3.5z"/>
+    <circle cx="24" cy="15.3" r="6.4"/>
+  </g>
+  <g fill="none" stroke="#31BEBE" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 12.1v6.4M20.8 15.3h6.4"/>
+  </g>
+  <path d="M16 40.5c2.4.8 5.1 1.2 8 1.2s5.6-.4 8-1.2" fill="none" stroke="#1848A1" stroke-width="2" stroke-linecap="round"/>
+</svg>
