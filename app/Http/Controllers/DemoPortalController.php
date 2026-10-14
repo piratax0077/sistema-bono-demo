@@ -33,9 +33,6 @@ class DemoPortalController extends Controller
         if (! Auth::check() && config('demo.user_switch_enabled')) {
             return $this->loginBono($request);
         }
-        if (Auth::user()?->rol === 'cliente') {
-            return redirect()->route('paciente.home');
-        }
 
         $vouchers = Voucher::with(['agenda', 'atencion', 'cobros.auditor', 'cobros.decisorPago'])
             ->latest('id')->take(50)->get();
@@ -70,7 +67,7 @@ class DemoPortalController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        $destinosPaciente = ['home', 'paciente.totem', 'paciente.escritorio', 'paciente.agenda'];
+        $destinosPaciente = ['home', 'paciente.home', 'paciente.totem', 'paciente.escritorio', 'paciente.agenda'];
         $destino = (string) $request->input('destino', '');
         if ($perfil === 'paciente' && in_array($destino, $destinosPaciente, true)) {
             return redirect()->route($destino)->with('ok', 'Perfil cambiado a Paciente.');

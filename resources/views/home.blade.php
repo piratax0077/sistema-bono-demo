@@ -12,11 +12,14 @@
 <body>
 @include('partials.demo_user_switcher')
 <main class="wrap">
+    @include('partials.demo_home_tabs')
+    <div id="panel-presentation" role="tabpanel" aria-labelledby="tab-presentation" data-home-panel="presentation">
     <section class="hero card">
         <div>
-            <div class="eyebrow">Ecosistema Medichile · Demostración integral</div>
-            <h1>Una atención conectada, segura y trazable de principio a fin</h1>
-            <p class="hero-lead">Esta demostración permite recorrer una misma operación desde sus canales y actores principales: el paciente se autogestiona desde la app o el tótem, el asistente acompaña, el profesional atiende y Contraloría verifica antes de liberar el pago.</p>
+            <div class="eyebrow">Medichile · Demostración del sistema de bonos</div>
+            <h1>Una atención segura, conectada y sin papel</h1>
+            <p class="hero-lead">Desde la reserva hasta el cobro: paciente, profesional, centro de atención y bono vinculados en un mismo recorrido.</p>
+            <p>Conoce los controles de autorización, privacidad y trazabilidad desde el escritorio, la app y el tótem. El cifrado protege los datos; la autenticación de dos factores verifica la identidad.</p>
             <div class="hero-actions">
                 <a class="button" href="#recorrido">Explorar el recorrido</a>
                 <a class="button secondary" href="#seguridad">Conocer las capas de seguridad</a>
@@ -33,6 +36,9 @@
             </div>
         </aside>
     </section>
+
+    @include('partials.demo_security_cards')
+    @include('partials.demo_flow_guide', ['demoInteractive' => true])
 
     <section class="section" id="recorrido">
         <header class="section-heading">
@@ -93,6 +99,7 @@
         <div class="stats">@foreach($resumen as $nombre => $valor)<div class="stat"><strong>{{ $valor }}</strong><span>{{ str_replace('_',' ',ucfirst($nombre)) }}</span></div>@endforeach</div>
         <p class="note">Entorno demostrativo: las integraciones y respuestas de autorización están simuladas para presentar el circuito completo de forma segura.</p>
     </section>
+    </div>
 </main>
 @include('partials.demo_footer')
 </body>

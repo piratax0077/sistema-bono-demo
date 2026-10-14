@@ -26,10 +26,11 @@
     @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
 
     <section class="hero">
-        <div class="eyebrow">Medichile · Portal del paciente</div>
-        <h1 class="text-white">Hola, {{ $nombrePacienteReal }}</h1>
-        <p>Desde aquí puedes administrar tus horas, bonos y llegada al centro médico en un solo lugar.</p>
+        <div class="eyebrow">Medichile · Inicio paciente</div>
+        <h1 class="text-white">Tu atención, paso a paso</h1>
+        <p>Reserva tu hora, revisa tus bonos y pagos, consulta tu agenda y avisa tu llegada al centro de salud.</p>
         <div class="chips">
+            <span class="chip">Hola, {{ $nombrePacienteReal }}</span>
             <span class="chip">RUT {{ sdi_formatear_rut($rutPacienteReal) }}</span>
             <span class="chip">Perfil Med-SDI #{{ $pacienteMedsdi['id'] ?? 'no disponible' }}</span>
             <span class="chip">{{ $telefonoPacienteReal ?: 'Teléfono no registrado' }}</span>
@@ -41,7 +42,6 @@
         <div class="alert alert-warning mt-3">No fue posible cargar el perfil desde Med-SDI: {{ $perfilRemotoMedsdi['mensaje'] }}</div>
     @endif
 
-    @include('partials.demo_security_cards')
     @include('partials.demo_flow_guide', ['demoInteractive' => true])
 
     <div class="section-title"><h2>¿Qué necesitas hacer?</h2><p>Accesos rápidos a las funciones principales.</p></div>

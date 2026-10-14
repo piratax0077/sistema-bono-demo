@@ -1,6 +1,6 @@
 <style>
     /* Shared page width; dialogs keep their own readable dimensions. */
-    body .home-shell, body .shell, body .page-shell, body .admin-shell, body .max-w-7xl,
+    body .home-shell, body .wrap, body .shell, body .page-shell, body .admin-shell, body .max-w-7xl,
     body .container:not(.modal .container):not(dialog .container) {
         box-sizing:border-box;
         width:100% !important;
@@ -19,6 +19,6 @@
         body .demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
     }
     @media(min-width:2100px){
-        body .demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:repeat(7,minmax(0,1fr))}
+        body .demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
     }
 </style>

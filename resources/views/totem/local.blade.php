@@ -20,6 +20,10 @@
         body{background:linear-gradient(145deg,#edf4ff,#f8fbff);color:#1f2d3d}.shell{border:1px solid #d7e2f2;box-shadow:0 24px 70px rgba(24,72,161,.14)}.head{background:linear-gradient(120deg,#1848a1,#31bebe)}.brand small{color:#d9f7f7}.status,.flash.ok{background:#e7f9f9;color:#237f87}.panel,.option,.flow-diagram{border-color:#c9d8ef;background:#fbfdff}.primary,.option button,.voucher form button,.schedule-card button,.qr-result a{background:#31bebe}.next-screen a,.field button,.option.secondary button{background:#1848a1}.meta,.schedule-price{background:#edf4ff}.meta strong,.tab.active,.flow-diagram h3,.schedule-date,.schedule-time,.qr-result h3{color:#1848a1}.flow-arrow{color:#31bebe}.tabs,.med-search{background:#edf4ff;border-color:#c9d8ef}.tab{color:#52657e}.flow-step,.schedule-card,.voucher{border-color:#d5e1f1;box-shadow:0 8px 22px rgba(24,72,161,.07)}.flow-step strong{color:#1f2d3d}.med-search input,.med-search select,.field input{border-color:#c9d8ef}.qr-result{border-color:#31bebe;background:#f0fbfb}.hint{background:#edf4ff;color:#1848a1}
     </style>
     <style>.method-separator{display:flex;align-items:center;gap:12px;margin:22px 0;color:#71849b;font-weight:800}.method-separator:before,.method-separator:after{content:"";height:1px;flex:1;background:#d5e1f1}.qr-input{text-transform:none!important}.automatic-match{margin:18px 0;padding:16px 18px;border-radius:14px;background:#e7f9f9;color:#176d75;font-weight:800}.alternate-identification{margin-top:15px}.alternate-identification summary{cursor:pointer;color:#1848a1;font-weight:900;padding:10px 0}.next-screen form{width:100%;margin:0}.next-screen button{display:block;width:100%;border:0;padding:17px 22px;border-radius:15px;background:#155ba4;color:#fff;text-align:center;font-family:inherit;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 9px 22px rgba(21,91,164,.2)}.totem-header-row{width:100%;margin:0}.totem-header-row>.col-12{min-width:0}.totem-header-row .demo-switcher{width:100%;max-width:100%;margin:0}</style>
+<style>
+.tabs.tabs-paciente{grid-template-columns:repeat(3,minmax(0,1fr))}.option a.primary{text-decoration:none}
+@media(max-width:700px){.tabs.tabs-paciente{grid-template-columns:1fr}}
+</style>
 </head>
 <body style="display:block;padding:0">
 <div class="row g-0 totem-header-row">
@@ -37,11 +41,12 @@
         @php($tab = $soloCompra ? request('tab', 'reserva') : request('tab', 'comprar'))
         <div class="intro">
             <h2>{{ $soloCompra ? 'Paciente Tótem' : 'Autoatención Medichile' }}</h2>
-            <p>{{ $soloCompra ? 'Reserva tu hora o registra tu aviso de llegada.' : 'Compra tu bono o avisa tu llegada sin pasar por recepción.' }}</p>
+            <p>{{ $soloCompra ? 'Reserva tu hora, saca tu bono de atención o registra tu aviso de llegada.' : 'Compra tu bono o avisa tu llegada sin pasar por recepción.' }}</p>
         </div>
         @if($soloCompra)
-            <nav class="tabs" aria-label="Opciones del paciente tótem">
+            <nav class="tabs tabs-paciente" aria-label="Opciones del paciente tótem">
                 <a class="tab {{ $tab === 'reserva' ? 'active' : '' }}" href="{{ route('paciente.totem', ['tab' => 'reserva']) }}">Reserva de hora</a>
+                <a class="tab {{ $tab === 'bono' ? 'active' : '' }}" href="{{ route('paciente.totem', ['tab' => 'bono']) }}" @if($tab === 'bono') aria-current="page" @endif>Sacar bono de atención</a>
                 <a class="tab {{ $tab === 'autoatencion' ? 'active' : '' }}" href="{{ route('paciente.totem', ['tab' => 'autoatencion']) }}">Aviso de llegada</a>
             </nav>
         @else
@@ -99,6 +104,25 @@
                     </div>
                 @endif
             </section>
+        @elseif($soloCompra && $tab === 'bono')
+            <section class="panel" aria-labelledby="sacar-bono-titulo">
+                <h2 id="sacar-bono-titulo">Sacar bono de atención</h2>
+                <p>Selecciona el camino que corresponde. El bono debe quedar asociado al paciente, profesional, prestación y hora de atención.</p>
+                <div class="options">
+                    <article class="option">
+                        <h3>Ya tengo una hora reservada</h3>
+                        <p>Abre el sistema de bonos del paciente para revisar tu reserva, confirmar el copago y continuar con la autorización y el QR. No reserves otra hora.</p>
+                        <a class="primary" href="{{ route('paciente.escritorio') }}#bonos-reservados">Ir a Mis bonos y pagos →</a>
+                    </article>
+                    <article class="option">
+                        <h3>Necesito una hora y un bono</h3>
+                        <p>Identifica al paciente por RUT y selecciona profesional, prestación y horario en Med-SDI. El flujo existente registra la reserva y genera el bono pendiente de confirmación.</p>
+                        <button class="primary" type="button" id="abrirReservaMedsdiTotem" @disabled(!$totem)>Buscar atención y generar bono</button>
+                    </article>
+                </div>
+                <div class="hint">La creación del bono no significa que esté pagado. La autorización y el pago se continúan en el sistema de bonos del paciente. En esta demostración, las operaciones de pago se simulan.</div>
+                <p style="margin-top:18px;margin-bottom:0"><a href="{{ route('paciente.totem', ['tab' => 'autoatencion']) }}">Ya tengo mi bono: avisar llegada al centro de salud →</a></p>
+            </section>
         @elseif($soloCompra)
             <section class="panel">
                 @if($agendaOnlineResultado)
@@ -120,7 +144,6 @@
             <span><strong>Ubicación:</strong> {{ $totem?->ubicacion ?? 'Sin ubicación' }}</span>
             <span><strong>Último ping:</strong> {{ $totem?->ultimo_ping?->format('d-m-Y H:i:s') ?? 'Sin conexión' }}</span>
         </div>
-        @include('partials.demo_flow_guide', ['demoStep' => $tab === 'autoatencion' ? ($bonos->contains(fn ($bono) => optional($bono->agenda)->estado === 'paciente_en_espera') ? 4 : 3) : ($agendaOnlineResultado ? 2 : 1)])
         @if(auth()->user()?->rol === 'admin')
             <nav class="admin-only"><a href="{{ url('admin/totems/dashboard') }}">Administrar tótem</a></nav>
         @endif

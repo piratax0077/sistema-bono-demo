@@ -1,18 +1,24 @@
 @php
     $securityCards = [
-        ['icon' => '📲', 'title' => 'El paciente autoriza', 'text' => 'La confirmación llega al teléfono del paciente por App o WhatsApp. El paciente aprueba o rechaza; la secretaría no autoriza en su nombre.', 'purpose' => ' Autenticación Multifactor (MFA). Datos encriptados. Protege el consentimiento y evita autorizaciones por terceros.'],
-        ['icon' => '🏦', 'title' => 'Cuenta bancaria protegida', 'text' => 'Los cambios de cuenta requieren una segunda verificación y generan un aviso al contacto anterior del usuario.', 'purpose' => 'Autenticación Multifactor (MFA). Datos encriptados. Ayuda a impedir que un tercero desvíe pagos o devoluciones.'],
-        ['icon' => '🧾', 'title' => 'Una atención, un registro, un profesional, un lugar de atención con Qr dinámico asociado', 'text' => 'Cada bono mantiene relacionados sus pasos: pagos,atenciones, devoluciones, saldos cobros, etc.. Repetir una solicitud no debe duplicar el movimiento ni acreditar dos veces el mismo dinero.', 'purpose' => 'Controla cobros duplicados y  conciliaciónes de saldos.'],
-        ['icon' => '👥', 'title' => 'Roles, funciones, permisos separados', 'text' => 'Paciente, asistente, profesional, Centros de salud, Laboratorios, auditoría y administración tienen permisos distintos. Quien registra la atención no aprueba su propio cobro.', 'purpose' => 'Una revisión independiente acompaña la autorización del pago.'],
-        ['icon' => '🔎', 'title' => 'Alertas antifraude', 'text' => 'Mediante patrones de IA. Se identifican conductas sospechosas: de reservas, rechazos, cambios de cuenta e intentos repetidos de usar un bono pasa su revisión por contraloría.', 'purpose' => 'Permite detectar movimientos inusuales y dejar evidencia.'],
-        ['icon' => '🔒', 'title' => 'Privacidad en el tótem', 'text' => 'Al terminar o superar el tiempo de inactividad, se cierra la sesión y se retiran de pantalla los datos del paciente.', 'purpose' => 'Evita que la siguiente persona vea información de otra atención.'],
-        ['icon' => '✅', 'title' => 'Atención confirmada', 'text' => 'El profesional debe cerrar la atención. Para que el Qr quede en estado de disponibilidad de cobro. El sistema vincula: paciente, al profesional, a la hora de atención al cierre de la consulta y el bono.', 'purpose' => 'Ayuda a prevenir cobros por prestaciones no realizadas. (una contraloría automática autoriza si algo falla se pasa a auditoría)'],
-        ['icon' => '🌱', 'title' => 'Atención sin papel', 'text' => 'Reserva, bono, autorización y comprobantes digitales, disponibles sin imprimir.', 'purpose_label' => 'Beneficio', 'purpose' => 'Reduce el consumo de papel y tinta y evita impresiones y traslados innecesarios.'],
+        ['icon' => '👥 Roles y permisos', 'title' => 'Accesos y funciones independientes', 'text' => 'Paciente, asistente, profesional, centros de salud, laboratorios, auditoría y administración tienen permisos diferentes. El paciente reserva y confirma; la asistente gestiona el bono y la llegada; el profesional atiende.', 'purpose' => 'Una contraloría independiente revisa la autorización del pago y deriva las excepciones a auditoría.'],
+        ['icon' => '📲 Paciente I', 'title' => 'Reserva y autorización del bono', 'text' => 'El paciente reserva, confirma y autoriza el pago desde los canales habilitados: portal institucional, escritorio Medichile, tótem, app o WhatsApp. Si acepta, el bono queda vinculado al paciente, profesional y centro. Si rechaza, se gestiona la devolución o el saldo según corresponda.', 'purpose' => 'Autenticación multifactor (MFA) y datos cifrados. El consentimiento se vincula al bono y monto específicos; los mensajes y pagos se simulan en el demo.'],
+        ['icon' => '🔒 Paciente II', 'title' => 'Privacidad en el tótem', 'text' => 'Al terminar o superar el tiempo de inactividad, se cierra la sesión y se retiran de pantalla los datos del paciente.', 'purpose' => 'Evita que la siguiente persona vea información de otra atención.'],
+        ['icon' => '🧾 Profesional I', 'title' => 'Un bono vinculado a cada atención', 'text' => 'El QR permite identificar el estado del bono durante el recorrido. Paciente, profesional, centro, atención, pagos, devoluciones y saldos permanecen relacionados. Repetir una solicitud no debe duplicar movimientos.', 'purpose' => 'Validación del estado vigente, prevención de reutilización y conciliación para evitar cobros o abonos duplicados.'],
+        ['icon' => '✅ Profesional II', 'title' => 'Cierre clínico antes del cobro', 'text' => 'El profesional registra el cierre de la atención. El bono pasa a revisión para cobro, conservando el vínculo con el paciente, profesional, hora y prestación.', 'purpose' => 'Ayuda a prevenir cobros por prestaciones no realizadas. Contraloría valida los antecedentes y deriva las excepciones a auditoría.'],
+        ['icon' => '🔎 Seguridad', 'title' => 'Alertas antifraude', 'text' => 'La propuesta contempla análisis de patrones mediante IA para detectar reservas, rechazos, cambios de cuenta e intentos de reutilización sospechosos. Las alertas se remiten a contraloría para revisión.', 'purpose' => 'Permite detectar movimientos inusuales y conservar evidencia; una alerta no equivale por sí sola a fraude confirmado.'],
+        ['icon' => '🏦 Paciente y profesional', 'title' => 'Cuenta bancaria protegida', 'text' => 'Los cambios de cuenta requieren una segunda verificación y generan un aviso al contacto anterior del usuario.', 'purpose' => 'Autenticación multifactor y datos cifrados para ayudar a impedir el desvío de pagos o devoluciones.'],
+        ['icon' => '🌱 Medio ambiente', 'title' => 'Atención sin papel', 'text' => 'Reserva, bono, autorización y comprobantes digitales, disponibles sin imprimir.', 'purpose_label' => 'Beneficio', 'purpose' => 'Reduce el consumo de papel y tinta y evita impresiones y traslados innecesarios.'],
     ];
 @endphp
 <style>
     .demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
-    .demo-security-cards .demo-guide-step{padding:20px;min-height:240px}
+    .demo-security-cards .demo-guide-step{padding:22px;min-height:280px;display:flex;flex-direction:column;border-width:2px}
+    .demo-security-cards .demo-guide-status{align-self:flex-start}
+    .demo-security-cards .demo-guide-icon{font-size:19px;line-height:1.4;margin:16px 0 10px}
+    .demo-security-cards .demo-guide-step strong{font-size:16px;line-height:1.45}
+    .demo-security-cards .demo-guide-security{margin-top:auto;padding-top:12px}
+    .demo-security-cards .demo-guide-step small{padding-bottom:14px}
+    .demo-security-cards .demo-guide-step:last-child{grid-column:auto}
     .demo-security-cards .demo-guide-step small{font-size:14px;line-height:1.5}
     .demo-security-cards .demo-guide-security{font-size:13px;line-height:1.45}
     @media(max-width:900px){.demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -20,7 +26,7 @@
 </style>
 <section class="demo-guide demo-security-cards" aria-label="Controles de seguridad y antifraude" data-interactive="true" data-patient-id="{{ auth()->id() }}" data-storage-scope="security" data-step-label="Control">
     <div class="demo-guide-head">
-        <div><h2>Así protegemos tu atención</h2><p>Conoce los controles de seguridad y antifraude del sistema.</p></div>
+        <div><h2>Nuestra propuesta de privacidad y seguridad</h2><p>Conoce los controles de seguridad y antifraude del sistema.</p></div>
         <span class="demo-guide-progress" aria-live="polite">Control 1 de {{ count($securityCards) }}</span>
     </div>
     <p class="demo-guide-hint">Demostración explicativa: pulsa cada tarjeta para recorrer los controles. Puedes volver a cualquiera y repetir la presentación.</p>

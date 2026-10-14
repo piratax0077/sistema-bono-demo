@@ -100,6 +100,19 @@ Route::get('/', function () {
 });
 
 Route::get('/home', [DemoPortalController::class, 'index'])->name('home');
+Route::get('/demo/ficha-tecnica', function (Request $request) {
+    abort_unless(config('demo.enabled') && in_array($request->server('REMOTE_ADDR'), ['127.0.0.1', '::1'], true), 403);
+    $path = config('demo.technical_sheet_path');
+    abort_unless(is_string($path) && is_file($path), 404);
+    return response(file_get_contents($path), 200, [
+        'Content-Type' => 'text/html; charset=UTF-8',
+        'Cache-Control' => 'private, no-store, max-age=0',
+        'X-Frame-Options' => 'SAMEORIGIN',
+        'X-Content-Type-Options' => 'nosniff',
+        'Referrer-Policy' => 'no-referrer',
+        'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'",
+    ]);
+})->middleware('auth')->name('demo.technical-sheet');
 Route::get('/demo', fn () => redirect()->route('home'));
 Route::post('/demo/cambiar-usuario/{perfil}', [DemoPortalController::class, 'switchUser'])
     ->middleware('throttle:30,1')->name('demo.switch-user');

@@ -25,6 +25,13 @@ class SecurityHeaders
             "connect-src 'self' " . config('security.totem_origin')
         );
 
+        // Only the authenticated local document can be embedded by this same site.
+        if ($request->routeIs('demo.technical-sheet') && $response->getStatusCode() === 200) {
+            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+            $response->headers->set('Referrer-Policy', 'no-referrer');
+            $response->headers->set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'");
+        }
+
         if ($request->isSecure()) {
             $response->headers->set(
                 'Strict-Transport-Security',
