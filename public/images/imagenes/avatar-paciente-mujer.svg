@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Avatar de paciente">
+  <defs>
+    <clipPath id="c"><circle cx="60" cy="60" r="60"/></clipPath>
+  </defs>
+  <circle cx="60" cy="60" r="60" fill="#d8f4f4"/>
+  <g clip-path="url(#c)">
+    <!-- Pelo largo (parte trasera) -->
+    <path d="M31 54C30 28 43 15 60 15s30 13 29 39l2 40c0 6-5 10-10 10H39c-5 0-10-4-10-10z" fill="#17868b"/>
+    <!-- Cuerpo -->
+    <path d="M14 124c0-22 18-35 46-35s46 13 46 35z" fill="#31bebe"/>
+    <!-- Cuello -->
+    <path d="M51 70h18v18c0 6-4 11-9 11s-9-5-9-11z" fill="#e9f9f9"/>
+    <path d="M51 82c5 4 13 4 18 0v4c-5 4-13 4-18 0z" fill="#d6f1f1"/>
+    <!-- Rostro -->
+    <ellipse cx="60" cy="53" rx="16" ry="20" fill="#f4fdfd"/>
+    <!-- Flequillo lateral -->
+    <path d="M43 52c-3-19 7-30 19-30 13 0 21 10 19 27-6-8-15-13-25-13-3 4-8 10-13 16z" fill="#1d969b"/>
+    <!-- Mechones largos sobre los hombros -->
+    <path d="M37 50c-3 21-2 39 2 52 1 3 7 3 8 0-4-13-5-31-2-48z" fill="#1d969b"/>
+    <path d="M83 50c3 21 2 39-2 52-1 3-7 3-8 0 4-13 5-31 2-48z" fill="#1d969b"/>
+    <!-- Brillo suave del pelo -->
+    <path d="M66 26c7 2 12 8 13 16-4-5-9-9-15-11z" fill="#5fd3d3" opacity=".55"/>
+  </g>
+</svg>
