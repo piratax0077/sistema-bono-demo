@@ -9,253 +9,270 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
     @vite('resources/js/flatpickr.js')
     <style>
-        :root{--k-blue:#1848a1;--k-blue-2:#1c6fb8;--k-teal:#31bebe;--k-teal-ink:#157f86;--k-ink:#13233a;--k-muted:#5a6b82;--k-line:#d5e1f1;--k-soft:#eef4fb;--k-ok:#0e8577;--k-ok-2:#12a08e;--k-radius:28px;--k-touch:64px}
+        :root{
+            --k-blue:#1848a1;--k-blue-2:#1c6fb8;--k-teal:#31bebe;--k-teal-ink:#0b7f86;--k-ink:#13233a;--k-muted:#5a6b82;--k-line:#d5e1f1;--k-soft:#eef4fb;--k-ok:#0e8577;--k-ok-2:#12a08e;
+            --k-h:calc(100vh - var(--k-offset,56px));
+            --t-pad:clamp(8px,1.4vh,16px);
+            --t-side:clamp(9px,1.4vh,16px);
+            --t-glass:clamp(6px,.9vh,11px);
+            --t-cam:clamp(5px,.8vh,8px);
+            --t-panel:clamp(32px,5vh,56px);
+            --t-neck:clamp(12px,3vh,40px);
+            --t-base:clamp(9px,1.5vh,18px);
+            --t-sh:calc(var(--k-h) - var(--t-pad) - var(--t-side) - var(--t-panel) - var(--t-neck) - var(--t-base) - 2 * var(--t-glass) - var(--t-cam));
+            --t-sw:min(calc(var(--t-sh) * 2.6),1880px,calc(100vw - 16px - 2 * var(--t-glass) - 2 * var(--t-side)));
+            --t-unit:calc(min(var(--t-sw),var(--t-sh)) / 100);
+            --su:var(--t-unit);
+        }
+        @supports (height:100dvh){:root{--k-h:calc(100dvh - var(--k-offset,56px))}}
         *{box-sizing:border-box}
         html,body{font-family:'Manrope',sans-serif}
-        body{margin:0;min-height:100vh;color:var(--k-ink);background:radial-gradient(1100px 560px at 8% -12%,#d9e8fb 0,transparent 62%),radial-gradient(900px 520px at 108% 6%,#d4f2f2 0,transparent 58%),#eef4fb}
+        body{margin:0;min-height:100vh;color:var(--k-ink);background:radial-gradient(1000px 560px at 50% -10%,#f6f9fe 0,transparent 70%),linear-gradient(180deg,#e7eef8 0%,#e0e8f3 72%,#cfd9e7 100%)}
+        :root body.kiosk-page{opacity:1!important;transition:none!important}
         .totem-header-row{width:100%;margin:0}.totem-header-row>.col-12{min-width:0}.totem-header-row .demo-switcher{width:100%;max-width:100%;margin:0}
         .k-ico{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-        /* Pantalla del tótem */
-        .kiosk{width:min(1240px,calc(100% - 40px));margin:22px auto 0}
-        .kiosk-screen{display:flex;flex-direction:column;min-height:calc(100vh - 92px);background:#fff;border:1px solid #d7e2f2;border-radius:var(--k-radius);box-shadow:0 30px 80px rgba(15,42,92,.15);overflow:hidden}
-        .kiosk-top{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 32px;background:linear-gradient(120deg,#123d86,#1848a1 55%,#2aa9b4);color:#fff}
-        .kiosk-brand{display:flex;align-items:center;gap:18px;min-width:0}
-        .kiosk-brand img{display:block;height:40px;width:auto}
-        .kiosk-brand-text{padding-left:18px;border-left:1px solid rgba(255,255,255,.32);min-width:0}
-        .kiosk-brand-text strong{display:block;font-size:20px;font-weight:800;line-height:1.15}
-        .kiosk-brand-text small{display:block;margin-top:3px;color:#cdeff0;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-        .kiosk-top-right{display:flex;align-items:center;gap:22px;flex:none}
-        .kiosk-clock{text-align:right;line-height:1}
-        .kiosk-clock strong{display:block;font-size:34px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-        .kiosk-clock small{display:block;margin-top:5px;color:#d9eef7;font-size:13px;font-weight:600}.kiosk-clock small::first-letter{text-transform:uppercase}
-        .kiosk-status{display:inline-flex;align-items:center;gap:9px;padding:10px 16px;border:1px solid rgba(255,255,255,.32);border-radius:999px;background:rgba(255,255,255,.14);font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
-        .kiosk-status i{width:10px;height:10px;border-radius:50%;background:#5ff0c6;animation:kPulse 2s infinite}
-        .kiosk-status.is-off i{background:#ffb4a8;animation:none}
-        @keyframes kPulse{0%{box-shadow:0 0 0 0 rgba(95,240,198,.65)}70%{box-shadow:0 0 0 10px rgba(95,240,198,0)}100%{box-shadow:0 0 0 0 rgba(95,240,198,0)}}
+        .kiosk{height:var(--k-h);min-height:440px;display:flex;justify-content:center;padding:var(--t-pad) 8px 0;overflow:hidden}
+        .totem{position:relative;display:flex;flex-direction:column;align-items:center;width:calc(var(--t-sw) + 2 * var(--t-glass) + 2 * var(--t-side));height:100%}
+        .totem::after{content:"";position:absolute;left:50%;bottom:0;z-index:-1;width:70%;height:calc(var(--t-base) * 2.4);transform:translate(-50%,40%);border-radius:50%;background:radial-gradient(closest-side,rgba(15,30,60,.32),transparent)}
+        .totem-housing{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;padding:var(--t-side) var(--t-side) 0;border-radius:calc(var(--t-side) * 2.4) calc(var(--t-side) * 2.4) calc(var(--t-side) * 1.4) calc(var(--t-side) * 1.4);background:linear-gradient(90deg,#c9d3e0 0%,#edf1f6 3%,#fff 18%,#fff 82%,#edf1f6 97%,#c6d0dd 100%);box-shadow:0 0 0 1px #b8c4d4,inset 0 2px 0 rgba(255,255,255,.9),0 24px 50px rgba(15,42,92,.22),0 4px 10px rgba(15,42,92,.12)}
+        .totem-glass{position:relative;flex:1;min-height:0;display:flex;padding:calc(var(--t-glass) + var(--t-cam)) var(--t-glass) var(--t-glass);border-radius:calc(var(--t-glass) + 10px);background:linear-gradient(160deg,#1c2435,#05080f 42%,#0c121d);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 1px 0 #fff}
+        .totem-cam{position:absolute;top:calc((var(--t-glass) + var(--t-cam)) / 2);left:50%;width:7px;height:7px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 35%,#5d7092 0 18%,#0a1020 52%);box-shadow:0 0 0 2px #1b2437}
+        .totem-panel{flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:clamp(12px,3vw,40px);height:var(--t-panel);padding:0 4px}
+        .totem-scanner{position:relative;grid-column:2;display:grid;place-items:center;width:calc(var(--t-panel) * 1.5);height:calc(var(--t-panel) * .56);border-radius:8px;background:linear-gradient(160deg,#2a3346,#0a0f19);color:rgba(255,255,255,.5);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 1px 0 #fff}
+        .totem-scanner .k-ico{width:45%;height:45%}
+        .totem-scanner::after{content:"";position:absolute;left:14%;right:14%;top:50%;height:2px;background:#ff5d5d;box-shadow:0 0 6px #ff5d5d;opacity:.75}
+        .totem-led{grid-column:3;justify-self:end;width:9px;height:9px;margin-right:6px;border-radius:50%;background:#2fd59f;box-shadow:0 0 0 2px #e4e9f0,0 0 10px #2fd59f}
+        .totem-led.is-off{background:#ff7b6b;box-shadow:0 0 0 2px #e4e9f0,0 0 10px #ff7b6b}
+        .totem-neck{flex:none;width:clamp(90px,24%,280px);height:var(--t-neck);background:linear-gradient(90deg,#b4bfce,#e7ecf2 22%,#fff 50%,#e2e8ef 78%,#b1bccb);box-shadow:inset 0 7px 8px -6px rgba(15,42,92,.35)}
+        .totem-base{flex:none;width:clamp(170px,46%,540px);height:var(--t-base);border-radius:10px 10px 3px 3px;background:linear-gradient(180deg,#e2e8f0,#a3afc0);box-shadow:0 0 0 1px #a9b4c3}
 
-        .kiosk-body{flex:1;display:flex;flex-direction:column;gap:26px;padding:34px 40px 34px}
-        .kiosk-welcome{text-align:center}
-        .kiosk-eyebrow{display:inline-block;padding:7px 15px;border-radius:999px;background:#e3f5f5;color:var(--k-teal-ink);font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-        .kiosk-welcome h1{margin:14px 0 8px;color:var(--k-ink);font-size:clamp(28px,3.4vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1.1}
-        .kiosk-welcome p{margin:0;color:var(--k-muted);font-size:clamp(16px,1.5vw,19px)}
+        .kiosk-screen{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#123d86 0%,#1848a1 46%,#1a62a6 100%);color:#fff;container:pantalla / inline-size}
+        .kiosk-top{flex:none;display:flex;align-items:center;justify-content:space-between;gap:calc(var(--su) * 2);padding:calc(var(--su) * 1.5) calc(var(--su) * 3);border-bottom:1px solid rgba(255,255,255,.14)}
+        .kiosk-brand{display:flex;align-items:center;gap:calc(var(--su) * 1.8);min-width:0}
+        .kiosk-logo{display:block;flex:none;height:calc(var(--su) * 5.2);width:auto}
+        .kiosk-title{min-width:0;padding-left:calc(var(--su) * 1.8);border-left:1px solid rgba(255,255,255,.3);line-height:1.15}
+        .kiosk-title strong{display:block;color:#fff;font-size:calc(var(--su) * 2.8);font-weight:800}
+        .kiosk-title small{display:block;margin-top:calc(var(--su) * .3);color:#8be7e0;font-size:calc(var(--su) * 1.5);font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+        .kiosk-clock{flex:none;display:flex;align-items:baseline;gap:calc(var(--su) * 1.4)}
+        .kiosk-clock small{color:#bcd3ee;font-size:calc(var(--su) * 1.7);font-weight:600}
+        .kiosk-clock small::first-letter{text-transform:uppercase}
+        .kiosk-clock strong{color:#fff;font-size:calc(var(--su) * 4);font-weight:800;font-variant-numeric:tabular-nums}
 
-        /* Menú de opciones táctiles */
-        .kiosk-menu{display:grid;grid-template-columns:repeat(var(--k-cols,3),minmax(0,1fr));gap:18px}
-        .kiosk-tile{position:relative;display:flex;flex-direction:column;gap:12px;min-height:168px;padding:22px;border:2px solid var(--k-line);border-radius:24px;background:#fff;color:var(--k-ink);text-decoration:none;box-shadow:0 10px 26px rgba(15,42,92,.07);transition:transform .14s ease,box-shadow .2s ease,border-color .2s ease;-webkit-tap-highlight-color:transparent}
-        .kiosk-tile:hover{border-color:#9fbbe3;box-shadow:0 16px 34px rgba(15,42,92,.12);color:var(--k-ink)}
-        .kiosk-tile:active{transform:scale(.97)}
-        .kiosk-tile-icon{display:grid;place-items:center;width:60px;height:60px;border-radius:18px;background:#e8f0fb;color:var(--k-blue)}
-        .kiosk-tile-icon .k-ico{width:32px;height:32px}
-        .kiosk-tile-title{padding-right:44px;font-size:21px;font-weight:800;line-height:1.2}
-        .kiosk-tile-desc{margin-top:-4px;color:var(--k-muted);font-size:14.5px;line-height:1.4}
-        .kiosk-tile-go{position:absolute;top:22px;right:22px;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--k-soft);color:var(--k-blue)}
-        .kiosk-tile-go .k-ico{width:22px;height:22px}
-        .kiosk-tile.is-active{border-color:transparent;background:linear-gradient(140deg,#1848a1,#1d6db6 60%,#239fb1);color:#fff;box-shadow:0 18px 40px rgba(24,72,161,.32)}
+        .kiosk-body{--su:calc(var(--t-unit) * var(--k-menu,1));flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:calc(var(--su) * 1.8);padding:calc(var(--su) * 2.4) calc(var(--su) * 3.4);scrollbar-width:none}
+        .kiosk-body::-webkit-scrollbar{display:none}
+        .kiosk-welcome{flex:none;text-align:center}
+        .kiosk-eyebrow{display:inline-block;margin-bottom:calc(var(--su) * .9);color:#8be7e0;font-size:calc(var(--su) * 1.9);font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+        .kiosk-welcome h1{margin:0;color:#fff;font-size:calc(var(--su) * 5.8);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+        .kiosk-welcome p{margin:calc(var(--su) * .7) 0 0;color:#cfe0f5;font-size:calc(var(--su) * 2.6)}
+
+        .kiosk-menu{flex:none;display:grid;grid-template-columns:repeat(var(--k-cols,3),minmax(0,1fr));gap:calc(var(--su) * 1.8)}
+        .kiosk-tile{position:relative;display:flex;align-items:center;gap:calc(var(--su) * 1.8);padding:calc(var(--su) * 2) calc(var(--su) * 2.4);border-radius:calc(var(--su) * 2.4);background:#fff;color:var(--k-ink);text-align:left;text-decoration:none;box-shadow:0 calc(var(--su) * .8) calc(var(--su) * 2.4) rgba(4,16,44,.3);-webkit-tap-highlight-color:transparent}
+        .kiosk-tile:hover{color:var(--k-ink)}
+        .kiosk-tile-icon{flex:none;display:grid;place-items:center;width:calc(var(--su) * 7.4);height:calc(var(--su) * 7.4);border-radius:50%;background:#e8f0fb;color:var(--k-blue)}
+        .kiosk-tile-icon .k-ico{width:calc(var(--su) * 3.9);height:calc(var(--su) * 3.9)}
+        .kiosk-tile-body{flex:1;min-width:0}
+        .kiosk-tile-title{display:block;font-size:calc(var(--su) * 2.9);font-weight:800;line-height:1.2}
+        .kiosk-tile-desc{display:block;margin-top:calc(var(--su) * .4);color:var(--k-muted);font-size:calc(var(--su) * 2.15);line-height:1.35}
+        .kiosk-tile-go{flex:none;display:grid;place-items:center;width:calc(var(--su) * 4.4);height:calc(var(--su) * 4.4);border-radius:50%;background:var(--k-soft);color:var(--k-blue)}
+        .kiosk-tile-go .k-ico{width:calc(var(--su) * 2.4);height:calc(var(--su) * 2.4)}
+        .kiosk-tile.is-active{background:linear-gradient(160deg,#0c868d,#09727a);color:#fff;box-shadow:0 0 0 calc(var(--su) * .5) #8be7e0,0 calc(var(--su) * .8) calc(var(--su) * 2.4) rgba(4,16,44,.3)}
         .kiosk-tile.is-active .kiosk-tile-icon{background:rgba(255,255,255,.18);color:#fff}
-        .kiosk-tile.is-active .kiosk-tile-desc{color:#dcebfa}
-        .kiosk-tile.is-active .kiosk-tile-go{background:#fff;color:var(--k-blue)}
+        .kiosk-tile.is-active .kiosk-tile-desc{color:#eafafa}
+        .kiosk-tile.is-active .kiosk-tile-go{background:#fff;color:#09727a}
+        .kiosk-tile.is-active .kiosk-tile-go .k-ico{stroke-width:3}
 
-        /* Escenario de cada opción */
-        .kiosk-stage{padding:32px;border:1px solid var(--k-line);border-radius:var(--k-radius);background:linear-gradient(180deg,#f6f9fe,#fff 70%)}
-        .kiosk-stage-head{display:flex;align-items:center;gap:20px;margin-bottom:24px}
-        .kiosk-stage-icon{flex:none;display:grid;place-items:center;width:76px;height:76px;border-radius:22px;background:linear-gradient(140deg,#dff4f4,#e4edfb);color:var(--k-blue)}
-        .kiosk-stage-icon .k-ico{width:40px;height:40px}
-        .kiosk-stage h2{margin:0;color:var(--k-ink);font-size:clamp(23px,2.5vw,31px);font-weight:800;letter-spacing:-.01em;line-height:1.15}
-        .kiosk-stage-head p{margin:6px 0 0;color:var(--k-muted);font-size:17px;line-height:1.45}
-        .kiosk-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0 0 26px;padding:0;list-style:none}
-        .kiosk-steps li{display:flex;align-items:center;gap:12px;padding:16px;border:1px solid var(--k-line);border-radius:18px;background:#fff;font-size:15.5px;font-weight:700;line-height:1.3}
-        .kiosk-steps b{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--k-blue);color:#fff;font-size:17px;font-weight:800}
-        .kiosk-note{display:flex;align-items:center;justify-content:center;gap:10px;margin:18px 0 0;color:var(--k-muted);font-size:16px;font-weight:600;text-align:center}
-        .kiosk-note .k-ico{color:var(--k-teal-ink)}
+        .kiosk-stage{--su:calc(var(--t-unit) * var(--k-fit,1));flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;padding:calc(var(--su) * 2.6) calc(var(--su) * 3.2);border-radius:calc(var(--su) * 3);background:#fff;color:var(--k-ink);box-shadow:0 calc(var(--su) * 1) calc(var(--su) * 3.4) rgba(4,16,44,.3)}
+        .kiosk-stage-head{display:flex;align-items:center;gap:calc(var(--su) * 2);margin-bottom:calc(var(--su) * 1.8)}
+        .kiosk-stage-icon{flex:none;display:grid;place-items:center;width:calc(var(--su) * 7);height:calc(var(--su) * 7);border-radius:calc(var(--su) * 2);background:linear-gradient(140deg,#dff4f4,#e4edfb);color:var(--k-blue)}
+        .kiosk-stage-icon .k-ico{width:calc(var(--su) * 3.8);height:calc(var(--su) * 3.8)}
+        .kiosk-stage h2{margin:0;color:var(--k-ink);font-size:calc(var(--su) * 3.4);font-weight:800;letter-spacing:-.01em;line-height:1.15}
+        .kiosk-stage-head p{margin:calc(var(--su) * .5) 0 0;color:var(--k-muted);font-size:calc(var(--su) * 1.9);line-height:1.4}
+        .kiosk-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:calc(var(--su) * 1.4);margin:0 0 calc(var(--su) * 2);padding:0;list-style:none}
+        .kiosk-steps li{display:flex;align-items:center;gap:calc(var(--su) * 1.2);padding:calc(var(--su) * 1.2) calc(var(--su) * 1.4);border:1px solid var(--k-line);border-radius:calc(var(--su) * 1.8);background:#f7faff;font-size:calc(var(--su) * 1.75);font-weight:700;line-height:1.3}
+        .kiosk-steps b{flex:none;display:grid;place-items:center;width:calc(var(--su) * 3.8);height:calc(var(--su) * 3.8);border-radius:50%;background:var(--k-blue);color:#fff;font-size:calc(var(--su) * 1.9);font-weight:800}
+        .kiosk-note{display:flex;align-items:center;justify-content:center;gap:calc(var(--su) * 1.2);margin:calc(var(--su) * 1.4) 0 0;color:var(--k-muted);font-size:calc(var(--su) * 1.9);font-weight:600;text-align:center}
+        .kiosk-note .k-ico{width:calc(var(--su) * 3);height:calc(var(--su) * 3);color:var(--k-teal-ink)}
         .kiosk-note.is-warn{color:#8a5a00}.kiosk-note.is-warn .k-ico{color:#c98a00}
-        .kiosk-link{display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:12px 4px;color:var(--k-blue);font-size:17px;font-weight:800;text-decoration:none}
+        .kiosk-link{display:inline-flex;align-items:center;gap:calc(var(--su) * 1);margin-top:calc(var(--su) * 1.4);padding:calc(var(--su) * .8) 0;color:var(--k-blue);font-size:calc(var(--su) * 2);font-weight:800;text-decoration:none}
+        .kiosk-link .k-ico{width:calc(var(--su) * 2.6);height:calc(var(--su) * 2.6)}
         .kiosk-link:hover{color:var(--k-blue-2);text-decoration:underline}
 
-        /* Botones de tótem */
-        .k-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:var(--k-touch);margin:0;padding:14px 26px;border:0;border-radius:20px;background:linear-gradient(135deg,var(--k-blue),var(--k-blue-2));color:#fff;font-family:inherit;font-size:20px;font-weight:800;line-height:1.2;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 12px 26px rgba(24,72,161,.26),inset 0 -3px 0 rgba(0,0,0,.14);transition:transform .12s ease,box-shadow .2s ease,filter .2s ease;-webkit-tap-highlight-color:transparent;user-select:none}
+        .k-btn{display:flex;align-items:center;justify-content:center;gap:calc(var(--su) * 1.4);width:100%;min-height:calc(var(--su) * 7.2);margin:0;padding:calc(var(--su) * 1.4) calc(var(--su) * 3);border:0;border-radius:calc(var(--su) * 2.2);background:linear-gradient(135deg,var(--k-blue),var(--k-blue-2));color:#fff;font-family:inherit;font-size:calc(var(--su) * 2.4);font-weight:800;line-height:1.2;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 calc(var(--su) * 1) calc(var(--su) * 2.6) rgba(24,72,161,.28),inset 0 -3px 0 rgba(0,0,0,.14);transition:transform .12s ease,filter .2s ease;-webkit-tap-highlight-color:transparent;user-select:none}
+        .k-btn .k-ico{width:calc(var(--su) * 3.2);height:calc(var(--su) * 3.2)}
         .k-btn:hover{color:#fff;filter:brightness(1.07)}
-        .k-btn:active{transform:translateY(2px) scale(.985);box-shadow:0 5px 12px rgba(24,72,161,.24),inset 0 -1px 0 rgba(0,0,0,.14)}
+        .k-btn:active{transform:translateY(2px) scale(.985)}
         .k-btn:disabled,.k-btn[aria-disabled="true"]{background:#c9d3e1;color:#f4f7fb;box-shadow:none;cursor:not-allowed;transform:none;filter:none;animation:none}
-        .k-btn .k-ico{width:26px;height:26px}
-        .k-btn--ok{background:linear-gradient(135deg,var(--k-ok),var(--k-ok-2));box-shadow:0 12px 26px rgba(14,133,119,.26),inset 0 -3px 0 rgba(0,0,0,.14)}
+        .k-btn--ok,.k-btn--xl{background:linear-gradient(135deg,var(--k-ok),var(--k-ok-2));box-shadow:0 calc(var(--su) * 1) calc(var(--su) * 2.6) rgba(14,133,119,.32),inset 0 -3px 0 rgba(0,0,0,.14)}
         .k-btn--ghost{border:2px solid #bcd0ee;background:#fff;color:var(--k-blue);box-shadow:none}
         .k-btn--ghost:hover{color:var(--k-blue);background:#f3f7fd;filter:none}
-        .k-btn--xl{gap:18px;min-height:96px;padding:16px 18px 16px 22px;border-radius:26px;font-size:clamp(20px,2.2vw,26px)}
-        .k-btn-lead,.k-btn-arrow{flex:none;display:grid;place-items:center;width:56px;height:56px;border-radius:50%}
+        .k-btn--xl{flex:none;gap:calc(var(--su) * 2);min-height:calc(var(--su) * 10);padding:calc(var(--su) * 1.6) calc(var(--su) * 1.8) calc(var(--su) * 1.6) calc(var(--su) * 2.4);border-radius:calc(var(--su) * 3);font-size:calc(var(--su) * 3.3)}
+        .k-btn-lead,.k-btn-arrow{flex:none;display:grid;place-items:center;width:calc(var(--su) * 6.4);height:calc(var(--su) * 6.4);border-radius:50%}
         .k-btn-lead{background:rgba(255,255,255,.16)}
-        .k-btn-arrow{background:#fff;color:var(--k-blue)}
+        .k-btn-arrow{background:#fff;color:var(--k-ok)}
+        .k-btn-lead .k-ico,.k-btn-arrow .k-ico{width:calc(var(--su) * 3.4);height:calc(var(--su) * 3.4)}
         .k-btn:disabled .k-btn-arrow{color:#9aa8bc}
-        .k-btn-lead .k-ico,.k-btn-arrow .k-ico{width:28px;height:28px}
-        .k-btn-text{display:flex;flex-direction:column;align-items:flex-start;min-width:0;text-align:left}
-        .k-btn-text small{margin-top:4px;font-size:15px;font-weight:600;opacity:.88}
+        .k-btn-text{flex:1;display:flex;flex-direction:column;align-items:flex-start;min-width:0;text-align:left}
+        .k-btn-text small{margin-top:calc(var(--su) * .4);font-size:calc(var(--su) * 1.85);font-weight:600;opacity:.9}
         .k-btn--attract:not(:disabled){animation:kAttract 2.6s ease-out infinite}
-        @keyframes kAttract{0%{box-shadow:0 12px 26px rgba(24,72,161,.26),0 0 0 0 rgba(49,190,190,.55)}70%,100%{box-shadow:0 12px 26px rgba(24,72,161,.26),0 0 0 18px rgba(49,190,190,0)}}
-        .k-btn:focus-visible,.kiosk-tile:focus-visible,.kiosk-details summary:focus-visible{outline:4px solid rgba(49,190,190,.7);outline-offset:3px}
+        @keyframes kAttract{0%{box-shadow:0 8px 20px rgba(14,133,119,.32),0 0 0 0 rgba(49,190,190,.6)}70%,100%{box-shadow:0 8px 20px rgba(14,133,119,.32),0 0 0 12px rgba(49,190,190,0)}}
+        .k-btn:focus-visible,.kiosk-tile:focus-visible,.kiosk-details summary:focus-visible{outline:3px solid #8be7e0;outline-offset:3px}
 
-        /* Mensajes y formularios */
-        .kiosk-flash{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;font-size:18px;font-weight:800;line-height:1.35}
-        .kiosk-flash .k-ico{width:30px;height:30px}
+        .kiosk-flash{flex:none;display:flex;align-items:center;gap:calc(var(--su) * 1.6);padding:calc(var(--su) * 1.8) calc(var(--su) * 2.4);border-radius:calc(var(--su) * 2.2);font-size:calc(var(--su) * 2.1);font-weight:800;line-height:1.35}
+        .kiosk-flash .k-ico{width:calc(var(--su) * 3.6);height:calc(var(--su) * 3.6)}
         .kiosk-flash.ok{background:#e2f7f2;color:#0b6b5f}
         .kiosk-flash.error{background:#fde6e4;color:#9b2318}
-        .kiosk-stage .kiosk-flash{margin-bottom:18px}
-        .kiosk-hint{display:flex;align-items:flex-start;gap:12px;margin-top:18px;padding:16px 18px;border-radius:18px;background:#edf4ff;color:#1d4c94;font-size:15.5px;font-weight:600;line-height:1.45}
-        .kiosk-hint .k-ico{margin-top:1px}
-        .kiosk-label{display:block;margin:0 0 10px;color:var(--k-muted);font-size:15px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
-        .kiosk-field{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px}
-        .kiosk-field input{width:100%;min-height:76px;padding:0 24px;border:2px solid #bcd0ee;border-radius:20px;background:#fff;color:var(--k-ink);font-family:inherit;font-size:28px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+        .kiosk-stage .kiosk-flash{margin-bottom:calc(var(--su) * 1.8)}
+        .kiosk-hint{display:flex;align-items:flex-start;gap:calc(var(--su) * 1.4);margin-top:calc(var(--su) * 1.8);padding:calc(var(--su) * 1.6) calc(var(--su) * 2);border-radius:calc(var(--su) * 1.8);background:#edf4ff;color:#1d4c94;font-size:calc(var(--su) * 1.75);font-weight:600;line-height:1.45}
+        .kiosk-hint .k-ico{width:calc(var(--su) * 2.8);height:calc(var(--su) * 2.8)}
+        .kiosk-label{display:block;margin:0 0 calc(var(--su) * 1);color:var(--k-muted);font-size:calc(var(--su) * 1.6);font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+        .kiosk-field{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:calc(var(--su) * 1.4)}
+        .kiosk-field input{width:100%;min-height:calc(var(--su) * 8.4);padding:0 calc(var(--su) * 2.6);border:2px solid #bcd0ee;border-radius:calc(var(--su) * 2.2);background:#fff;color:var(--k-ink);font-family:inherit;font-size:calc(var(--su) * 3.2);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
         .kiosk-field input::placeholder{color:#9fb0c6;font-weight:600;letter-spacing:.02em}
-        .kiosk-field input:focus{outline:none;border-color:var(--k-blue);box-shadow:0 0 0 5px rgba(24,72,161,.15)}
-        .kiosk-field .k-btn{width:auto;min-height:76px;padding:0 32px}
-        .kiosk-error{margin-top:10px;color:#a32020;font-size:16px;font-weight:800}
-        .kiosk-details{margin-top:6px}
-        .kiosk-details summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:0 20px;border:2px dashed #bcd0ee;border-radius:18px;color:var(--k-blue);font-size:18px;font-weight:800;list-style:none;cursor:pointer}
+        .kiosk-field input:focus{outline:none;border-color:var(--k-blue);box-shadow:0 0 0 4px rgba(24,72,161,.15)}
+        .kiosk-field .k-btn{width:auto;min-height:calc(var(--su) * 8.4);padding:0 calc(var(--su) * 3.4)}
+        .kiosk-error{margin-top:calc(var(--su) * 1.2);color:#a32020;font-size:calc(var(--su) * 1.9);font-weight:800}
+        .kiosk-details summary{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--su) * 1.4);min-height:calc(var(--su) * 6.4);padding:0 calc(var(--su) * 2.4);border:2px dashed #bcd0ee;border-radius:calc(var(--su) * 2);color:var(--k-blue);font-size:calc(var(--su) * 2.1);font-weight:800;list-style:none;cursor:pointer}
         .kiosk-details summary::-webkit-details-marker{display:none}
-        .kiosk-details summary .k-ico{transition:transform .2s ease}
-        .kiosk-details[open] summary{margin-bottom:20px;border-style:solid;background:#f3f7fd}
+        .kiosk-details summary .k-ico{width:calc(var(--su) * 3);height:calc(var(--su) * 3);transition:transform .2s ease}
+        .kiosk-details[open] summary{margin-bottom:calc(var(--su) * 1.8);border-style:solid;background:#f3f7fd}
         .kiosk-details[open] summary .k-ico{transform:rotate(180deg)}
 
-        .kiosk-vouchers{display:grid;gap:16px;margin-top:22px}
-        .kiosk-voucher{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:20px;padding:22px;border:1px solid var(--k-line);border-radius:22px;background:#fff;box-shadow:0 10px 24px rgba(15,42,92,.06)}
-        .kiosk-voucher-icon{display:grid;place-items:center;width:58px;height:58px;border-radius:18px;background:#e8f0fb;color:var(--k-blue)}
-        .kiosk-voucher-icon .k-ico{width:30px;height:30px}
-        .kiosk-voucher h3{margin:0 0 8px;font-size:20px;font-weight:800}
-        .kiosk-voucher p{margin:3px 0;color:var(--k-muted);font-size:16px}
+        .kiosk-vouchers{display:grid;gap:calc(var(--su) * 1.6);margin-top:calc(var(--su) * 2)}
+        .kiosk-voucher{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:calc(var(--su) * 2);padding:calc(var(--su) * 2);border:1px solid var(--k-line);border-radius:calc(var(--su) * 2.2);background:#f7faff}
+        .kiosk-voucher-icon{display:grid;place-items:center;width:calc(var(--su) * 6);height:calc(var(--su) * 6);border-radius:calc(var(--su) * 1.8);background:#e8f0fb;color:var(--k-blue)}
+        .kiosk-voucher-icon .k-ico{width:calc(var(--su) * 3.2);height:calc(var(--su) * 3.2)}
+        .kiosk-voucher h3{margin:0 0 calc(var(--su) * .6);font-size:calc(var(--su) * 2.2);font-weight:800}
+        .kiosk-voucher p{margin:2px 0;color:var(--k-muted);font-size:calc(var(--su) * 1.8)}
         .kiosk-voucher p strong{color:var(--k-ink)}
         .kiosk-voucher form{margin:0}
-        .kiosk-voucher .k-btn{min-width:260px}
-        .kiosk-badge{display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border-radius:999px;background:#e2f7f2;color:#0b6b5f;font-size:15px;font-weight:800;white-space:nowrap}
+        .kiosk-voucher .k-btn{min-width:calc(var(--su) * 28)}
+        .kiosk-badge{display:inline-flex;align-items:center;justify-content:center;gap:calc(var(--su) * 1);padding:calc(var(--su) * 1.4) calc(var(--su) * 2);border-radius:999px;background:#e2f7f2;color:#0b6b5f;font-size:calc(var(--su) * 1.8);font-weight:800;white-space:nowrap}
+        .kiosk-badge .k-ico{width:calc(var(--su) * 2.8);height:calc(var(--su) * 2.8)}
 
-        .kiosk-options{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-        .kiosk-option{display:flex;flex-direction:column;gap:12px;padding:26px;border:2px solid var(--k-line);border-radius:24px;background:#fff}
-        .kiosk-option h3{margin:4px 0 0;font-size:22px;font-weight:800}
-        .kiosk-option p{flex:1;margin:0 0 8px;color:var(--k-muted);font-size:16px;line-height:1.5}
+        .kiosk-options{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--su) * 1.8)}
+        .kiosk-option{display:grid;grid-template-columns:auto minmax(0,1fr);align-content:start;align-items:center;gap:calc(var(--su) * 1) calc(var(--su) * 1.6);padding:calc(var(--su) * 2.2);border:1px solid var(--k-line);border-radius:calc(var(--su) * 2.4);background:#f7faff}
+        .kiosk-option>.kiosk-tile-icon{width:calc(var(--su) * 5.6);height:calc(var(--su) * 5.6)}
+        .kiosk-option>.kiosk-tile-icon .k-ico{width:calc(var(--su) * 3);height:calc(var(--su) * 3)}
+        .kiosk-option h3{margin:0;font-size:calc(var(--su) * 2.4);font-weight:800}
+        .kiosk-option p{grid-column:1/-1;margin:0;color:var(--k-muted);font-size:calc(var(--su) * 1.75);line-height:1.45}
+        .kiosk-option>.k-btn{grid-column:1/-1;align-self:end;min-height:calc(var(--su) * 6.6);margin-top:calc(var(--su) * .6);font-size:calc(var(--su) * 2.1)}
 
-        .kiosk-success{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:18px 20px;margin-bottom:26px;padding:24px;border:2px solid #7fd6c9;border-radius:24px;background:#effbf8}
-        .kiosk-success-icon{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--k-ok);color:#fff}
-        .kiosk-success-icon .k-ico{width:34px;height:34px}
-        .kiosk-success h3{margin:0 0 4px;color:#0b6b5f;font-size:23px;font-weight:800}
-        .kiosk-success p{margin:0;color:var(--k-muted);font-size:16.5px}
-        .kiosk-success-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .kiosk-success{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:calc(var(--su) * 1.6) calc(var(--su) * 2);margin-bottom:calc(var(--su) * 2);padding:calc(var(--su) * 2);border:2px solid #7fd6c9;border-radius:calc(var(--su) * 2.2);background:#effbf8}
+        .kiosk-success-icon{display:grid;place-items:center;width:calc(var(--su) * 6.4);height:calc(var(--su) * 6.4);border-radius:50%;background:var(--k-ok);color:#fff}
+        .kiosk-success-icon .k-ico{width:calc(var(--su) * 3.6);height:calc(var(--su) * 3.6)}
+        .kiosk-success h3{margin:0 0 calc(var(--su) * .4);color:#0b6b5f;font-size:calc(var(--su) * 2.6);font-weight:800}
+        .kiosk-success p{margin:0;color:var(--k-muted);font-size:calc(var(--su) * 1.9)}
+        .kiosk-success-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--su) * 1.4)}
 
-        /* Barra de estado del equipo */
-        .kiosk-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px 20px;padding:16px 32px;border-top:1px solid var(--k-line);background:#f3f7fd}
-        .kiosk-bar-info{display:flex;flex-wrap:wrap;gap:10px}
-        .kiosk-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 13px;border:1px solid var(--k-line);border-radius:999px;background:#fff;color:var(--k-muted);font-size:13.5px;font-weight:600}
-        .kiosk-chip strong{color:var(--k-ink);font-weight:800}
-        .kiosk-chip .k-ico{width:16px;height:16px;color:var(--k-blue)}
-        .kiosk-bar-help{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-        .kiosk-help{display:inline-flex;align-items:center;gap:10px;color:var(--k-blue);font-size:15px;font-weight:800}
-        .kiosk-admin{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:12px;background:#e3ebf7;color:#264d78;font-size:14px;font-weight:800;text-decoration:none}
-        .kiosk-admin:hover{color:#1848a1;background:#d7e3f5}
+        .kiosk-bar{flex:none;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:calc(var(--su) * 1) calc(var(--su) * 2);padding:calc(var(--su) * 1.1) calc(var(--su) * 3);background:rgba(4,16,44,.28);color:#d6e6f8}
+        .kiosk-bar-info{display:flex;flex-wrap:wrap;gap:calc(var(--su) * 1)}
+        .kiosk-chip{display:inline-flex;align-items:center;gap:calc(var(--su) * .8);padding:calc(var(--su) * .6) calc(var(--su) * 1.4);border-radius:999px;background:rgba(255,255,255,.12);color:#d6e6f8;font-size:calc(var(--su) * 1.9);font-weight:600;white-space:nowrap}
+        .kiosk-chip strong{color:#fff;font-weight:800}
+        .kiosk-chip .k-ico{width:calc(var(--su) * 2);height:calc(var(--su) * 2);color:#8be7e0}
+        .kiosk-bar-help{display:flex;align-items:center;gap:calc(var(--su) * 1.6)}
+        .kiosk-help{display:inline-flex;align-items:center;gap:calc(var(--su) * 1);color:#fff;font-size:calc(var(--su) * 2.05);font-weight:700}
+        .kiosk-help .k-ico{width:calc(var(--su) * 2.4);height:calc(var(--su) * 2.4);color:#8be7e0}
+        .kiosk-admin{color:#fff;font-size:calc(var(--su) * 1.5);font-weight:800}
+        .kiosk-admin:hover{color:#8be7e0}
 
-        @media (prefers-reduced-motion: reduce){.kiosk-status i,.k-btn--attract:not(:disabled){animation:none}.kiosk-tile,.k-btn{transition:none}}
-
-        /* Notebook */
-        @media (max-width:1180px){
-            .kiosk-body{padding:28px 30px}
-            .kiosk-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+        @container pantalla (min-width:561px) and (max-width:820px){
+            .kiosk-tile{flex-direction:column;justify-content:center;gap:calc(var(--su) * 1);text-align:center}
+            .kiosk-tile-body{flex:none}
+            .kiosk-tile-go{position:absolute;top:calc(var(--su) * 1.2);right:calc(var(--su) * 1.2)}
+            .kiosk-tile:not(.is-active) .kiosk-tile-go{display:none}
         }
-        @media (max-height:1000px) and (min-width:901px){
-            .kiosk{margin-top:16px}
-            .kiosk-top{padding-top:14px;padding-bottom:14px}
-            .kiosk-body{gap:18px;padding-top:22px;padding-bottom:22px}
-            .kiosk-welcome h1{margin:10px 0 4px;font-size:clamp(26px,2.9vw,38px)}
-            .kiosk-tile{min-height:132px;padding:18px;gap:10px}
-            .kiosk-tile-icon{width:52px;height:52px;border-radius:16px}
-            .kiosk-tile-go{top:18px;right:18px}
-            .kiosk-stage{padding:24px 26px}
-            .kiosk-stage-head{margin-bottom:18px}
-            .kiosk-stage-icon{width:64px;height:64px;border-radius:18px}
-            .kiosk-steps{margin-bottom:18px}
-            .kiosk-steps li{padding:12px 14px}
-            .k-btn--xl{min-height:84px}
-            .kiosk-note{margin-top:12px}
-            .kiosk-bar{padding-top:12px;padding-bottom:12px}
-        }
-        @media (max-height:800px) and (min-width:901px){
-            .kiosk-welcome p{display:none}
-            .kiosk-tile{flex-direction:row;align-items:center;gap:14px;min-height:96px;padding:16px}
-            .kiosk-tile-icon{flex:none}
-            .kiosk-tile-body{flex:1;min-width:0}
-            .kiosk-tile-title{padding-right:0;font-size:18.5px}
-            .kiosk-tile-desc{margin-top:3px;font-size:13.5px}
-            .kiosk-tile-go{position:static;flex:none;width:38px;height:38px}
-            .kiosk-stage-head p{font-size:15.5px}
-        }
-        /* Tablet */
-        @media (max-width:900px){
-            .kiosk{width:calc(100% - 28px);margin-top:14px}
-            .kiosk-top{padding:16px 22px}
-            .kiosk-brand img{height:34px}
-            .kiosk-brand-text strong{font-size:17px}
-            .kiosk-clock strong{font-size:28px}
-            .kiosk-tile{min-height:150px;padding:18px}
-            .kiosk-tile-title{font-size:18.5px}
-            .kiosk-stage{padding:24px}
-            .kiosk-options{grid-template-columns:1fr}
-            .kiosk-voucher{grid-template-columns:auto minmax(0,1fr)}
-            .kiosk-voucher>form,.kiosk-voucher>.kiosk-badge{grid-column:1/-1}
-            .kiosk-voucher .k-btn{min-width:0}
-            .kiosk-bar{padding:16px 22px}
-        }
-        /* Celular */
-        @media (max-width:700px){
-            .kiosk{width:100%;margin:0}
-            .kiosk-screen{min-height:0;border:0;border-radius:0;box-shadow:none}
-            .kiosk-top{padding:14px 16px;gap:12px}
-            .kiosk-brand{gap:12px}
-            .kiosk-brand img{height:28px}
-            .kiosk-brand-text{padding-left:12px}
-            .kiosk-brand-text strong{font-size:15px}
-            .kiosk-brand-text small{display:none}
-            .kiosk-top-right{gap:12px}
-            .kiosk-clock strong{font-size:22px}
-            .kiosk-clock small{display:none}
-            .kiosk-status{padding:8px 11px;font-size:11px}
-            .kiosk-body{gap:20px;padding:22px 16px 26px}
-            .kiosk-menu{grid-template-columns:1fr;gap:12px}
-            .kiosk-tile{flex-direction:row;align-items:center;gap:14px;min-height:88px;padding:14px 16px}
-            .kiosk-tile-icon{flex:none;width:52px;height:52px;border-radius:16px}
-            .kiosk-tile-icon .k-ico{width:28px;height:28px}
-            .kiosk-tile-body{flex:1;min-width:0}
-            .kiosk-tile-title{padding-right:0;font-size:18px}
-            .kiosk-tile-desc{margin-top:3px;font-size:13.5px}
-            .kiosk-tile-go{position:static;flex:none;width:38px;height:38px}
-            .kiosk-stage{padding:20px 16px;border-radius:22px}
-            .kiosk-stage-head{align-items:flex-start;gap:14px;margin-bottom:18px}
-            .kiosk-stage-icon{width:56px;height:56px;border-radius:16px}
-            .kiosk-stage-icon .k-ico{width:30px;height:30px}
-            .kiosk-stage-head p{font-size:15.5px}
-            .kiosk-steps{gap:10px;margin-bottom:20px}
-            .kiosk-steps li{flex-direction:column;align-items:flex-start;gap:8px;padding:13px;font-size:14px}
-            .kiosk-steps b{width:32px;height:32px;font-size:15px}
-            .k-btn{font-size:18px}
-            .k-btn--xl{gap:12px;min-height:84px;padding:14px;font-size:20px}
+        @container pantalla (max-width:560px){
+            .kiosk-top,.kiosk-bar{--su:calc(var(--t-unit) * 1.1 * var(--k-menu,1))}
+            .kiosk-stage{--su:calc(var(--t-unit) * 1.1 * var(--k-fit,1))}
+            .kiosk-body{--su:calc(var(--t-unit) * 1.1 * var(--k-menu,1));gap:calc(var(--su) * 2.8);padding:calc(var(--su) * 3.6) calc(var(--su) * 4) calc(var(--su) * 3.2)}
+            .kiosk-top{padding:calc(var(--su) * 2.4) calc(var(--su) * 4)}
+            .kiosk-logo{height:calc(var(--su) * 5.6)}
+            .kiosk-title strong{font-size:calc(var(--su) * 3.6)}
+            .kiosk-title small{font-size:calc(var(--su) * 2.2)}
+            .kiosk-clock small{font-size:calc(var(--su) * 3)}
+            .kiosk-clock strong{font-size:calc(var(--su) * 4.8)}
+            .kiosk-eyebrow{margin-bottom:calc(var(--su) * 1.4);font-size:calc(var(--su) * 2.8)}
+            .kiosk-welcome h1{font-size:calc(var(--su) * 6.6)}
+            .kiosk-welcome p{margin-top:calc(var(--su) * 1.2);font-size:calc(var(--su) * 3.2)}
+            .kiosk-menu{gap:calc(var(--su) * 2.4)}
+            .kiosk-tile{flex-direction:column;justify-content:center;gap:calc(var(--su) * 1.4);padding:calc(var(--su) * 2.6) calc(var(--su) * 1.6);border-radius:calc(var(--su) * 3.6);text-align:center}
+            .kiosk-tile-icon{width:calc(var(--su) * 10);height:calc(var(--su) * 10)}
+            .kiosk-tile-icon .k-ico{width:calc(var(--su) * 5.4);height:calc(var(--su) * 5.4)}
+            .kiosk-tile-body{flex:none}
+            .kiosk-tile-title{font-size:calc(var(--su) * 3.4)}
+            .kiosk-tile-desc{margin-top:calc(var(--su) * .8);font-size:calc(var(--su) * 2.7)}
+            .kiosk-tile-go{position:absolute;top:calc(var(--su) * 1.6);right:calc(var(--su) * 1.6);width:calc(var(--su) * 5.6);height:calc(var(--su) * 5.6)}
+            .kiosk-tile:not(.is-active) .kiosk-tile-go{display:none}
+            .kiosk-tile-go .k-ico{width:calc(var(--su) * 3.4);height:calc(var(--su) * 3.4)}
+            .kiosk-stage{padding:calc(var(--su) * 4);border-radius:calc(var(--su) * 4.4)}
+            .kiosk-stage-head{gap:calc(var(--su) * 3);margin-bottom:calc(var(--su) * 3)}
+            .kiosk-stage-icon{width:calc(var(--su) * 10);height:calc(var(--su) * 10);border-radius:calc(var(--su) * 3)}
+            .kiosk-stage-icon .k-ico{width:calc(var(--su) * 5.4);height:calc(var(--su) * 5.4)}
+            .kiosk-stage h2{font-size:calc(var(--su) * 4.8)}
+            .kiosk-stage-head p{margin-top:calc(var(--su) * 1);font-size:calc(var(--su) * 3.1)}
+            .kiosk-steps{grid-template-columns:1fr 1fr;gap:calc(var(--su) * 2);margin-bottom:calc(var(--su) * 3)}
+            .kiosk-steps li{gap:calc(var(--su) * 2);padding:calc(var(--su) * 1.8) calc(var(--su) * 2.2);border-radius:calc(var(--su) * 3);font-size:calc(var(--su) * 2.9)}
+            .kiosk-steps b{width:calc(var(--su) * 6.4);height:calc(var(--su) * 6.4);font-size:calc(var(--su) * 3.2)}
+            .kiosk-note{gap:calc(var(--su) * 2);margin-top:calc(var(--su) * 2.4);font-size:calc(var(--su) * 3)}
+            .kiosk-note .k-ico{width:calc(var(--su) * 5);height:calc(var(--su) * 5)}
+            .kiosk-link{gap:calc(var(--su) * 1.6);margin-top:calc(var(--su) * 2);padding:calc(var(--su) * 1.6) 0;font-size:calc(var(--su) * 3.3)}
+            .kiosk-link .k-ico{width:calc(var(--su) * 4.5);height:calc(var(--su) * 4.5)}
+            .k-btn{gap:calc(var(--su) * 2.4);min-height:calc(var(--su) * 13);padding:calc(var(--su) * 2.4) calc(var(--su) * 4);border-radius:calc(var(--su) * 3.6);font-size:calc(var(--su) * 4)}
+            .k-btn .k-ico{width:calc(var(--su) * 5.4);height:calc(var(--su) * 5.4)}
+            .k-btn--xl{gap:calc(var(--su) * 2.6);min-height:calc(var(--su) * 15);padding:calc(var(--su) * 2.4) calc(var(--su) * 2.6) calc(var(--su) * 2.4) calc(var(--su) * 4.4);border-radius:calc(var(--su) * 4.4);font-size:calc(var(--su) * 5)}
             .k-btn-lead{display:none}
-            .k-btn-arrow{width:46px;height:46px}
-            .k-btn-text small{font-size:13.5px}
-            .kiosk-field{grid-template-columns:1fr}
-            .kiosk-field input{min-height:68px;font-size:24px}
-            .kiosk-field .k-btn{width:100%;min-height:68px}
-            .kiosk-flash{font-size:16px;padding:16px}
-            .kiosk-note{justify-content:flex-start;text-align:left;font-size:15px}
-            .kiosk-voucher{padding:18px;gap:14px}
-            .kiosk-voucher-icon{width:48px;height:48px}
-            .kiosk-success{padding:18px}
-            .kiosk-success-icon{width:52px;height:52px}
-            .kiosk-success-actions{grid-template-columns:1fr}
-            .kiosk-bar{flex-direction:column;align-items:flex-start;padding:16px}
-            .kiosk-bar-help{width:100%;justify-content:space-between}
+            .k-btn-arrow{width:calc(var(--su) * 10);height:calc(var(--su) * 10)}
+            .k-btn-arrow .k-ico{width:calc(var(--su) * 5.4);height:calc(var(--su) * 5.4)}
+            .k-btn-text small{margin-top:calc(var(--su) * .6);font-size:calc(var(--su) * 3)}
+            .kiosk-flash{gap:calc(var(--su) * 2.6);padding:calc(var(--su) * 3) calc(var(--su) * 3.6);border-radius:calc(var(--su) * 3.6);font-size:calc(var(--su) * 3.5)}
+            .kiosk-flash .k-ico{width:calc(var(--su) * 6);height:calc(var(--su) * 6)}
+            .kiosk-hint{gap:calc(var(--su) * 2.2);margin-top:calc(var(--su) * 3);padding:calc(var(--su) * 2.6) calc(var(--su) * 3);border-radius:calc(var(--su) * 3);font-size:calc(var(--su) * 2.9)}
+            .kiosk-hint .k-ico{width:calc(var(--su) * 4.6);height:calc(var(--su) * 4.6)}
+            .kiosk-label{margin-bottom:calc(var(--su) * 1.6);font-size:calc(var(--su) * 2.8)}
+            .kiosk-field{grid-template-columns:1fr;gap:calc(var(--su) * 2.4)}
+            .kiosk-field input{min-height:calc(var(--su) * 14);padding:0 calc(var(--su) * 4);border-radius:calc(var(--su) * 3.6);font-size:calc(var(--su) * 5.6)}
+            .kiosk-field .k-btn{width:100%;min-height:calc(var(--su) * 13);padding:0 calc(var(--su) * 4)}
+            .kiosk-error{margin-top:calc(var(--su) * 2);font-size:calc(var(--su) * 3.2)}
+            .kiosk-details summary{gap:calc(var(--su) * 2);min-height:calc(var(--su) * 11);padding:0 calc(var(--su) * 3.6);border-radius:calc(var(--su) * 3.2);font-size:calc(var(--su) * 3.4)}
+            .kiosk-details summary .k-ico{width:calc(var(--su) * 5);height:calc(var(--su) * 5)}
+            .kiosk-details[open] summary{margin-bottom:calc(var(--su) * 3)}
+            .kiosk-vouchers{gap:calc(var(--su) * 2.6);margin-top:calc(var(--su) * 3.6)}
+            .kiosk-voucher{grid-template-columns:auto minmax(0,1fr);align-items:start;gap:calc(var(--su) * 2.6) calc(var(--su) * 3);padding:calc(var(--su) * 3.4);border-radius:calc(var(--su) * 3.6)}
+            .kiosk-voucher>form,.kiosk-voucher>.kiosk-badge{grid-column:1/-1}
+            .kiosk-voucher-icon{width:calc(var(--su) * 10);height:calc(var(--su) * 10);border-radius:calc(var(--su) * 3)}
+            .kiosk-voucher-icon .k-ico{width:calc(var(--su) * 5.4);height:calc(var(--su) * 5.4)}
+            .kiosk-voucher h3{margin-bottom:calc(var(--su) * 1.2);font-size:calc(var(--su) * 3.8)}
+            .kiosk-voucher p{font-size:calc(var(--su) * 3.1)}
+            .kiosk-voucher .k-btn{min-width:0}
+            .kiosk-badge{gap:calc(var(--su) * 1.6);padding:calc(var(--su) * 2.4) calc(var(--su) * 3.2);font-size:calc(var(--su) * 3.2)}
+            .kiosk-badge .k-ico{width:calc(var(--su) * 4.6);height:calc(var(--su) * 4.6)}
+            .kiosk-options{grid-template-columns:1fr;gap:calc(var(--su) * 2.6)}
+            .kiosk-option{gap:calc(var(--su) * 1.2) calc(var(--su) * 3);padding:calc(var(--su) * 3.2);border-radius:calc(var(--su) * 3.6)}
+            .kiosk-option>.kiosk-tile-icon{width:calc(var(--su) * 9);height:calc(var(--su) * 9)}
+            .kiosk-option>.kiosk-tile-icon .k-ico{width:calc(var(--su) * 4.8);height:calc(var(--su) * 4.8)}
+            .kiosk-option h3{font-size:calc(var(--su) * 3.8)}
+            .kiosk-option p{font-size:calc(var(--su) * 2.8)}
+            .kiosk-option>.k-btn{min-height:calc(var(--su) * 11);margin-top:calc(var(--su) * 1.6);font-size:calc(var(--su) * 3.5)}
+            .kiosk-success{gap:calc(var(--su) * 2.6) calc(var(--su) * 3);margin-bottom:calc(var(--su) * 3.6);padding:calc(var(--su) * 3.4);border-radius:calc(var(--su) * 3.6)}
+            .kiosk-success-icon{width:calc(var(--su) * 11);height:calc(var(--su) * 11)}
+            .kiosk-success-icon .k-ico{width:calc(var(--su) * 6);height:calc(var(--su) * 6)}
+            .kiosk-success h3{font-size:calc(var(--su) * 4.2)}
+            .kiosk-success p{font-size:calc(var(--su) * 3.1)}
+            .kiosk-success-actions{grid-template-columns:1fr;gap:calc(var(--su) * 2.4)}
+            .kiosk-bar{padding:calc(var(--su) * 2.2) calc(var(--su) * 4)}
+            .kiosk-chip{gap:calc(var(--su) * 1.2);padding:calc(var(--su) * .8) calc(var(--su) * 2);font-size:calc(var(--su) * 2.6)}
+            .kiosk-chip .k-ico{width:calc(var(--su) * 3.4);height:calc(var(--su) * 3.4)}
+            .kiosk-help{gap:calc(var(--su) * 1.6);font-size:calc(var(--su) * 2.9)}
+            .kiosk-help .k-ico{width:calc(var(--su) * 4.4);height:calc(var(--su) * 4.4)}
+            .kiosk-admin{font-size:calc(var(--su) * 2.8)}
         }
-        @media (max-width:400px){
-            .kiosk-brand-text{display:none}
-            .kiosk-steps{grid-template-columns:1fr}
-            .kiosk-steps li{flex-direction:row;align-items:center;padding:10px 14px}
-        }
+
+        @media (prefers-reduced-motion: reduce){.k-btn--attract:not(:disabled){animation:none}.k-btn{transition:none}}
+        @media (max-width:600px){:root{--t-panel:clamp(30px,4.4vh,44px);--t-neck:clamp(8px,1.8vh,18px);--t-side:clamp(7px,1vh,10px)}}
     </style>
 </head>
-<body>
+<body class="kiosk-page">
 @php $soloCompra = request()->routeIs('paciente.totem'); @endphp
 @php $tab = $soloCompra ? request('tab', 'reserva') : request('tab', 'comprar'); @endphp
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -285,17 +302,29 @@
         @include('partials.demo_user_switcher')
     </div>
 </div>
+<script>
+(function () {
+    var barra = document.querySelector('.totem-header-row');
+    function medir() {
+        document.documentElement.style.setProperty('--k-offset', (barra ? barra.offsetHeight : 0) + 'px');
+    }
+    medir();
+    if (barra && window.ResizeObserver) new ResizeObserver(medir).observe(barra);
+    window.addEventListener('resize', medir);
+})();
+</script>
 <main class="kiosk">
-  <div class="kiosk-screen">
+  <div class="totem">
+    <div class="totem-housing">
+      <div class="totem-glass">
+        <span class="totem-cam" aria-hidden="true"></span>
+        <div class="kiosk-screen">
     <header class="kiosk-top">
         <div class="kiosk-brand">
-            <img src="{{ asset('images/logotipos/medichile-white-h.svg') }}" alt="Medichile">
-            <div class="kiosk-brand-text"><strong>Tótem de atención</strong><small>SDI Salud Digital Integrada</small></div>
+            <img class="kiosk-logo" src="{{ asset('images/logotipos/medichile-white-h.svg') }}" alt="Medichile">
+            <div class="kiosk-title"><strong>Tótem de atención</strong><small>SDI Salud Digital Integrada</small></div>
         </div>
-        <div class="kiosk-top-right">
-            <div class="kiosk-clock" aria-live="off"><strong id="kioskHora">--:--</strong><small id="kioskFecha">&nbsp;</small></div>
-            <div class="kiosk-status {{ $totem ? '' : 'is-off' }}"><i aria-hidden="true"></i>{{ $totem ? 'Activo' : 'Sin equipo activo' }}</div>
-        </div>
+        <div class="kiosk-clock" aria-live="off"><small id="kioskFecha">&nbsp;</small><strong id="kioskHora">--:--</strong></div>
     </header>
     <script>
     (function () {
@@ -303,7 +332,7 @@
         function tick() {
             var ahora = new Date();
             hora.textContent = ahora.toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit', hour12: false});
-            fecha.textContent = ahora.toLocaleDateString('es-CL', {weekday: 'long', day: 'numeric', month: 'long'});
+            fecha.textContent = ahora.toLocaleDateString('es-CL', {weekday: 'short', day: 'numeric', month: 'short'}).replace(/\./g, '');
         }
         tick();
         setInterval(tick, 10000);
@@ -336,8 +365,8 @@
                 <a class="kiosk-tile {{ $activa ? 'is-active' : '' }}" href="{{ route($rutaMenu, ['tab' => $opcion['tab']]) }}" @if($activa) aria-current="page" @endif>
                     <span class="kiosk-tile-icon"><svg class="k-ico" aria-hidden="true"><use href="#{{ $opcion['icono'] }}"/></svg></span>
                     <span class="kiosk-tile-body">
-                        <span class="kiosk-tile-title d-block">{{ $opcion['titulo'] }}</span>
-                        <span class="kiosk-tile-desc d-block">{{ $opcion['texto'] }}</span>
+                        <span class="kiosk-tile-title">{{ $opcion['titulo'] }}</span>
+                        <span class="kiosk-tile-desc">{{ $opcion['texto'] }}</span>
                     </span>
                     <span class="kiosk-tile-go"><svg class="k-ico" aria-hidden="true"><use href="#{{ $activa ? 'k-i-check' : 'k-i-arrow' }}"/></svg></span>
                 </a>
@@ -514,38 +543,121 @@
             @endif
         </div>
     </footer>
+        </div>
+      </div>
+      <div class="totem-panel" aria-hidden="true">
+        <span class="totem-scanner"><svg class="k-ico"><use href="#k-i-qr"/></svg></span>
+        <span class="totem-led {{ $totem ? '' : 'is-off' }}" title="{{ $totem ? 'Equipo activo · Último ping ' . ($totem->ultimo_ping?->format('d-m-Y H:i:s') ?? 'sin registro') : 'Sin equipo activo' }}"></span>
+      </div>
+    </div>
+    <div class="totem-neck" aria-hidden="true"></div>
+    <div class="totem-base" aria-hidden="true"></div>
   </div>
 </main>
+<script>
+document.querySelectorAll('.kiosk-tile').forEach(function (opcion) {
+    opcion.addEventListener('click', function (event) { event.stopPropagation(); });
+});
+(function () {
+    var cuerpo = document.querySelector('.kiosk-body');
+    var pantalla = document.querySelector('.kiosk-screen');
+    var escena = document.querySelector('.kiosk-stage');
+    if (!cuerpo || !pantalla || !escena) return;
+    function aplicar(menu, panel) {
+        pantalla.style.setProperty('--k-menu', menu.toFixed(3));
+        escena.style.setProperty('--k-fit', panel.toFixed(3));
+        cuerpo.scrollTop = 0;
+        var limite = cuerpo.getBoundingClientRect().bottom - parseFloat(getComputedStyle(cuerpo).paddingBottom);
+        return escena.getBoundingClientRect().bottom <= limite - 2 && cuerpo.scrollHeight <= cuerpo.clientHeight;
+    }
+    function mejorPanel(menu) {
+        var minimo = 0.3, maximo = 1.6;
+        if (aplicar(menu, maximo)) return maximo;
+        for (var i = 0; i < 10; i++) {
+            var medio = (minimo + maximo) / 2;
+            if (aplicar(menu, medio)) minimo = medio; else maximo = medio;
+        }
+        return minimo;
+    }
+    function letraMinima() {
+        var menor = Infinity;
+        escena.querySelectorAll('p, li, small, .kiosk-hint').forEach(function (elemento) {
+            menor = Math.min(menor, parseFloat(getComputedStyle(elemento).fontSize));
+        });
+        return menor;
+    }
+    function ajustar() {
+        cuerpo.style.overflowY = 'hidden';
+        escena.style.flexGrow = '0';
+        var menu = 1;
+        var panel = mejorPanel(menu);
+        if (panel < 0.9) {
+            var bajo = 0.65, alto = 1;
+            for (var i = 0; i < 8; i++) {
+                var medio = (bajo + alto) / 2;
+                if (aplicar(medio, medio)) bajo = medio; else alto = medio;
+            }
+            menu = bajo;
+            panel = mejorPanel(menu);
+        }
+        aplicar(menu, panel);
+        var piso = pantalla.clientWidth < 560 ? 9 : 6.5;
+        var actual = letraMinima();
+        if (actual < piso) {
+            panel = Math.min(1.6, panel * piso / actual);
+            if (!aplicar(menu, panel) && aplicar(0.7, panel)) {
+                var menor = 0.7, mayor = menu;
+                for (var j = 0; j < 8; j++) {
+                    var punto = (menor + mayor) / 2;
+                    if (aplicar(punto, panel)) menor = punto; else mayor = punto;
+                }
+                menu = menor;
+            }
+            aplicar(menu, panel);
+        }
+        escena.style.flexGrow = '';
+        cuerpo.style.overflowY = '';
+    }
+    ajustar();
+    window.addEventListener('load', ajustar);
+    if (document.fonts) {
+        if (document.fonts.ready) document.fonts.ready.then(ajustar);
+        document.fonts.addEventListener('loadingdone', ajustar);
+    }
+    if (window.ResizeObserver) new ResizeObserver(ajustar).observe(pantalla);
+    cuerpo.addEventListener('toggle', ajustar, true);
+})();
+</script>
 
 @if($soloCompra)
 <style>
-.modal.demo-modal-visible{display:block;background:rgba(10,24,52,.62);overflow-y:auto}
+.modal.demo-modal-visible{display:block;overflow-y:auto}
 body.demo-modal-open{overflow:hidden}
-/* Modal de reserva con estilo de tótem (sobre la barra demo, z-index 9999) */
-#modalReservaMedsdiTotem{z-index:10050}
-#modalReservaMedsdiTotem .modal-content{border:0;border-radius:28px;overflow:hidden;box-shadow:0 40px 90px rgba(10,24,52,.35)}
-#modalReservaMedsdiTotem .modal-header{align-items:center;gap:16px;padding:22px 28px;border:0;background:linear-gradient(120deg,#123d86,#1848a1 55%,#2aa9b4);color:#fff}
-#modalReservaMedsdiTotem .k-modal-kicker{color:#cdeff0;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-#modalReservaMedsdiTotem .modal-title{margin:4px 0 0;color:#fff;font-size:clamp(20px,2.3vw,27px);font-weight:800}
-#modalReservaMedsdiTotem .btn-close{flex:none;width:52px;height:52px;margin:0 0 0 auto;padding:0;border-radius:50%;opacity:1;filter:none;background:rgba(255,255,255,.16) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/18px no-repeat}
+.kiosk-screen>#modalReservaMedsdiTotem{position:absolute;inset:0;z-index:30;background:#f4f8fd;color:var(--k-ink)}
+#modalReservaMedsdiTotem .modal-dialog{display:block;width:100%;max-width:none;min-height:100%;margin:0;transform:none}
+#modalReservaMedsdiTotem .modal-content{min-height:100%;border:0;border-radius:0;box-shadow:none;background:#f4f8fd}
+#modalReservaMedsdiTotem .modal-header{position:sticky;top:0;z-index:2;align-items:center;gap:12px;padding:12px 14px;border:0;border-radius:0;background:linear-gradient(120deg,#123d86,#1848a1 55%,#2aa9b4);color:#fff}
+#modalReservaMedsdiTotem .k-modal-kicker{color:#cdeff0;font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+#modalReservaMedsdiTotem .modal-title{margin:2px 0 0;color:#fff;font-size:17px;font-weight:800;line-height:1.2}
+#modalReservaMedsdiTotem .btn-close{flex:none;width:42px;height:42px;margin:0 0 0 auto;padding:0;border-radius:50%;opacity:1;filter:none;background:rgba(255,255,255,.16) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/15px no-repeat}
 #modalReservaMedsdiTotem .btn-close:hover{background-color:rgba(255,255,255,.28)}
-#modalReservaMedsdiTotem .modal-body{padding:24px 28px 28px;background:#f4f8fd}
-#modalReservaMedsdiTotem .k-step{margin-bottom:16px;padding:22px;border:1px solid var(--k-line);border-radius:22px;background:#fff}
-#modalReservaMedsdiTotem .k-step-title{display:flex;align-items:center;gap:12px;margin-bottom:16px;color:var(--k-ink);font-size:19px;font-weight:800}
-#modalReservaMedsdiTotem .k-step-title b{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--k-blue);color:#fff;font-size:17px}
-#modalReservaMedsdiTotem .form-label{margin-bottom:8px;color:var(--k-muted);font-size:13.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
-#modalReservaMedsdiTotem .form-control,#modalReservaMedsdiTotem .form-select{min-height:60px;padding:12px 18px;border:2px solid #c9d8ef;border-radius:16px;color:var(--k-ink);font-size:18px;font-weight:600}
-#modalReservaMedsdiTotem .form-select{padding-right:48px;background-position:right 18px center;background-size:18px 14px}
-#modalReservaMedsdiTotem .form-control:focus,#modalReservaMedsdiTotem .form-select:focus{border-color:var(--k-blue);box-shadow:0 0 0 5px rgba(24,72,161,.15)}
+#modalReservaMedsdiTotem .modal-body{padding:12px}
+#modalReservaMedsdiTotem .k-step{margin-bottom:12px;padding:14px;border:1px solid var(--k-line);border-radius:16px;background:#fff}
+#modalReservaMedsdiTotem .k-step-title{display:flex;align-items:center;gap:10px;margin-bottom:12px;color:var(--k-ink);font-size:16px;font-weight:800}
+#modalReservaMedsdiTotem .k-step-title b{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--k-blue);color:#fff;font-size:14px}
+#modalReservaMedsdiTotem .form-label{margin-bottom:6px;color:var(--k-muted);font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+#modalReservaMedsdiTotem .form-control,#modalReservaMedsdiTotem .form-select{min-height:50px;padding:10px 14px;border:2px solid #c9d8ef;border-radius:14px;color:var(--k-ink);font-size:16px;font-weight:600}
+#modalReservaMedsdiTotem .form-select{padding-right:40px;background-position:right 14px center;background-size:16px 12px}
+#modalReservaMedsdiTotem .form-control:focus,#modalReservaMedsdiTotem .form-select:focus{border-color:var(--k-blue);box-shadow:0 0 0 4px rgba(24,72,161,.15)}
 #modalReservaMedsdiTotem .form-control:disabled,#modalReservaMedsdiTotem .form-select:disabled{background-color:#eef2f7;color:#8a98ac}
 #modalReservaMedsdiTotem .form-control[readonly]{background:#f3f7fd}
-#modalReservaMedsdiTotem #medsdiRutBuscar{font-size:24px;font-weight:700;letter-spacing:.05em}
-#modalReservaMedsdiTotem .input-group{flex-wrap:nowrap;gap:12px}
-#modalReservaMedsdiTotem .input-group>*{margin-left:0!important;border-radius:16px!important}
-#modalReservaMedsdiTotem .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:60px;padding:12px 24px;border-radius:16px;font-size:17px;font-weight:800;transition:transform .12s ease,filter .2s ease}
+#modalReservaMedsdiTotem #medsdiRutBuscar{font-size:20px;font-weight:700;letter-spacing:.05em}
+#modalReservaMedsdiTotem .input-group{flex-wrap:nowrap;gap:8px}
+#modalReservaMedsdiTotem .input-group>*{margin-left:0!important;border-radius:14px!important}
+#modalReservaMedsdiTotem .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:10px 18px;border-radius:14px;font-size:15.5px;font-weight:800;transition:transform .12s ease,filter .2s ease}
 #modalReservaMedsdiTotem .btn:active{transform:scale(.97)}
 #modalReservaMedsdiTotem .btn:disabled{opacity:.5}
-#modalReservaMedsdiTotem .btn-sm{min-height:48px;padding:10px 18px;border-radius:14px;font-size:15.5px}
+#modalReservaMedsdiTotem .btn-sm{min-height:42px;padding:8px 14px;border-radius:12px;font-size:14px}
 #modalReservaMedsdiTotem .btn-primary{border:0;background:linear-gradient(135deg,var(--k-blue),var(--k-blue-2));box-shadow:0 8px 18px rgba(24,72,161,.24)}
 #modalReservaMedsdiTotem .btn-info{border:0;background:var(--k-teal-ink);color:#fff}
 #modalReservaMedsdiTotem .btn-outline-primary{border:2px solid #bcd0ee;background:#fff;color:var(--k-blue)}
@@ -553,37 +665,28 @@ body.demo-modal-open{overflow:hidden}
 #modalReservaMedsdiTotem .btn-outline-secondary{border:2px solid #c9d3e1;background:#fff;color:var(--k-muted)}
 #modalReservaMedsdiTotem .btn-outline-success{border:2px solid #7fd6c9;background:#effbf8;color:#0b6b5f}
 #modalReservaMedsdiTotem .btn-outline-success:hover{border-color:var(--k-ok);background:var(--k-ok);color:#fff}
-#modalReservaMedsdiTotem #medsdiFormConfirmar .btn-success{min-height:84px;border:0;border-radius:22px;background:linear-gradient(135deg,var(--k-ok),var(--k-ok-2));font-size:22px;box-shadow:0 12px 26px rgba(14,133,119,.3)}
-#modalReservaMedsdiTotem .alert{padding:16px 18px;border:0;border-radius:16px;font-size:16.5px;font-weight:600}
+#modalReservaMedsdiTotem #medsdiFormConfirmar .btn-success{min-height:64px;border:0;border-radius:18px;background:linear-gradient(135deg,var(--k-ok),var(--k-ok-2));font-size:18px;box-shadow:0 10px 22px rgba(14,133,119,.3)}
+#modalReservaMedsdiTotem .alert{padding:12px 14px;border:0;border-radius:14px;font-size:14.5px;font-weight:600}
+#modalReservaMedsdiTotem .alert.d-flex{flex-wrap:wrap}
 #modalReservaMedsdiTotem .alert-info{background:#edf4ff;color:#1d4c94}
 #modalReservaMedsdiTotem .alert-success{background:#e2f7f2;color:#0b6b5f}
 #modalReservaMedsdiTotem .alert-warning{background:#fff4dc;color:#7d5700}
-#modalReservaMedsdiTotem .list-group{border:1px solid var(--k-line);border-radius:16px}
-#modalReservaMedsdiTotem .list-group-item{padding:16px 18px;border-color:var(--k-line);font-size:17px}
+#modalReservaMedsdiTotem .list-group{border:1px solid var(--k-line);border-radius:14px}
+#modalReservaMedsdiTotem .list-group-item{padding:12px 14px;border-color:var(--k-line);font-size:15px}
 #modalReservaMedsdiTotem .list-group-item-action:hover{background:#edf4ff}
-#modalReservaMedsdiTotem #medsdiPacienteResultado,#modalReservaMedsdiTotem #medsdiDiasAtencion{font-size:16px}
-#modalReservaMedsdiTotem #medsdiResultados .card{border:1px solid var(--k-line)!important;border-radius:20px;box-shadow:0 8px 20px rgba(15,42,92,.06)!important}
-#modalReservaMedsdiTotem #medsdiResultados .card-body{padding:20px!important}
-#modalReservaMedsdiTotem #medsdiResultados strong{font-size:18px}
-#modalReservaMedsdiTotem #medsdiHoras{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px!important}
+#modalReservaMedsdiTotem #medsdiPacienteResultado,#modalReservaMedsdiTotem #medsdiDiasAtencion{font-size:14.5px}
+#modalReservaMedsdiTotem #medsdiResultados .card{border:1px solid var(--k-line)!important;border-radius:16px;box-shadow:0 6px 16px rgba(15,42,92,.06)!important}
+#modalReservaMedsdiTotem #medsdiResultados .card-body{padding:14px!important}
+#modalReservaMedsdiTotem #medsdiResultados strong{font-size:16px}
+#modalReservaMedsdiTotem #medsdiHoras{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px!important}
 #modalReservaMedsdiTotem #medsdiHoras>span{grid-column:1/-1}
-#modalReservaMedsdiTotem .medsdi-elegir-hora{min-height:64px;font-size:20px;font-variant-numeric:tabular-nums}
+#modalReservaMedsdiTotem .medsdi-elegir-hora{min-height:54px;font-size:18px;font-variant-numeric:tabular-nums}
 .flatpickr-calendar{font-family:'Manrope',sans-serif}
-@media (max-width:767.98px){
-    #modalReservaMedsdiTotem .modal-content{border-radius:0}
-    #modalReservaMedsdiTotem .modal-header{padding:16px}
-    #modalReservaMedsdiTotem .btn-close{width:46px;height:46px}
-    #modalReservaMedsdiTotem .modal-body{padding:16px}
-    #modalReservaMedsdiTotem .k-step{padding:16px;border-radius:18px}
-    #modalReservaMedsdiTotem .input-group{flex-wrap:wrap}
-    #modalReservaMedsdiTotem .input-group>.btn{width:100%}
-    #modalReservaMedsdiTotem #medsdiHoras{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
-    #modalReservaMedsdiTotem #medsdiFormConfirmar .btn-success{min-height:72px;font-size:19px}
-}
+@container pantalla (max-width:560px){#modalReservaMedsdiTotem .input-group{flex-wrap:wrap}#modalReservaMedsdiTotem .input-group>.btn{width:100%}#modalReservaMedsdiTotem .row>[class*="col-"]{flex:0 0 100%;width:100%;max-width:100%}}
 </style>
 
 <div class="modal fade" id="modalReservaMedsdiTotem" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-md-down"><div class="modal-content">
+    <div class="modal-dialog"><div class="modal-content">
         <div class="modal-header">
             <div><div class="k-modal-kicker">Conectado a Med-SDI</div><h2 class="modal-title">Buscar profesional y reservar hora</h2></div>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -700,6 +803,9 @@ body.demo-modal-open{overflow:hidden}
         </div>
     </div></div>
 </div>
+<script>
+document.querySelector('.kiosk-screen')?.appendChild(document.getElementById('modalReservaMedsdiTotem'));
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
