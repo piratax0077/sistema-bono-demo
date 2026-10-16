@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
     <style>
         :root{--blue:#1848a1;--blue-dark:#112f68;--cyan:#31bebe;--green:#087b68;--ink:#1f2d3d;--muted:#607184;--line:#d8e3f0;--soft:#f3f8fc;--white:#fff}
-        *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 5% 4%,rgba(49,190,190,.12),transparent 28rem),linear-gradient(180deg,#f8fbff,#edf4ff);color:var(--ink);font-family:'Manrope',sans-serif}.wrap{max-width:1540px;margin:auto;padding:34px 24px 64px}.card{background:rgba(255,255,255,.97);border:1px solid rgba(216,227,240,.9);border-radius:24px;box-shadow:0 18px 46px rgba(24,72,161,.08)}.eyebrow{color:var(--green);font-size:12px;font-weight:900;letter-spacing:.17em;text-transform:uppercase}.hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:34px;padding:42px}.hero h1{max-width:850px;margin:10px 0 16px;font-size:clamp(34px,5vw,62px);line-height:1.02;letter-spacing:-.045em}.hero-lead{max-width:810px;margin:0;color:var(--muted);font-size:19px;line-height:1.65}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 17px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;text-decoration:none;cursor:pointer}.button.secondary{background:#eaf2ff;color:var(--blue)}.trust-box{align-self:stretch;padding:25px;border-radius:19px;background:linear-gradient(145deg,var(--blue-dark),var(--blue) 58%,#258fa4);color:#fff}.trust-box h2{margin:8px 0 13px;font-size:23px}.trust-box p{margin:0 0 18px;color:#dceaff;line-height:1.55}.trust-list{display:grid;gap:11px}.trust-item{display:flex;gap:10px;align-items:flex-start;padding:11px;border:1px solid rgba(255,255,255,.17);border-radius:12px;background:rgba(255,255,255,.08)}.trust-check{display:grid;place-items:center;flex:0 0 25px;height:25px;border-radius:50%;background:var(--cyan);font-weight:950}.section{margin-top:26px}.section-heading{max-width:820px;margin:0 auto 24px;text-align:center}.section-heading h2{margin:8px 0 10px;font-size:clamp(27px,4vw,40px);letter-spacing:-.035em}.section-heading p{margin:0;color:var(--muted);font-size:17px;line-height:1.6}.journey{display:grid;grid-template-columns:repeat(5,1fr);gap:15px}.role{position:relative;display:flex;min-height:455px;flex-direction:column;padding:22px;overflow:hidden}.role:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:var(--accent)}.role-number{display:grid;place-items:center;width:46px;height:46px;border-radius:15px;background:#edf4ff;color:var(--accent);font-size:20px;font-weight:950}.role h3{margin:18px 0 8px;font-size:23px}.role-subtitle{min-height:68px;margin:0 0 18px;color:var(--muted);line-height:1.45}.role ul{display:grid;gap:12px;margin:0 0 24px;padding:0;list-style:none}.role li{position:relative;padding-left:23px;color:#435568;line-height:1.45}.role li:before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:950}.role .role-action{margin-top:auto}.role form{margin:0}.role .button{width:100%;background:var(--accent)}.role-patient{--accent:#1848a1}.role-totem{--accent:#e07935}.role-assistant{--accent:#218a9d}.role-professional{--accent:#087b68}.role-audit{--accent:#7355a6}.security{display:grid;grid-template-columns:.8fr 1.2fr;gap:24px;padding:34px}.security-intro{padding:10px}.security-intro h2{margin:9px 0 13px;font-size:35px;letter-spacing:-.035em}.security-intro p{color:var(--muted);font-size:16px;line-height:1.65}.security-flow{display:grid;gap:10px}.security-step{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:15px;border:1px solid var(--line);border-radius:15px;background:var(--soft)}.security-step span{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#fff;color:var(--blue);font-weight:950;box-shadow:0 5px 16px rgba(24,72,161,.09)}.security-step h3{margin:1px 0 4px;font-size:16px}.security-step p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}.proof-title{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:30px 0 12px}.proof-title h2{margin:5px 0 0;font-size:30px}.proof-title p{max-width:650px;margin:0;color:var(--muted);line-height:1.5}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}.stat{padding:15px;border-radius:15px;background:#fff;border:1px solid var(--line)}.stat strong{display:block;color:var(--green);font-size:25px}.stat span{color:var(--muted);font-size:13px;text-transform:capitalize}.evidence{margin-top:12px;overflow:hidden}.evidence summary{padding:19px 22px;cursor:pointer;color:var(--blue);font-weight:900;list-style:none}.evidence summary::-webkit-details-marker{display:none}.evidence summary:after{content:"＋";float:right}.evidence[open] summary:after{content:"−"}.tablebox{overflow:auto;border-top:1px solid var(--line)}table{width:100%;border-collapse:collapse;min-width:960px}th,td{padding:13px;text-align:left;vertical-align:top;border-bottom:1px solid #e5edf5}th{color:#607184;font-size:11px;letter-spacing:.05em;text-transform:uppercase}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#e4f4ee;color:#087555;font-size:12px;font-weight:800}.table-action{display:inline-block;margin:2px;padding:6px 9px;border-radius:8px;background:var(--green);color:#fff;text-decoration:none;font-size:12px;font-weight:800}.empty{padding:30px;text-align:center;color:var(--muted)}.note{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}@media(max-width:1250px){.journey{grid-template-columns:repeat(3,1fr)}}@media(max-width:1050px){.hero,.security{grid-template-columns:1fr}.journey{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:680px){.wrap{padding:20px 13px 45px}.hero{padding:26px 20px}.hero h1{font-size:36px}.journey,.stats{grid-template-columns:1fr}.role{min-height:auto}.role-subtitle{min-height:auto}.security{padding:22px}.proof-title{display:block}.proof-title p{margin-top:10px}}
+        *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 5% 4%,rgba(49,190,190,.12),transparent 28rem),linear-gradient(180deg,#f8fbff,#edf4ff);color:var(--ink);font-family:'Manrope',sans-serif}.wrap{max-width:1540px;margin:auto;padding:34px 24px 64px}.card{background:rgba(255,255,255,.97);border:1px solid rgba(216,227,240,.9);border-radius:24px;box-shadow:0 18px 46px rgba(24,72,161,.08)}.eyebrow{color:var(--green);font-size:12px;font-weight:900;letter-spacing:.17em;text-transform:uppercase}.hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:34px;padding:42px}.hero h1{max-width:850px;margin:10px 0 16px;font-size:clamp(34px,5vw,62px);line-height:1.02;letter-spacing:-.045em}.hero-lead{max-width:810px;margin:0;color:var(--muted);font-size:19px;line-height:1.65}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 17px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;font-weight:800;text-decoration:none;cursor:pointer}.button.secondary{background:#eaf2ff;color:var(--blue)}.trust-box{align-self:stretch;padding:25px;border-radius:19px;background:linear-gradient(145deg,var(--blue-dark),var(--blue) 58%,#258fa4);color:#fff}.trust-box h2{margin:8px 0 13px;font-size:23px}.trust-box p{margin:0 0 18px;color:#dceaff;line-height:1.55}.trust-list{display:grid;gap:11px}.trust-item{display:flex;gap:10px;align-items:flex-start;padding:11px;border:1px solid rgba(255,255,255,.17);border-radius:12px;background:rgba(255,255,255,.08)}.trust-check{display:grid;place-items:center;flex:0 0 25px;height:25px;border-radius:50%;background:var(--cyan);font-weight:950}.section{margin-top:26px}.section-heading{max-width:820px;margin:0 auto 24px;text-align:center}.section-heading h2{margin:8px 0 10px;font-size:clamp(27px,4vw,40px);letter-spacing:-.035em}.section-heading p{margin:0;color:var(--muted);font-size:17px;line-height:1.6}.journey{display:grid;grid-template-columns:repeat(5,1fr);gap:15px}.role{position:relative;display:flex;min-height:455px;flex-direction:column;padding:22px;overflow:hidden}.role:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:var(--accent)}.role-number{display:grid;place-items:center;width:46px;height:46px;border-radius:15px;background:#edf4ff;color:var(--accent);font-size:20px;font-weight:950}.role h3{margin:18px 0 8px;font-size:23px}.role-subtitle{min-height:68px;margin:0 0 18px;color:var(--muted);line-height:1.45}.role ul{display:grid;gap:12px;margin:0 0 24px;padding:0;list-style:none}.role li{position:relative;padding-left:23px;color:#435568;line-height:1.45}.role li:before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:950}.role .role-action{margin-top:auto}.role form{margin:0}.role .button{width:100%;background:var(--accent)}.role-patient{--accent:#1848a1}.role-totem{--accent:#e07935}.role-assistant{--accent:#218a9d}.role-professional{--accent:#087b68}.role-audit{--accent:#7355a6}.security{display:grid;grid-template-columns:.8fr 1.2fr;gap:24px;padding:34px}.security-intro{padding:10px}.security-intro h2{margin:9px 0 13px;font-size:35px;letter-spacing:-.035em}.security-intro p{color:var(--muted);font-size:16px;line-height:1.65}.security-flow{display:grid;gap:10px}.security-step{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:15px;border:1px solid var(--line);border-radius:15px;background:var(--soft)}.security-step span{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#fff;color:var(--blue);font-weight:950;box-shadow:0 5px 16px rgba(24,72,161,.09)}.security-step h3{margin:1px 0 4px;font-size:16px}.security-step p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}.proof-title{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:30px 0 12px}.proof-title h2{margin:5px 0 0;font-size:30px}.proof-title p{max-width:650px;margin:0;color:var(--muted);line-height:1.5}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}.stat{padding:15px;border-radius:15px;background:#fff;border:1px solid var(--line)}.stat strong{display:block;color:var(--green);font-size:25px}.stat span{color:var(--muted);font-size:13px;text-transform:capitalize}.evidence{margin-top:12px;overflow:hidden}.evidence summary{padding:19px 22px;cursor:pointer;color:var(--blue);font-weight:900;list-style:none}.evidence summary::-webkit-details-marker{display:none}.evidence summary:after{content:"＋";float:right}.evidence[open] summary:after{content:"−"}.tablebox{overflow:auto;border-top:1px solid var(--line)}table{width:100%;border-collapse:collapse;min-width:960px}th,td{padding:13px;text-align:left;vertical-align:top;border-bottom:1px solid #e5edf5}th{color:#607184;font-size:11px;letter-spacing:.05em;text-transform:uppercase}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#e4f4ee;color:#087555;font-size:12px;font-weight:800}.table-action{display:inline-block;margin:2px;padding:6px 9px;border-radius:8px;background:var(--green);color:#fff;text-decoration:none;font-size:12px;font-weight:800}.empty{padding:30px;text-align:center;color:var(--muted)}.note{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}.view-tabs{scroll-margin-top:78px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:26px 0 0;padding:8px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.85);box-shadow:0 10px 28px rgba(24,72,161,.06)}.view-tabs button{min-height:52px;padding:10px 14px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-family:'Manrope',sans-serif;font-size:15px;font-weight:800;line-height:1.3;cursor:pointer;transition:background .2s,color .2s}.view-tabs button:hover{background:#eef4ff;color:var(--blue)}.view-tabs button[aria-selected="true"]{background:var(--blue);color:#fff;box-shadow:0 8px 20px rgba(24,72,161,.22)}.view-tabs button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}.view-panel{margin-top:20px}.view-panel[hidden]{display:none!important}.view-panel>section:first-child{margin-top:0}@media(max-width:860px){.view-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.view-tabs button{min-height:48px;padding:9px 10px;font-size:13.5px}}@media(max-width:1250px){.journey{grid-template-columns:repeat(3,1fr)}}@media(max-width:1050px){.hero,.security{grid-template-columns:1fr}.journey{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:680px){.wrap{padding:20px 13px 45px}.hero{padding:26px 20px}.hero h1{font-size:36px}.journey,.stats{grid-template-columns:1fr}.role{min-height:auto}.role-subtitle{min-height:auto}.security{padding:22px}.proof-title{display:block}.proof-title p{margin-top:10px}}
     </style>
     @include('partials.scroll_fade')
 </head>
@@ -23,8 +23,8 @@
             <p class="hero-lead">Desde la reserva hasta el cobro: paciente, profesional, centro de atención y bono vinculados en un mismo recorrido.</p>
             <p>Conoce los controles de autorización, privacidad y trazabilidad desde el escritorio, la app y el tótem. El cifrado protege los datos; la autenticación de dos factores verifica la identidad.</p>
             <div class="hero-actions">
-                <a class="button" href="#recorrido">Explorar el recorrido</a>
-                <a class="button secondary" href="#seguridad">Conocer las capas de seguridad</a>
+                <a class="button" href="#recorrido" data-view-link="coordinacion">Explorar el recorrido</a>
+                <a class="button secondary" href="#seguridad" data-view-link="autorizacion">Conocer las capas de seguridad</a>
             </div>
         </div>
         <aside class="trust-box">
@@ -39,9 +39,22 @@
         </aside>
     </section>
 
-    @include('partials.demo_security_cards')
-    @include('partials.demo_flow_guide', ['demoInteractive' => true])
+    <div class="view-tabs" role="tablist" aria-label="Secciones de la presentación">
+        <button type="button" role="tab" id="view-tab-presentacion" aria-controls="view-presentacion" aria-selected="true" data-view-tab="presentacion">Presentación interactiva</button>
+        <button type="button" role="tab" id="view-tab-recorrido" aria-controls="view-recorrido" aria-selected="false" tabindex="-1" data-view-tab="recorrido">Tu recorrido de atención</button>
+        <button type="button" role="tab" id="view-tab-coordinacion" aria-controls="view-coordinacion" aria-selected="false" tabindex="-1" data-view-tab="coordinacion">Cómo se coordina la atención</button>
+        <button type="button" role="tab" id="view-tab-autorizacion" aria-controls="view-autorizacion" aria-selected="false" tabindex="-1" data-view-tab="autorizacion">Autorización en el momento correcto</button>
+    </div>
 
+    <div class="view-panel" id="view-presentacion" role="tabpanel" aria-labelledby="view-tab-presentacion" data-view-panel="presentacion">
+    @include('partials.demo_security_cards')
+    </div>
+
+    <div class="view-panel" id="view-recorrido" role="tabpanel" aria-labelledby="view-tab-recorrido" data-view-panel="recorrido" hidden>
+    @include('partials.demo_flow_guide', ['demoInteractive' => true])
+    </div>
+
+    <div class="view-panel" id="view-coordinacion" role="tabpanel" aria-labelledby="view-tab-coordinacion" data-view-panel="coordinacion" hidden>
     <section class="section" id="recorrido">
         <header class="section-heading">
             <div class="eyebrow">Una plataforma · Cinco experiencias conectadas</div>
@@ -81,7 +94,9 @@
             </article>
         </div>
     </section>
+    </div>
 
+    <div class="view-panel" id="view-autorizacion" role="tabpanel" aria-labelledby="view-tab-autorizacion" data-view-panel="autorizacion" hidden>
     <section class="section security card" id="seguridad">
         <div class="security-intro">
             <div class="eyebrow">Seguridad por diseño</div><h2>La autorización correcta, en el momento correcto</h2>
@@ -95,6 +110,7 @@
             <div class="security-step"><span>4</span><div><h3>Trazabilidad y control</h3><p>Recepción, atención, auditoría y depósito avanzan mediante estados controlados y quedan disponibles para revisión.</p></div></div>
         </div>
     </section>
+    </div>
 
     <section class="section" id="evidencia">
         <div class="proof-title"><div><div class="eyebrow">Demo en vivo</div><h2>Indicadores del recorrido</h2></div><p>Estos indicadores cambian a medida que se opera desde los distintos perfiles. El detalle de pagos y respaldos QR se consulta desde el Historial de pagos del profesional.</p></div>
@@ -104,5 +120,43 @@
     </div>
 </main>
 @include('partials.demo_footer')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tabs = [...document.querySelectorAll('[data-view-tab]')];
+    const panels = [...document.querySelectorAll('[data-view-panel]')];
+    if (!tabs.length) return;
+    const bar = tabs[0].parentElement;
+    function select(name, focus, scroll) {
+        const tab = tabs.find(t => t.dataset.viewTab === name);
+        if (!tab) return;
+        tabs.forEach(t => {const active = t === tab; t.setAttribute('aria-selected', String(active)); t.tabIndex = active ? 0 : -1;});
+        panels.forEach(p => {p.hidden = p.dataset.viewPanel !== name;});
+        window.dispatchEvent(new Event('scroll'));
+        try { sessionStorage.setItem('homeViewTab', name); } catch (e) {}
+        if (focus) tab.focus();
+        if (scroll) bar.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => select(tab.dataset.viewTab));
+        tab.addEventListener('keydown', event => {
+            if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+            event.preventDefault();
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+            select(tabs[next].dataset.viewTab, true);
+        });
+    });
+    document.querySelectorAll('[data-view-link]').forEach(link => link.addEventListener('click', event => {
+        event.preventDefault();
+        select(link.dataset.viewLink, false, true);
+    }));
+    const fromHash = {'#recorrido': 'coordinacion', '#seguridad': 'autorizacion'}[location.hash];
+    let stored = null;
+    try { stored = sessionStorage.getItem('homeViewTab'); } catch (e) {}
+    if (fromHash) {
+        select(fromHash);
+        window.addEventListener('load', () => setTimeout(() => bar.scrollIntoView({block: 'start'}), 50));
+    } else if (stored) select(stored);
+});
+</script>
 </body>
 </html>
