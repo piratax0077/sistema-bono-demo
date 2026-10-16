@@ -21,7 +21,6 @@
     .sec-deck-progress{flex:0 0 auto;padding:8px 13px;border-radius:999px;background:#edf4ff;color:var(--deck-blue);font-size:13px;font-weight:800;white-space:nowrap}
     .sec-deck-hint{margin:12px 0 18px;color:#52657e;font-size:13.5px;line-height:1.5}
 
-    /* Escenario de la presentación */
     .sec-deck-stage{position:relative;overflow:hidden;padding:22px clamp(18px,3vw,40px) 18px;border-radius:22px;background:radial-gradient(circle at 88% 0%,rgba(49,190,190,.34),transparent 42%),radial-gradient(circle at 0% 100%,rgba(49,190,190,.16),transparent 40%),linear-gradient(135deg,#0d2550 0%,#1848a1 62%,#1d7f97 100%);color:#fff;outline:none}
     .sec-deck-stage::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1px);background-size:22px 22px;-webkit-mask-image:linear-gradient(115deg,transparent 35%,#000 100%);mask-image:linear-gradient(115deg,transparent 35%,#000 100%);pointer-events:none}
     .sec-deck-stage:focus-visible{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--deck-blue)}
