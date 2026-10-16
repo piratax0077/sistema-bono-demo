@@ -15,10 +15,4 @@
     body:has(.totem-header-row) main.shell{padding:0 !important;width:calc(100% - 24px) !important;margin:16px auto}
     body:has(.totem-header-row) .body{padding:clamp(18px,2vw,32px)}
     .demo-guide-grid > *, .actions > *, .content-grid > *{min-width:0;overflow-wrap:anywhere}
-    @media(min-width:1400px){
-        body .demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-    }
-    @media(min-width:2100px){
-        body .demo-guide.demo-security-cards .demo-guide-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-    }
 </style>
