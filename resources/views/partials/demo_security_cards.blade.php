@@ -1,13 +1,13 @@
 @php
     $securityCards = [
-        ['tag' => '👥 Roles y permisos', 'icon' => 'control-roles-permisos.svg', 'title' => 'Accesos y funciones independientes', 'text' => 'Paciente, asistente, profesional, centros de salud, laboratorios, auditoría y administración tienen permisos diferentes. El paciente reserva y confirma; la asistente gestiona el bono y la llegada; el profesional atiende.', 'purpose' => 'Una contraloría independiente revisa la autorización del pago y deriva las excepciones a auditoría.'],
-        ['tag' => '📲 Paciente I', 'icon' => 'control-autorizacion-paciente.svg', 'title' => 'Reserva y autorización del bono', 'text' => 'El paciente reserva, confirma y autoriza el pago desde los canales habilitados: portal institucional, escritorio Medichile, tótem, app o WhatsApp. Si acepta, el bono queda vinculado al paciente, profesional y centro. Si rechaza, se gestiona la devolución o el saldo según corresponda.', 'purpose' => 'Autenticación multifactor (MFA) y datos cifrados. El consentimiento se vincula al bono y monto específicos; los mensajes y pagos se simulan en el demo.'],
-        ['tag' => '🔒 Paciente II', 'icon' => 'control-privacidad-totem.svg', 'title' => 'Privacidad en el tótem', 'text' => 'Al terminar o superar el tiempo de inactividad, se cierra la sesión y se retiran de pantalla los datos del paciente.', 'purpose' => 'Evita que la siguiente persona vea información de otra atención.'],
-        ['tag' => '🧾 Profesional I', 'icon' => 'control-qr-trazabilidad.svg', 'title' => 'Un bono vinculado a cada atención', 'text' => 'El QR permite identificar el estado del bono durante el recorrido. Paciente, profesional, centro, atención, pagos, devoluciones y saldos permanecen relacionados. Repetir una solicitud no debe duplicar movimientos.', 'purpose' => 'Validación del estado vigente, prevención de reutilización y conciliación para evitar cobros o abonos duplicados.'],
-        ['tag' => '✅ Profesional II', 'icon' => 'control-atencion-confirmada.svg', 'title' => 'Cierre clínico antes del cobro', 'text' => 'El profesional registra el cierre de la atención. El bono pasa a revisión para cobro, conservando el vínculo con el paciente, profesional, hora y prestación.', 'purpose' => 'Ayuda a prevenir cobros por prestaciones no realizadas. Contraloría valida los antecedentes y deriva las excepciones a auditoría.'],
-        ['tag' => '🔎 Seguridad', 'icon' => 'control-alertas-antifraude.svg', 'title' => 'Alertas antifraude', 'text' => 'La propuesta contempla análisis de patrones mediante IA para detectar reservas, rechazos, cambios de cuenta e intentos de reutilización sospechosos. Las alertas se remiten a contraloría para revisión.', 'purpose' => 'Permite detectar movimientos inusuales y conservar evidencia; una alerta no equivale por sí sola a fraude confirmado.'],
-        ['tag' => '🏦 Paciente y profesional', 'icon' => 'control-cuenta-bancaria.svg', 'title' => 'Cuenta bancaria protegida', 'text' => 'Los cambios de cuenta requieren una segunda verificación y generan un aviso al contacto anterior del usuario.', 'purpose' => 'Autenticación multifactor y datos cifrados para ayudar a impedir el desvío de pagos o devoluciones.'],
-        ['tag' => '🌱 Medio ambiente', 'icon' => 'control-sin-papel.svg', 'title' => 'Atención sin papel', 'text' => 'Reserva, bono, autorización y comprobantes digitales, disponibles sin imprimir.', 'purpose_label' => 'Beneficio', 'purpose' => 'Reduce el consumo de papel y tinta y evita impresiones y traslados innecesarios.'],
+        ['icon' => 'control-roles-permisos.svg', 'title' => 'Accesos y funciones independientes', 'text' => 'Paciente, asistente, profesional, centros de salud, laboratorios, auditoría y administración tienen permisos diferentes. El paciente reserva y confirma; la asistente gestiona el bono y la llegada; el profesional atiende.', 'purpose' => 'Una contraloría independiente revisa la autorización del pago y deriva las excepciones a auditoría.'],
+        ['icon' => 'control-autorizacion-paciente.svg', 'title' => 'Reserva y autorización del bono', 'text' => 'El paciente reserva, confirma y autoriza el pago desde los canales habilitados: portal institucional, escritorio Medichile, tótem, app o WhatsApp. Si acepta, el bono queda vinculado al paciente, profesional y centro. Si rechaza, se gestiona la devolución o el saldo según corresponda.', 'purpose' => 'Autenticación multifactor (MFA) y datos cifrados. El consentimiento se vincula al bono y monto específicos; los mensajes y pagos se simulan en el demo.'],
+        ['icon' => 'control-privacidad-totem.svg', 'title' => 'Privacidad en el tótem', 'text' => 'Al terminar o superar el tiempo de inactividad, se cierra la sesión y se retiran de pantalla los datos del paciente.', 'purpose' => 'Evita que la siguiente persona vea información de otra atención.'],
+        ['icon' => 'control-qr-trazabilidad.svg', 'title' => 'Un bono vinculado a cada atención', 'text' => 'El QR permite identificar el estado del bono durante el recorrido. Paciente, profesional, centro, atención, pagos, devoluciones y saldos permanecen relacionados. Repetir una solicitud no debe duplicar movimientos.', 'purpose' => 'Validación del estado vigente, prevención de reutilización y conciliación para evitar cobros o abonos duplicados.'],
+        ['icon' => 'control-atencion-confirmada.svg', 'title' => 'Cierre clínico antes del cobro', 'text' => 'El profesional registra el cierre de la atención. El bono pasa a revisión para cobro, conservando el vínculo con el paciente, profesional, hora y prestación.', 'purpose' => 'Ayuda a prevenir cobros por prestaciones no realizadas. Contraloría valida los antecedentes y deriva las excepciones a auditoría.'],
+        ['icon' => 'control-alertas-antifraude.svg', 'title' => 'Alertas antifraude', 'text' => 'La propuesta contempla análisis de patrones mediante IA para detectar reservas, rechazos, cambios de cuenta e intentos de reutilización sospechosos. Las alertas se remiten a contraloría para revisión.', 'purpose' => 'Permite detectar movimientos inusuales y conservar evidencia; una alerta no equivale por sí sola a fraude confirmado.'],
+        ['icon' => 'control-cuenta-bancaria.svg', 'title' => 'Cuenta bancaria protegida', 'text' => 'Los cambios de cuenta requieren una segunda verificación y generan un aviso al contacto anterior del usuario.', 'purpose' => 'Autenticación multifactor y datos cifrados para ayudar a impedir el desvío de pagos o devoluciones.'],
+        ['icon' => 'control-sin-papel.svg', 'title' => 'Atención sin papel', 'text' => 'Reserva, bono, autorización y comprobantes digitales, disponibles sin imprimir.', 'purpose_label' => 'Beneficio', 'purpose' => 'Reduce el consumo de papel y tinta y evita impresiones y traslados innecesarios.'],
     ];
     $securityTotal = count($securityCards);
 @endphp
@@ -45,7 +45,6 @@
     .sec-deck-icon{position:relative;display:grid;place-items:center;width:clamp(104px,10vw,136px);aspect-ratio:1;border-radius:50%;background:#fff;box-shadow:0 18px 40px rgba(4,20,52,.35),0 0 0 10px rgba(255,255,255,.08)}
     .sec-deck-icon img{display:block;width:56%;height:56%}
     .sec-deck-icon::before,.sec-deck-icon::after{content:'';position:absolute;inset:-10px;border:1.5px solid rgba(156,242,234,.55);border-radius:50%;opacity:0}
-    .sec-deck-tag{position:relative;display:inline-flex;align-items:center;padding:7px 14px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(255,255,255,.12);color:#fff;font-size:13px;font-weight:700;text-align:center}
 
     .sec-deck-copy{min-width:0}
     .sec-deck-copy h3{margin:0 0 12px;color:#fff;font-size:clamp(22px,2.3vw,32px);font-weight:800;letter-spacing:-.02em;line-height:1.2}
@@ -59,7 +58,6 @@
     .sec-deck-slide.is-active .sec-deck-icon{animation:secDeckPop .7s cubic-bezier(.16,1,.3,1) .12s both}
     .sec-deck-slide.is-active .sec-deck-icon::before,.sec-deck-slide.is-active .sec-deck-icon::after{animation:secDeckRing 3s ease-out infinite}
     .sec-deck-slide.is-active .sec-deck-icon::after{animation-delay:1.5s}
-    .sec-deck-slide.is-active .sec-deck-tag{animation:secDeckUp .55s ease .26s both}
     .sec-deck-slide.is-active .sec-deck-copy h3{animation:secDeckUp .55s ease .18s both}
     .sec-deck-slide.is-active .sec-deck-copy p{animation:secDeckUp .55s ease .28s both}
     .sec-deck-slide.is-active .sec-deck-purpose{animation:secDeckUp .55s ease .4s both}
@@ -104,7 +102,7 @@
     }
     @media(prefers-reduced-motion:reduce){
         .sec-deck-slide,.sec-deck-slide.is-before,.sec-deck.is-ready .sec-deck-slide,.sec-deck.is-ready .sec-deck-slide.is-active{transform:none;transition:opacity .2s linear,visibility 0s}
-        .sec-deck-slide.is-active .sec-deck-icon,.sec-deck-slide.is-active .sec-deck-icon::before,.sec-deck-slide.is-active .sec-deck-icon::after,.sec-deck-slide.is-active .sec-deck-tag,.sec-deck-slide.is-active .sec-deck-copy h3,.sec-deck-slide.is-active .sec-deck-copy p,.sec-deck-slide.is-active .sec-deck-purpose{animation:none}
+        .sec-deck-slide.is-active .sec-deck-icon,.sec-deck-slide.is-active .sec-deck-icon::before,.sec-deck-slide.is-active .sec-deck-icon::after,.sec-deck-slide.is-active .sec-deck-copy h3,.sec-deck-slide.is-active .sec-deck-copy p,.sec-deck-slide.is-active .sec-deck-purpose{animation:none}
     }
 </style>
 <section class="sec-deck" id="propuesta-seguridad" aria-label="Controles de seguridad y antifraude" data-security-deck data-patient-id="{{ auth()->id() }}">
@@ -127,8 +125,7 @@
                 @php $words = count(preg_split('/\s+/u', trim($card['text'].' '.$card['purpose']))); @endphp
                 <article class="sec-deck-slide {{ $loop->first ? 'is-active' : '' }}" id="sec-deck-slide-{{ $loop->iteration }}" role="group" aria-roledescription="diapositiva" aria-label="{{ $loop->iteration }} de {{ $securityTotal }}: {{ $card['title'] }}" data-tone="{{ isset($card['purpose_label']) ? 'benefit' : 'protect' }}" data-duration="{{ max(8, min(22, (int) round($words * 0.3))) }}" @unless($loop->first) aria-hidden="true" inert @endunless>
                     <div class="sec-deck-visual">
-                        <span class="sec-deck-icon" aria-hidden="true"><img src="{{ asset('images/iconos/'.$card['icon']) }}" alt=""><span class="sec-deck-number">{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</span></span>
-                        <span class="sec-deck-tag">{{ $card['tag'] }}</span>
+                        <span class="sec-deck-icon" aria-hidden="true"><img src="{{ asset('images/iconos/'.$card['icon']) }}" alt=""><span class="sec-deck-number">{{ $loop->iteration }}</span></span>
                     </div>
                     <div class="sec-deck-copy">
                         <h3>{{ $loop->iteration }}. {{ $card['title'] }}</h3>
