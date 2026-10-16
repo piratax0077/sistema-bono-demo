@@ -14,12 +14,10 @@
 <style>
     .sec-deck{--deck-blue:#1848a1;--deck-navy:#112f68;--deck-cyan:#31bebe;--deck-mint:#9cf2ea;--deck-ink:#18304f;--deck-muted:#5d6f86;--deck-line:#d7e2f2;margin:26px 0;padding:26px;border:1px solid #cbdaf0;border-radius:24px;background:#fff;box-shadow:0 18px 46px rgba(24,72,161,.08);color:var(--deck-ink);font-family:'Manrope',sans-serif}
     .sec-deck *{box-sizing:border-box}
-    .sec-deck-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px}
+    .sec-deck-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:20px}
     .sec-deck-eyebrow{display:block;margin-bottom:6px;color:#087b68;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
     .sec-deck-head h2{margin:0;color:var(--deck-ink);font-size:clamp(21px,2.2vw,28px);font-weight:800;letter-spacing:-.02em;line-height:1.2}
     .sec-deck-head p{margin:5px 0 0;color:var(--deck-muted);font-size:15px}
-    .sec-deck-progress{flex:0 0 auto;padding:8px 13px;border-radius:999px;background:#edf4ff;color:var(--deck-blue);font-size:13px;font-weight:800;white-space:nowrap}
-    .sec-deck-hint{margin:12px 0 18px;color:#52657e;font-size:13.5px;line-height:1.5}
 
     .sec-deck-stage{position:relative;overflow:hidden;padding:22px clamp(18px,3vw,40px) 18px;border-radius:22px;background:radial-gradient(circle at 88% 0%,rgba(49,190,190,.34),transparent 42%),radial-gradient(circle at 0% 100%,rgba(49,190,190,.16),transparent 40%),linear-gradient(135deg,#0d2550 0%,#1848a1 62%,#1d7f97 100%);color:#fff;outline:none}
     .sec-deck-stage::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1px);background-size:22px 22px;-webkit-mask-image:linear-gradient(115deg,transparent 35%,#000 100%);mask-image:linear-gradient(115deg,transparent 35%,#000 100%);pointer-events:none}
@@ -112,13 +110,11 @@
 <section class="sec-deck" id="propuesta-seguridad" aria-label="Controles de seguridad y antifraude" data-security-deck data-patient-id="{{ auth()->id() }}">
     <div class="sec-deck-head">
         <div>
-            <span class="sec-deck-eyebrow">Presentación interactiva · {{ $securityTotal }} controles</span>
+            <span class="sec-deck-eyebrow">Presentación interactiva</span>
             <h2>Nuestra propuesta de privacidad y seguridad</h2>
             <p>Conoce los controles de seguridad y antifraude del sistema.</p>
         </div>
-        <span class="sec-deck-progress" aria-live="polite">Control 1 de {{ $securityTotal }}</span>
     </div>
-    <p class="sec-deck-hint">Demostración explicativa: pulsa cada tarjeta para recorrer los controles. Puedes volver a cualquiera y repetir la presentación.</p>
 
     <div class="sec-deck-stage" tabindex="0" aria-roledescription="presentación" aria-label="Presentación de los controles. Usa las flechas izquierda y derecha para cambiar de control.">
         <div class="sec-deck-bars" role="group" aria-label="Ir a un control">
@@ -176,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const stage = deck.querySelector('.sec-deck-stage');
         const slides = [...deck.querySelectorAll('.sec-deck-slide')];
         const bars = [...deck.querySelectorAll('.sec-deck-bar')];
-        const progress = deck.querySelector('.sec-deck-progress');
         const prev = deck.querySelector('[data-deck="prev"]');
         const next = deck.querySelector('[data-deck="next"]');
         const play = deck.querySelector('[data-deck="play"]');
@@ -185,19 +180,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const total = slides.length;
         const key = 'medichile-security-deck-' + deck.dataset.patientId;
         let current = 0;
-        let seen = new Set([0]);
         let playing = false;
         let onScreen = true;
 
         try {
             const saved = JSON.parse(sessionStorage.getItem(key) || 'null');
-            if (saved) {
-                current = Math.min(total - 1, Math.max(0, Math.floor(Number(saved.current) || 0)));
-                (saved.seen || []).map(Number).filter(n => n >= 0 && n < total).forEach(n => seen.add(n));
-                seen.add(current);
-            }
+            if (saved) current = Math.min(total - 1, Math.max(0, Math.floor(Number(saved.current) || 0)));
         } catch (_) {}
-        const save = () => { try { sessionStorage.setItem(key, JSON.stringify({current, seen: [...seen]})); } catch (_) {} };
+        const save = () => { try { sessionStorage.setItem(key, JSON.stringify({current})); } catch (_) {} };
 
         const restartBar = () => {
             const fill = bars[current].querySelector('i');
@@ -221,14 +211,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const last = current === total - 1;
             deck.classList.toggle('is-last', last);
             deck.style.setProperty('--deck-dur', (Number(slides[current].dataset.duration) || 12) + 's');
-            progress.textContent = `Control ${current + 1} de ${total}` + (seen.size === total ? ' · presentación completa' : '');
             prev.disabled = current === 0;
             nextText.textContent = last ? 'Repetir presentación' : 'Siguiente';
             next.setAttribute('aria-label', last ? 'Repetir la presentación desde el control 1' : `Ir al control ${current + 2}`);
         };
         const go = index => {
             current = Math.min(total - 1, Math.max(0, index));
-            seen.add(current);
             save();
             render();
             if (playing) restartBar();
