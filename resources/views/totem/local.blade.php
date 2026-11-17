@@ -76,10 +76,10 @@
         .kiosk-tile-desc{display:block;margin-top:calc(var(--su) * .4);color:var(--k-muted);font-size:calc(var(--su) * 2.15);line-height:1.35}
         .kiosk-tile-go{flex:none;display:grid;place-items:center;width:calc(var(--su) * 4.4);height:calc(var(--su) * 4.4);border-radius:50%;background:var(--k-soft);color:var(--k-blue)}
         .kiosk-tile-go .k-ico{width:calc(var(--su) * 2.4);height:calc(var(--su) * 2.4)}
-        .kiosk-tile.is-active{background:linear-gradient(160deg,#0c868d,#09727a);color:#fff;box-shadow:0 0 0 calc(var(--su) * .5) #8be7e0,0 calc(var(--su) * .8) calc(var(--su) * 2.4) rgba(4,16,44,.3)}
-        .kiosk-tile.is-active .kiosk-tile-icon{background:rgba(255,255,255,.18);color:#fff}
-        .kiosk-tile.is-active .kiosk-tile-desc{color:#eafafa}
-        .kiosk-tile.is-active .kiosk-tile-go{background:#fff;color:#09727a}
+        .kiosk-tile.is-active{background:linear-gradient(160deg,#31bebe,#27adb2);color:#fff;text-shadow:0 1px 2px rgba(0,70,80,.3);box-shadow:0 0 0 calc(var(--su) * .5) #c8f4f1,0 calc(var(--su) * .8) calc(var(--su) * 2.4) rgba(4,16,44,.3)}
+        .kiosk-tile.is-active .kiosk-tile-icon{background:rgba(255,255,255,.24);color:#fff}
+        .kiosk-tile.is-active .kiosk-tile-desc{color:#f4ffff}
+        .kiosk-tile.is-active .kiosk-tile-go{background:#fff;color:#1e9ea3}
         .kiosk-tile.is-active .kiosk-tile-go .k-ico{stroke-width:3}
 
         .kiosk-stage{--su:calc(var(--t-unit) * var(--k-fit,1));flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;padding:calc(var(--su) * 2.6) calc(var(--su) * 3.2);border-radius:calc(var(--su) * 3);background:#fff;color:var(--k-ink);box-shadow:0 calc(var(--su) * 1) calc(var(--su) * 3.4) rgba(4,16,44,.3)}
@@ -91,8 +91,8 @@
         .kiosk-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:calc(var(--su) * 1.4);margin:0 0 calc(var(--su) * 2);padding:0;list-style:none}
         .kiosk-steps li{display:flex;align-items:center;gap:calc(var(--su) * 1.2);padding:calc(var(--su) * 1.2) calc(var(--su) * 1.4);border:1px solid var(--k-line);border-radius:calc(var(--su) * 1.8);background:#f7faff;font-size:calc(var(--su) * 1.75);font-weight:700;line-height:1.3}
         .kiosk-steps b{flex:none;display:grid;place-items:center;width:calc(var(--su) * 3.8);height:calc(var(--su) * 3.8);border-radius:50%;background:var(--k-blue);color:#fff;font-size:calc(var(--su) * 1.9);font-weight:800}
-        .kiosk-note{display:flex;align-items:center;justify-content:center;gap:calc(var(--su) * 1.2);margin:calc(var(--su) * 1.4) 0 0;color:var(--k-muted);font-size:calc(var(--su) * 1.9);font-weight:600;text-align:center}
-        .kiosk-note .k-ico{width:calc(var(--su) * 3);height:calc(var(--su) * 3);color:var(--k-teal-ink)}
+        .kiosk-note{display:flex;align-items:center;justify-content:center;gap:calc(var(--su) * 1.2);margin:calc(var(--su) * 1.4) 0 0;color:#1f9ea3;font-size:calc(var(--su) * 1.9);font-weight:600;text-align:center}
+        .kiosk-note .k-ico{width:calc(var(--su) * 3);height:calc(var(--su) * 3);color:#31bebe}
         .kiosk-note.is-warn{color:#8a5a00}.kiosk-note.is-warn .k-ico{color:#c98a00}
         .kiosk-link{display:inline-flex;align-items:center;gap:calc(var(--su) * 1);margin-top:calc(var(--su) * 1.4);padding:calc(var(--su) * .8) 0;color:var(--k-blue);font-size:calc(var(--su) * 2);font-weight:800;text-decoration:none}
         .kiosk-link .k-ico{width:calc(var(--su) * 2.6);height:calc(var(--su) * 2.6)}
@@ -103,20 +103,22 @@
         .k-btn:hover{color:#fff;filter:brightness(1.07)}
         .k-btn:active{transform:translateY(2px) scale(.985)}
         .k-btn:disabled,.k-btn[aria-disabled="true"]{background:#c9d3e1;color:#f4f7fb;box-shadow:none;cursor:not-allowed;transform:none;filter:none;animation:none}
-        .k-btn--ok,.k-btn--xl{background:linear-gradient(135deg,var(--k-ok),var(--k-ok-2));box-shadow:0 calc(var(--su) * 1) calc(var(--su) * 2.6) rgba(14,133,119,.32),inset 0 -3px 0 rgba(0,0,0,.14)}
+        .k-btn--ok{background:linear-gradient(135deg,var(--k-ok),var(--k-ok-2));box-shadow:0 calc(var(--su) * 1) calc(var(--su) * 2.6) rgba(14,133,119,.32),inset 0 -3px 0 rgba(0,0,0,.14)}
+        .k-btn--xl{background:linear-gradient(135deg,#31bebe,#27adb2);text-shadow:0 1px 2px rgba(0,70,80,.3);box-shadow:0 calc(var(--su) * 1) calc(var(--su) * 2.6) rgba(49,190,190,.36),inset 0 -3px 0 rgba(0,0,0,.12)}
+        .k-btn--xl:disabled{background:#c9d3e1;box-shadow:none;text-shadow:none}
         .k-btn--ghost{border:2px solid #bcd0ee;background:#fff;color:var(--k-blue);box-shadow:none}
         .k-btn--ghost:hover{color:var(--k-blue);background:#f3f7fd;filter:none}
         .k-btn--xl{flex:none;gap:calc(var(--su) * 2);min-height:calc(var(--su) * 10);padding:calc(var(--su) * 1.6) calc(var(--su) * 1.8) calc(var(--su) * 1.6) calc(var(--su) * 2.4);border-radius:calc(var(--su) * 3);font-size:calc(var(--su) * 3.3)}
         .k-btn-lead,.k-btn-arrow{flex:none;display:grid;place-items:center;width:calc(var(--su) * 6.4);height:calc(var(--su) * 6.4);border-radius:50%}
         .k-btn-lead{background:rgba(255,255,255,.16)}
-        .k-btn-arrow{background:#fff;color:var(--k-ok)}
+        .k-btn-arrow{background:#fff;color:#1f9ea3}
         .k-btn-lead .k-ico,.k-btn-arrow .k-ico{width:calc(var(--su) * 3.4);height:calc(var(--su) * 3.4)}
         .k-btn:disabled .k-btn-arrow{color:#9aa8bc}
         .k-btn-text{flex:1;display:flex;flex-direction:column;align-items:flex-start;min-width:0;text-align:left}
         .k-btn-text small{margin-top:calc(var(--su) * .4);font-size:calc(var(--su) * 1.85);font-weight:600;opacity:.9}
         .k-btn--attract:not(:disabled){animation:kAttract 2.6s ease-out infinite}
-        @keyframes kAttract{0%{box-shadow:0 8px 20px rgba(14,133,119,.32),0 0 0 0 rgba(49,190,190,.6)}70%,100%{box-shadow:0 8px 20px rgba(14,133,119,.32),0 0 0 12px rgba(49,190,190,0)}}
-        .k-btn:focus-visible,.kiosk-tile:focus-visible,.kiosk-details summary:focus-visible{outline:3px solid #8be7e0;outline-offset:3px}
+        @keyframes kAttract{0%{box-shadow:0 8px 20px rgba(49,190,190,.36),0 0 0 0 rgba(49,190,190,.6)}70%,100%{box-shadow:0 8px 20px rgba(49,190,190,.36),0 0 0 12px rgba(49,190,190,0)}}
+        .k-btn:focus-visible,.kiosk-tile:focus-visible{outline:3px solid #8be7e0;outline-offset:3px}
 
         .kiosk-flash{flex:none;display:flex;align-items:center;gap:calc(var(--su) * 1.6);padding:calc(var(--su) * 1.8) calc(var(--su) * 2.4);border-radius:calc(var(--su) * 2.2);font-size:calc(var(--su) * 2.1);font-weight:800;line-height:1.35}
         .kiosk-flash .k-ico{width:calc(var(--su) * 3.6);height:calc(var(--su) * 3.6)}
@@ -132,11 +134,6 @@
         .kiosk-field input:focus{outline:none;border-color:var(--k-blue);box-shadow:0 0 0 4px rgba(24,72,161,.15)}
         .kiosk-field .k-btn{width:auto;min-height:calc(var(--su) * 8.4);padding:0 calc(var(--su) * 3.4)}
         .kiosk-error{margin-top:calc(var(--su) * 1.2);color:#a32020;font-size:calc(var(--su) * 1.9);font-weight:800}
-        .kiosk-details summary{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--su) * 1.4);min-height:calc(var(--su) * 6.4);padding:0 calc(var(--su) * 2.4);border:2px dashed #bcd0ee;border-radius:calc(var(--su) * 2);color:var(--k-blue);font-size:calc(var(--su) * 2.1);font-weight:800;list-style:none;cursor:pointer}
-        .kiosk-details summary::-webkit-details-marker{display:none}
-        .kiosk-details summary .k-ico{width:calc(var(--su) * 3);height:calc(var(--su) * 3);transition:transform .2s ease}
-        .kiosk-details[open] summary{margin-bottom:calc(var(--su) * 1.8);border-style:solid;background:#f3f7fd}
-        .kiosk-details[open] summary .k-ico{transform:rotate(180deg)}
 
         .kiosk-vouchers{display:grid;gap:calc(var(--su) * 1.6);margin-top:calc(var(--su) * 2)}
         .kiosk-voucher{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:calc(var(--su) * 2);padding:calc(var(--su) * 2);border:1px solid var(--k-line);border-radius:calc(var(--su) * 2.2);background:#f7faff}
@@ -167,7 +164,7 @@
 
         .kiosk-bar{flex:none;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:calc(var(--su) * 1) calc(var(--su) * 2);padding:calc(var(--su) * 1.1) calc(var(--su) * 3);background:rgba(4,16,44,.28);color:#d6e6f8}
         .kiosk-bar-info{display:flex;flex-wrap:wrap;gap:calc(var(--su) * 1)}
-        .kiosk-chip{display:inline-flex;align-items:center;gap:calc(var(--su) * .8);padding:calc(var(--su) * .6) calc(var(--su) * 1.4);border-radius:999px;background:rgba(255,255,255,.12);color:#d6e6f8;font-size:calc(var(--su) * 1.9);font-weight:600;white-space:nowrap}
+        .kiosk-chip{display:inline-flex;align-items:center;gap:calc(var(--su) * .8);padding:calc(var(--su) * .6) calc(var(--su) * 1.4);border-radius:0;background:none;color:#d6e6f8;font-size:calc(var(--su) * 1.9);font-weight:600;white-space:nowrap}
         .kiosk-chip strong{color:#fff;font-weight:800}
         .kiosk-chip .k-ico{width:calc(var(--su) * 2);height:calc(var(--su) * 2);color:#8be7e0}
         .kiosk-bar-help{display:flex;align-items:center;gap:calc(var(--su) * 1.6)}
@@ -234,9 +231,6 @@
             .kiosk-field input{min-height:calc(var(--su) * 14);padding:0 calc(var(--su) * 4);border-radius:calc(var(--su) * 3.6);font-size:calc(var(--su) * 5.6)}
             .kiosk-field .k-btn{width:100%;min-height:calc(var(--su) * 13);padding:0 calc(var(--su) * 4)}
             .kiosk-error{margin-top:calc(var(--su) * 2);font-size:calc(var(--su) * 3.2)}
-            .kiosk-details summary{gap:calc(var(--su) * 2);min-height:calc(var(--su) * 11);padding:0 calc(var(--su) * 3.6);border-radius:calc(var(--su) * 3.2);font-size:calc(var(--su) * 3.4)}
-            .kiosk-details summary .k-ico{width:calc(var(--su) * 5);height:calc(var(--su) * 5)}
-            .kiosk-details[open] summary{margin-bottom:calc(var(--su) * 3)}
             .kiosk-vouchers{gap:calc(var(--su) * 2.6);margin-top:calc(var(--su) * 3.6)}
             .kiosk-voucher{grid-template-columns:auto minmax(0,1fr);align-items:start;gap:calc(var(--su) * 2.6) calc(var(--su) * 3);padding:calc(var(--su) * 3.4);border-radius:calc(var(--su) * 3.6)}
             .kiosk-voucher>form,.kiosk-voucher>.kiosk-badge{grid-column:1/-1}
@@ -341,7 +335,6 @@
 
     <section class="kiosk-body">
         <div class="kiosk-welcome">
-            <span class="kiosk-eyebrow">{{ $soloCompra ? 'Paciente Tótem' : 'Autoatención Medichile' }}</span>
             <h1>¿Qué deseas hacer hoy?</h1>
             <p>{{ $soloCompra ? 'Toca una opción en la pantalla para reservar tu hora, sacar tu bono o avisar tu llegada.' : 'Toca una opción para comprar tu bono o avisar tu llegada sin pasar por recepción.' }}</p>
         </div>
@@ -389,8 +382,7 @@
                 @if($identificacionAutomatica)
                     <div class="kiosk-flash ok"><svg class="k-ico" aria-hidden="true"><use href="#k-i-check-circle"/></svg>Paciente reconocido. Encontramos la relación médico–paciente y la hora reservada.</div>
                 @endif
-                <details class="kiosk-details" @if(!$identificacionAutomatica) open @endif>
-                    <summary>{{ $identificacionAutomatica ? 'Buscar otra hora por RUT' : 'Identificar reserva por RUT' }}<svg class="k-ico" aria-hidden="true"><use href="#k-i-chevron"/></svg></summary>
+                <div class="kiosk-details">
                     <form id="buscarReservaRutForm" method="POST" action="{{ route('totem.local.buscar-hora') }}" autocomplete="off" data-totem-identification-form>
                         @csrf
                         @if($soloCompra)<input type="hidden" name="origen" value="paciente-totem">@endif
@@ -402,7 +394,7 @@
                         @error('rut')<div class="kiosk-error">{{ $message }}</div>@enderror
                     </form>
                     <div class="kiosk-hint"><svg class="k-ico" aria-hidden="true"><use href="#k-i-shield"/></svg><span>Seguridad: sólo se mostrarán reservas vigentes después de validar el RUT del paciente.</span></div>
-                </details>
+                </div>
 
                 @if($bonos->isNotEmpty())
                     <div class="kiosk-vouchers">
@@ -625,7 +617,6 @@ document.querySelectorAll('.kiosk-tile').forEach(function (opcion) {
         document.fonts.addEventListener('loadingdone', ajustar);
     }
     if (window.ResizeObserver) new ResizeObserver(ajustar).observe(pantalla);
-    cuerpo.addEventListener('toggle', ajustar, true);
 })();
 </script>
 

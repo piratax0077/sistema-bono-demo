@@ -22,6 +22,14 @@
 <body style="background:#f4f7fb;">
 @include('partials.demo_user_switcher')
 <div class="container py-5">
+    <div class="view-tabs" role="tablist" aria-label="Secciones del escritorio profesional">
+        <button type="button" role="tab" id="view-tab-recorrido" aria-controls="view-panel-recorrido" aria-selected="false" tabindex="-1" data-view-tab="recorrido">Recorrido</button>
+        <button type="button" role="tab" id="view-tab-escritorio" aria-controls="view-panel-escritorio" aria-selected="true" data-view-tab="escritorio">Escritorio</button>
+    </div>
+    <section id="view-panel-recorrido" role="tabpanel" aria-labelledby="view-tab-recorrido" data-view-panel="recorrido" hidden>
+        @include('partials.demo_flow_guide', ['demoProfessional' => true, 'demoInteractive' => true, 'demoStep' => 3])
+    </section>
+    <section id="view-panel-escritorio" role="tabpanel" aria-labelledby="view-tab-escritorio" data-view-panel="escritorio">
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <div class="text-uppercase text-success fw-bold small">Ciclo financiero</div>
@@ -262,7 +270,41 @@
             <button type="button" class="btn btn-outline-primary fw-bold" onclick="abrirCuentaBancariaProfesional()">🏦 Mis datos bancarios</button>
         </div>
     </div>
+    </section>
 </div>
+<style>
+.view-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px;padding:8px;border:1px solid #d8e3f0;border-radius:18px;background:rgba(255,255,255,.9);box-shadow:0 10px 28px rgba(24,72,161,.06)}
+.view-tabs button{flex:1 1 220px;min-height:52px;padding:10px 14px;border:0;border-radius:12px;background:transparent;color:#607184;font-family:'Manrope',sans-serif;font-size:15px;font-weight:800;line-height:1.3;cursor:pointer;transition:background .2s,color .2s}
+.view-tabs button:hover{background:#eef4ff;color:#1848a1}
+.view-tabs button[aria-selected="true"]{background:#e6efff;color:#1848a1;box-shadow:none}
+.view-tabs button:focus-visible{outline:3px solid #31bebe;outline-offset:2px}
+.view-panel[hidden]{display:none!important}
+@media(max-width:680px){.view-tabs button{min-height:48px;padding:9px 10px;font-size:13.5px}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var pestanas = Array.prototype.slice.call(document.querySelectorAll('[data-view-tab]'));
+    function seleccionar(pestana) {
+        pestanas.forEach(function (boton) {
+            var activa = boton === pestana;
+            boton.setAttribute('aria-selected', String(activa));
+            boton.tabIndex = activa ? 0 : -1;
+        });
+        document.querySelectorAll('[data-view-panel]').forEach(function (panel) {
+            panel.hidden = panel.dataset.viewPanel !== pestana.dataset.viewTab;
+        });
+    }
+    pestanas.forEach(function (boton, indice) {
+        boton.addEventListener('click', function () { seleccionar(boton); });
+        boton.addEventListener('keydown', function (evento) {
+            if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return;
+            var siguiente = pestanas[(indice + (evento.key === 'ArrowRight' ? 1 : pestanas.length - 1)) % pestanas.length];
+            siguiente.focus();
+            seleccionar(siguiente);
+        });
+    });
+});
+</script>
 
 @php
     $cuentaBancoProfesional = $cuentaBancariaMedsdi['cuenta'] ?? [];

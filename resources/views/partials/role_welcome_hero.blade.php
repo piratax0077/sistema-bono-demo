@@ -19,7 +19,9 @@
 @endonce
 
 <section class="role-welcome-hero {{ $class ?? '' }}">
-    <div class="role-welcome-hero__eyebrow">{{ $heroEyebrow }}</div>
+    @if(filled($heroEyebrow))
+        <div class="role-welcome-hero__eyebrow">{{ $heroEyebrow }}</div>
+    @endif
     <h1>{{ $heroTitle }}</h1>
     <p>{{ $heroDescription }}</p>
     @if($heroChips->isNotEmpty())

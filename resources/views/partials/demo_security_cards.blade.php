@@ -49,10 +49,9 @@
     .sec-deck-copy{min-width:0}
     .sec-deck-copy h3{margin:0 0 12px;color:#fff;font-size:clamp(22px,2.3vw,32px);font-weight:800;letter-spacing:-.02em;line-height:1.2}
     .sec-deck-copy p{max-width:760px;margin:0;color:#dceaff;font-size:clamp(15px,1.15vw,17px);line-height:1.68}
-    .sec-deck-purpose{display:flex;gap:12px;align-items:flex-start;max-width:760px;margin-top:20px;padding:14px 16px;border:1px solid rgba(156,242,234,.32);border-left:4px solid var(--deck-cyan);border-radius:14px;background:rgba(6,24,60,.32);color:#eef6ff;font-size:14.5px;line-height:1.55}
+    .sec-deck-purpose{display:flex;gap:12px;align-items:flex-start;max-width:760px;margin-top:20px;padding:14px 16px;border-radius:14px;background:rgba(6,24,60,.32);color:#eef6ff;font-size:14.5px;line-height:1.55}
     .sec-deck-purpose svg{flex:0 0 22px;width:22px;height:22px;margin-top:1px;color:var(--deck-mint)}
     .sec-deck-purpose b{color:var(--deck-mint)}
-    .sec-deck-slide[data-tone="benefit"] .sec-deck-purpose{border-color:rgba(134,239,172,.35);border-left-color:#4ade80}
     .sec-deck-slide[data-tone="benefit"] .sec-deck-purpose svg,.sec-deck-slide[data-tone="benefit"] .sec-deck-purpose b{color:#86efac}
 
     .sec-deck-slide.is-active .sec-deck-icon{animation:secDeckPop .7s cubic-bezier(.16,1,.3,1) .12s both}
@@ -69,7 +68,7 @@
     .sec-deck-btn:focus-visible{outline:3px solid var(--deck-mint);outline-offset:2px}
     .sec-deck-btn:disabled{opacity:.38;cursor:default;background:rgba(255,255,255,.1)}
     .sec-deck-btn svg{flex:0 0 18px;width:18px;height:18px}
-    .sec-deck-next{border-color:var(--deck-cyan);background:var(--deck-cyan);color:#08263f}
+    .sec-deck-next{border-color:var(--deck-cyan);background:var(--deck-cyan);color:#fff}
     .sec-deck-next:hover{background:#56d6d6}
     .sec-deck.is-playing .sec-deck-ico-play,.sec-deck:not(.is-playing) .sec-deck-ico-pause{display:none}
     .sec-deck.is-last .sec-deck-ico-next,.sec-deck:not(.is-last) .sec-deck-ico-replay{display:none}

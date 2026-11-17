@@ -33,12 +33,7 @@
     .demo-guide-head{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:12px}
     .demo-guide-head h2{margin:0;color:#18304f;font-size:21px;font-weight:800;letter-spacing:-.01em}
     .demo-guide-head p{margin:3px 0 0;color:#65758b;font-size:14.5px;line-height:1.45}
-    .demo-guide-meter{display:grid;gap:7px;justify-items:end;min-width:170px}
-    .demo-guide-progress{font-size:13px;font-weight:800;color:#1848a1;background:#edf4ff;border-radius:999px;padding:7px 13px;white-space:nowrap;transition:transform .25s ease}
-    .demo-guide-progress.progress-bump{transform:scale(1.05)}
-    .demo-guide-bar{width:100%;height:5px;border-radius:999px;background:#e7edf6;overflow:hidden}
-    .demo-guide-bar span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2dbabb,#16886c);transition:width .45s ease}
-    .demo-guide-body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,1fr);gap:24px;align-items:start}
+    .demo-guide-body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,1fr);gap:24px;align-items:start}.demo-guide-main{min-width:0}
     .demo-guide-carousel{container-type:inline-size;min-width:0;border-radius:18px;outline:none}
     .demo-guide-carousel:focus-visible{outline:3px solid #1848a1;outline-offset:4px}
     .demo-guide-route{display:flex;margin:0 0 16px;padding:0;list-style:none}
@@ -62,8 +57,8 @@
     .demo-guide-viewport{overflow:hidden;border-radius:18px;touch-action:pan-y}
     .demo-guide-track{display:flex;gap:16px;align-items:stretch}
     .demo-guide.is-ready .demo-guide-track{transition:transform .55s cubic-bezier(.22,1,.36,1)}
-    .demo-guide-slide{flex:0 0 100%;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start;padding:20px;border:1px solid #dfe8f4;border-radius:18px;background:#f8fbff;transition:border-color .3s,background .3s}
-    .demo-guide-slide.current{border-color:#a6e2e2;background:linear-gradient(135deg,#ebfafa 0%,#f8fbff 75%)}
+    .demo-guide-slide{flex:0 0 100%;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start;padding:20px;border:0;border-radius:18px;background:#f8fbff;transition:background .3s}
+    .demo-guide-slide.current{background:linear-gradient(135deg,#ebfafa 0%,#f8fbff 75%)}
     .demo-guide-slide.done{border-color:#bfe9d3;background:linear-gradient(135deg,#eefaf4 0%,#f8fbff 75%)}
     .demo-guide-slide-main{display:grid;grid-template-columns:52px minmax(0,1fr);gap:14px;align-items:start}
     .demo-guide-icon{display:grid;place-items:center;width:52px;height:52px;border:1px solid #e3ebf6;border-radius:15px;background:#fff;box-shadow:0 6px 14px rgba(24,72,161,.08);font-size:26px;line-height:1}
@@ -74,6 +69,7 @@
     .demo-guide-text{margin:6px 0 0;color:#40546d;font-size:15px;line-height:1.5}
     .demo-guide-security{padding:14px 16px;border:1px solid #e1eaf6;border-radius:14px;background:#fff;color:#4a6382;font-size:13.5px;line-height:1.55}
     .demo-guide-security p{margin:0}
+    .demo-guide-text,.demo-guide-security p,.demo-security-note>div{text-align:justify;hyphens:auto}
     .demo-guide-security-label{display:flex;gap:6px;align-items:center;margin-bottom:5px;color:#1848a1;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
     .demo-guide-security-label svg{width:14px;height:14px}
     @container (max-width:620px){.demo-guide-slide{grid-template-columns:1fr;gap:14px}}
@@ -89,7 +85,7 @@
     .demo-guide-aside{display:grid;gap:8px}
     .demo-guide-aside-title{display:flex;gap:7px;align-items:center;margin:0;color:#1848a1;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
     .demo-guide-aside-title svg{width:15px;height:15px}
-    .demo-security-note{display:grid;grid-template-columns:34px minmax(0,1fr);gap:11px;align-items:start;margin:0;padding:11px 13px;border:1px solid #d9e6fb;border-radius:13px;background:#eef4ff;color:#294d78;font-size:13px;line-height:1.5}
+    .demo-security-note{display:grid;grid-template-columns:34px minmax(0,1fr);gap:11px;align-items:start;margin:0;padding:11px 13px;border:0;border-radius:13px;background:#eef4ff;color:#294d78;font-size:13px;line-height:1.5}
     .demo-security-note strong{color:#1848a1;font-weight:800}
     .demo-security-badge{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#fff;box-shadow:0 2px 6px rgba(24,72,161,.08);font-size:18px;line-height:1}
     .demo-security-icon{display:block;width:24px;height:24px}
@@ -97,22 +93,17 @@
     .demo-guide-stop.done-enter .demo-guide-stop-dot:after{display:inline-block;animation:demoDoneCheck .4s ease-out}
     @media(min-width:1181px) and (max-height:820px){.demo-guide{padding:18px 22px}.demo-guide-head{margin-bottom:10px}.demo-guide-route{margin-bottom:12px}.demo-guide-slide{padding:16px}.demo-guide-nav{margin-top:12px}.demo-guide-aside{gap:7px}.demo-security-note{gap:10px;padding:9px 12px;font-size:12.5px;line-height:1.45}.demo-security-badge{width:30px;height:30px;font-size:16px}.demo-security-note{grid-template-columns:30px minmax(0,1fr)}.demo-security-icon{width:21px;height:21px}}
     @media(max-width:1180px){.demo-guide-body{grid-template-columns:1fr;gap:20px}.demo-guide-aside{grid-template-columns:repeat(2,minmax(0,1fr))}.demo-guide-aside-title{grid-column:1/-1}}
-    @media(max-width:760px){.demo-guide{padding:18px}.demo-guide-head{flex-direction:column;align-items:flex-start;gap:12px}.demo-guide-meter{justify-items:start;width:100%;min-width:0}.demo-guide-aside{grid-template-columns:1fr}}
+    @media(max-width:760px){.demo-guide{padding:18px}.demo-guide-head{flex-direction:column;align-items:flex-start;gap:12px}.demo-guide-aside{grid-template-columns:1fr}}
     @media(max-width:600px){.demo-guide-stop-label{display:none}.demo-guide-stop-dot{width:32px;height:32px;font-size:13px}.demo-guide-stop:not(:first-child):before{top:15px}.demo-guide-slide{padding:16px}.demo-guide-slide-main{grid-template-columns:44px minmax(0,1fr)}.demo-guide-icon{width:44px;height:44px;border-radius:13px;font-size:22px}.demo-guide-slide h3{font-size:18px}.demo-guide-text{font-size:14px}}
     @media(max-width:420px){.demo-guide{padding:15px;border-radius:18px}.demo-guide-head h2{font-size:19px}.demo-guide-btn{padding:10px 13px;font-size:13.5px}.demo-security-note{padding:11px}}
     @media(prefers-reduced-motion:reduce){.demo-guide *,.demo-guide *:before,.demo-guide *:after{animation:none!important;transition:none!important}}
 </style>
 <section class="demo-guide {{ $demoProfessional ? 'professional-guide' : '' }} {{ $demoAssistant ? 'assistant-guide' : '' }}" aria-label="Recorrido de atención Medichile" data-interactive="{{ $demoInteractive ? 'true' : 'false' }}" data-informative="{{ $demoGuideInformative ? 'true' : 'false' }}" data-completed="{{ $demoCompleted }}" data-viewed="{{ $demoViewed }}" data-patient-id="{{ auth()->id() }}" data-storage-scope="{{ $demoAssistant ? 'assistant-'.request()->route()->getName() : ($demoProfessional ? 'professional' : '') }}">
-    <div class="demo-guide-head">
-        <div><h2>{{ $demoAssistant ? $assistantTitle : ($demoProfessional ? 'Recorrido del profesional: de la agenda al cobro' : 'Tu recorrido de atención') }}</h2><p>{{ $demoAudit ? 'Revisión de evidencias, decisiones independientes y seguimiento de cada operación.' : ($demoAssistant ? 'Secretaría: identidad, autorización, lugar de atención y trazabilidad en cada paso.' : ($demoProfessional ? 'Tres etapas vinculadas: paciente en espera, atención cerrada y bono enviado a revisión para su cobro.' : 'Cada etapa conserva la relación entre paciente, médico, hora y bono.')) }}</p></div>
-        @unless($demoGuideInformative)
-        <div class="demo-guide-meter">
-            <span class="demo-guide-progress" aria-live="polite">Etapa {{ $demoInteractive ? 1 : $demoStep }} de {{ $demoTotal }}</span>
-            <span class="demo-guide-bar" aria-hidden="true"><span style="width:{{ $demoInitialProgress }}%"></span></span>
-        </div>
-        @endunless
-    </div>
     <div class="demo-guide-body">
+        <div class="demo-guide-main">
+        <div class="demo-guide-head">
+            <div><h2>{{ $demoAssistant ? $assistantTitle : ($demoProfessional ? 'Recorrido de la atención como profesional' : 'Recorrido de la atención como paciente') }}</h2><p>{{ $demoAudit ? 'Revisión de evidencias, decisiones independientes y seguimiento de cada operación.' : ($demoAssistant ? 'Secretaría: identidad, autorización, lugar de atención y trazabilidad en cada paso.' : ($demoProfessional ? 'Tres etapas vinculadas: paciente en espera, atención cerrada y bono enviado a revisión para su cobro.' : 'Cada etapa conserva la relación entre paciente, médico, hora y bono.')) }}</p></div>
+        </div>
         <div class="demo-guide-carousel" role="region" aria-roledescription="carrusel" aria-label="Etapas del recorrido" tabindex="0">
             <ol class="demo-guide-route">
                 @foreach($demoSteps as $number => $step)
@@ -147,6 +138,7 @@
                 <button type="button" class="demo-guide-btn demo-guide-prev" @if($demoViewed === 1) disabled @endif><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Anterior</button>
                 <button type="button" class="demo-guide-btn demo-guide-next" @if(! $demoInteractive && $demoViewed === $demoTotal) disabled @endif><span class="demo-guide-next-text">{{ $demoInteractive ? 'Completar etapa 1' : 'Siguiente' }}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
             </div>
+        </div>
         </div>
         <aside class="demo-guide-aside" aria-label="Seguridad y reglas del recorrido">
             <p class="demo-guide-aside-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>Seguridad y reglas del recorrido</p>

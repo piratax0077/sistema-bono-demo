@@ -10,8 +10,8 @@ class RoleHomeController extends Controller
             'Asistente',
             'Recepción y coordinación de pacientes',
             [
-                ['titulo' => 'Escritorio asistente', 'detalle' => 'Recepción, sala de espera y validaciones.', 'url' => route('asistente.escritorio')],
-                ['titulo' => 'Buscar paciente', 'detalle' => 'Consultar o registrar rápidamente un paciente.', 'url' => route('personas-rapidas.prueba')],
+                ['titulo' => 'Escritorio asistente', 'detalle' => 'Recepción, sala de espera y validaciones.', 'url' => route('asistente.escritorio'), 'icono' => 'images/imagenes/escritorio.png'],
+                ['titulo' => 'Buscar paciente', 'detalle' => 'Consultar o registrar rápidamente un paciente.', 'url' => route('personas-rapidas.prueba'), 'icono' => 'images/imagenes/buscar.png'],
             ]
         ));
     }
@@ -22,8 +22,8 @@ class RoleHomeController extends Controller
             'Profesional',
             'Agenda clínica y atención de pacientes',
             [
-                ['titulo' => 'Escritorio profesional', 'detalle' => 'Pacientes en espera y atenciones actuales.', 'url' => route('profesional.escritorio')],
-                ['titulo' => 'Gestión de cobros', 'detalle' => 'Atenciones habilitadas y códigos de cobro.', 'url' => route('profesional.cobros')],
+                ['titulo' => 'Escritorio profesional', 'detalle' => 'Pacientes en espera y atenciones actuales.', 'url' => route('profesional.escritorio'), 'icono' => 'images/imagenes/escritorio.png'],
+                ['titulo' => 'Gestión de cobros', 'detalle' => 'Atenciones habilitadas y códigos de cobro.', 'url' => route('profesional.cobros'), 'icono' => 'images/imagenes/cobro.png'],
             ]
         ));
     }

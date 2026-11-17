@@ -1,5 +1,5 @@
 @php
-    $assistantTitle = 'Recorrido de secretaría: recepción y coordinación';
+    $assistantTitle = 'Recorrido de la atención como secretaria';
     $assistantSteps = [
         1 => ['icon' => '🪪', 'title' => 'Verificar paciente y reserva', 'text' => 'Identifica al paciente por RUT, código o QR y comprueba su hora, profesional, prestación y centro de salud.', 'security' => 'Sesión de secretaría autorizada, RUT validado y acceso según permisos. La identidad y el bono deben corresponder a la misma reserva.'],
         2 => ['icon' => '📲', 'title' => 'Revisar bono y autorización', 'text' => 'Verifica la vigencia del bono y el pago. Cuando corresponde, solicita la aprobación del paciente por App o WhatsApp.', 'security' => 'El paciente decide desde su propio teléfono. Se revisan firma, vencimiento y estado del QR para evitar alteraciones, reutilización y cobros duplicados.'],

@@ -70,12 +70,17 @@ class DemoPortalController extends Controller
         $destinosPaciente = ['home', 'paciente.home', 'paciente.totem', 'paciente.escritorio', 'paciente.agenda'];
         $destino = (string) $request->input('destino', '');
         if ($perfil === 'paciente' && in_array($destino, $destinosPaciente, true)) {
-            return redirect()->route($destino)->with('ok', 'Perfil cambiado a Paciente.');
+            return redirect()->route($destino)->with('perfil_cambiado', 'Perfil cambiado a Paciente.');
         }
 
-        $destinosProfesional = ['profesional.escritorio', 'profesional.cobros', 'profesional.historial_pagos'];
+        $destinosProfesional = ['profesional.home', 'profesional.escritorio', 'profesional.cobros', 'profesional.historial_pagos'];
         if ($perfil === 'profesional' && in_array($destino, $destinosProfesional, true)) {
-            return redirect()->route($destino)->with('ok', 'Perfil cambiado a Profesional.');
+            return redirect()->route($destino)->with('perfil_cambiado', 'Perfil cambiado a Profesional.');
+        }
+
+        $destinosAsistente = ['asistente.home', 'asistente.escritorio'];
+        if ($perfil === 'asistente' && in_array($destino, $destinosAsistente, true)) {
+            return redirect()->route($destino)->with('perfil_cambiado', 'Perfil cambiado a Asistente.');
         }
 
         $destinosContraloria = [
@@ -85,13 +90,13 @@ class DemoPortalController extends Controller
             'auditoria.logins',
         ];
         if ($perfil === 'contralor' && in_array($destino, $destinosContraloria, true)) {
-            return redirect()->route($destino)->with('ok', 'Perfil cambiado a Contraloría.');
+            return redirect()->route($destino)->with('perfil_cambiado', 'Perfil cambiado a Contraloría.');
         }
 
         if (! empty($perfilConfig['route'])) {
-            return redirect()->route($perfilConfig['route'])->with('ok', 'Perfil cambiado a '.$perfilConfig['label'].'.');
+            return redirect()->route($perfilConfig['route'])->with('perfil_cambiado', 'Perfil cambiado a '.$perfilConfig['label'].'.');
         }
 
-        return redirect($perfilConfig['url'])->with('ok', 'Perfil cambiado a '.$perfilConfig['label'].'.');
+        return redirect($perfilConfig['url'])->with('perfil_cambiado', 'Perfil cambiado a '.$perfilConfig['label'].'.');
     }
 }
